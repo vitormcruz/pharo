@@ -11,8 +11,6 @@ Class {
 		'nonEmpty',
 		'collectResult',
 		'emptyButAllocatedWith20',
-		'elementExistsTwice',
-		'element',
 		'collectionWithElement',
 		'collectionIn',
 		'collectionNotIn',
@@ -275,9 +273,9 @@ BagTest >> setUp [
 		add: 5;
 		yourself.
 	collectionOfString := self speciesClass new
-		add: 1.5;
-		add: 5.5;
-		add: 7.5;
+		add: 'a';
+		add: 'b';
+		add: 'c';
 		yourself.
 	otherCollectionWithoutEqualElements := self speciesClass new
 		add: 1;
@@ -340,17 +338,10 @@ BagTest >> testAdd [
 
 { #category : #'basic tests' }
 BagTest >> testAddWithOccurrences [
-	
 	| aBag |
- 	aBag := Bag new.	
+	aBag := Bag new.
 	aBag add: 'a' withOccurrences: 3.
-	self assert: (aBag size = 3).
-	
-	
-	
-	
-		
-
+	self assert: aBag size equals: 3
 ]
 
 { #category : #'tests - iterating' }
@@ -362,25 +353,35 @@ BagTest >> testAnySastify [
 
 { #category : #'basic tests' }
 BagTest >> testAsBag [
-
 	| aBag |
- 
-	aBag := Bag new.	
-	
-	self assert: aBag asBag = aBag.
+	aBag := Bag new.
+
+	self assert: aBag asBag equals: aBag
+]
+
+{ #category : #'basic tests' }
+BagTest >> testAsDictionary [
+	| aBag aDictonary |
+	aBag := Bag new.
+	aBag add: 'a' withOccurrences: 4.
+	aBag add: 'b' withOccurrences: 2.
+	aDictonary := aBag asDictionary.
+	self assert: aDictonary size equals: 2.
+	self assert: (aBag as: Dictionary) equals: aDictonary.
+	self assert: (aDictonary at: 'a') equals: 4.
+	self assert: aBag asDictionary equals: aBag valuesAndCounts.
+	self deny: aBag asDictionary identicalTo: aBag valuesAndCounts
 ]
 
 { #category : #'basic tests' }
 BagTest >> testAsSet [
-
 	| aBag aSet |
-	aBag := Bag new.	
-	aBag add:'a' withOccurrences: 4.
-	aBag add:'b' withOccurrences: 2.
+	aBag := Bag new.
+	aBag add: 'a' withOccurrences: 4.
+	aBag add: 'b' withOccurrences: 2.
 	aSet := aBag asSet.
-	self assert: aSet size = 2.
-	self assert: (aSet occurrencesOf: 'a') = 1 
-	
+	self assert: aSet size equals: 2.
+	self assert: (aSet occurrencesOf: 'a') equals: 1
 ]
 
 { #category : #'basic tests' }
@@ -404,8 +405,8 @@ BagTest >> testCopyNonEmptyWithoutAllNotIncluded [
 BagTest >> testCreation [
 	| bag |
 	bag := Bag new.
-	self assert: (bag size) equals: 0.
-	self assert: (bag isEmpty)
+	self assert: bag size equals: 0.
+	self assertEmpty: bag
 ]
 
 { #category : #tests }
@@ -426,22 +427,23 @@ BagTest >> testCumulativeCounts [
 
 { #category : #tests }
 BagTest >> testEqual [
- 
 	| bag1 bag2 |
 	bag1 := Bag new.
 	bag2 := Bag new.
 	self assert: bag1 equals: bag2.
-	bag1 add: #a;
-		 add: #b.
-	bag2 add: #a;
-		 add: #a.
-	self deny: bag1 = bag2.
+	bag1
+		add: #a;
+		add: #b.
+	bag2
+		add: #a;
+		add: #a.
+	self deny: bag1 equals: bag2.
 	self assert: bag1 equals: bag1.
 	bag1 add: #a.
 	bag2 add: #b.
 	self assert: bag1 equals: bag2.
 	bag1 add: #c.
-	self deny: bag1 = bag2.
+	self deny: bag1 equals: bag2.
 	bag2 add: #c.
 	self assert: bag1 equals: bag2
 ]
@@ -450,12 +452,12 @@ BagTest >> testEqual [
 BagTest >> testFlatCollect [
 	| bag |
 	bag := Bag new.
-	bag add: { 1. 2. 3 }.
-	bag add: { 4. 5. 6 }.
+	bag add: {1 . 2 . 3}.
+	bag add: {4 . 5 . 6}.
 
 	self assert: (bag flatCollect: [ :x | x ]) equals: #(1 2 3 4 5 6) asBag.
-	self assert: (bag flatCollect: [ :x | x ]) class == Bag.
-	self assert: (#() asBag flatCollect: [:x | 1 to: 4 ]) isEmpty
+	self assert: (bag flatCollect: [ :x | x ]) class identicalTo: Bag.
+	self assertEmpty: (#() asBag flatCollect: [ :x | 1 to: 4 ])
 ]
 
 { #category : #'tests - includes' }
@@ -501,44 +503,43 @@ BagTest >> testOccurrencesOf [
 BagTest >> testRemove [
 	| bag item |
 	item := 'test item'.
-	bag := Bag new. 
-	
+	bag := Bag new.
+
 	bag add: item.
-	self assert: (bag size) equals: 1.
+	self assert: bag size equals: 1.
 	bag remove: item.
-	self assert: bag isEmpty.
-	
+	self assertEmpty: bag.
+
 	bag add: item withOccurrences: 2.
 	bag remove: item.
 	bag remove: item.
-	self assert: (bag size) equals: 0.
-	
-	self should: [bag remove: item.] raise: Error
+	self assert: bag size equals: 0.
+
+	self should: [ bag remove: item ] raise: Error
 ]
 
 { #category : #tests }
 BagTest >> testRemoveAll [
-	"Allows one to remove all elements of a collection" 
-	
+	"Allows one to remove all elements of a collection"
+
 	| c1 c2 s2 |
 	c1 := #(10 9 8 7 5 4 4 2) asBag.
 	c2 := c1 copy.
 	s2 := c2 size.
-	
+
 	c1 removeAll.
-	
-	self assert: c1 size = 0.
-	self assert: c2 size = s2 description: 'the copy has not been modified'.
+
+	self assert: c1 size equals: 0.
+	self assert: c2 size = s2 description: 'the copy has not been modified'
 ]
 
 { #category : #'tests - remove' }
 BagTest >> testRemoveElementThatExistsTwice [
-	 
 	| size |
 	size := self nonEmpty size.
 	self assert: (self nonEmpty includes: self elementTwiceIn).
 	self nonEmpty remove: self elementTwiceIn.
-	self assert: size - 1 = self nonEmpty size
+	self assert: size - 1 equals: self nonEmpty size
 ]
 
 { #category : #tests }

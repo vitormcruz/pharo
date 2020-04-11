@@ -86,7 +86,7 @@ Alien class >> ensureInSpecialObjectsArray [
 	self ~~ Alien ifTrue: [^self].
 
 	index := 53.
-	((Smalltalk includesKey: #VMObjectIndices)
+	((self environment includesKey: #VMObjectIndices)
 	 and: [((Smalltalk at: #VMObjectIndices) classPool at: #ClassAlien ifAbsent: []) ~= (index - 1)]) ifTrue:
 		[self error: 'index probably wrong'].
 
@@ -246,14 +246,14 @@ Alien class >> libcName [
 	| platform |
 	platform := SmalltalkImage current platformName.
 	platform = 'Mac OS' ifTrue:
-		[^SmalltalkImage current osVersion asInteger >= 1070
+		[^SmalltalkImage current os version asInteger >= 1070
 			ifTrue: ['libobjc.dylib']
 			ifFalse:
-				[SmalltalkImage current osVersion asInteger >= 1050
+				[SmalltalkImage current os version asInteger >= 1050
 					ifTrue: ['libgcc_s.1.dylib']
 					ifFalse: ['libc.dylib']]].
 	platform = 'unix' ifTrue:
-		[SmalltalkImage current osVersion = 'linux-gnu' ifTrue:
+		[SmalltalkImage current os version = 'linux-gnu' ifTrue:
 			[^'libc.so.6'].
 		 ^'libc.so'].
 	platform = 'Win32' ifTrue:
@@ -274,7 +274,7 @@ Alien class >> lookupOrNil: symbol  "<String>" inLibrary: libraryName [ "<String
 	"Answer the address of symbol in libraryName, or nil if it is not in the library.
 	Exceptions will be raised for invalid libraries, symbol names, etc."
 	^[self lookup: symbol inLibrary: libraryName ]
-		on: NotFoundError
+		on: LibrarySymbolNotFoundError
 		do: [:ex| nil]
 ]
 
@@ -518,7 +518,7 @@ Alien >> freeAfter: aBlock [
 	^[aBlock value: self] ensure: [self free]
 ]
 
-{ #category : #'instance initalization' }
+{ #category : #initialization }
 Alien >> initialize [
 	"Subclasses should redefine this method to perform initializations on instance creation"
 	"Overrides ProtoObjects' method for explicitness."
@@ -629,7 +629,7 @@ Alien >> primFindSymbol: symbolName [ "<String> ^<Integer>"
 	 its address, or fail if the receiver is invalid or the symbol cannot be found."
 	<primitive: 'primInLibraryFindSymbol' module: 'IA32ABI' error: errorCode>
 	^errorCode == #'not found'
-		ifTrue: [NotFoundError signal]
+		ifTrue: [LibrarySymbolNotFoundError signal]
 		ifFalse: [self primitiveFailed]
 ]
 

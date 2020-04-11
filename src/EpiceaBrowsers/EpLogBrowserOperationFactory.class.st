@@ -99,8 +99,8 @@ EpLogBrowserOperationFactory >> latestEventsFrom: previewEventsTheOldestFirst [
 	"TODO: move method"
 	
 	| aLog filter |
-	aLog := EpLog newWithStore: (OmMemoryStore withAll: previewEventsTheOldestFirst).
-	logBrowserModel := EpLogBrowserModel newWithLog: aLog.
+	aLog := EpLog newWithStore: (OmMemoryStore withAllContents: previewEventsTheOldestFirst).
+	logBrowserModel := EpLogBrowserPresenter newWithLog: aLog.
 	filter := EpLatestCodeChangeFilter new
 		logBrowserModel: logBrowserModel;
 		yourself.

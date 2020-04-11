@@ -76,7 +76,8 @@ GTPlayground class >> extentSettingsOn: aBuilder [
 		target: self;
 		parent: #gt;
 		getSelector: #preferredWidth;
-		setSelector: #preferredWidth:; 
+		setSelector: #preferredWidth:;
+		default: 600; 
 		label: 'Playground width';
 		description: 'The preferred width of new Playground windows'.
 	(aBuilder setting: #GTPlaygroundPreferredHeight)
@@ -84,6 +85,7 @@ GTPlayground class >> extentSettingsOn: aBuilder [
 		parent: #gt;
 		getSelector: #preferredHeight;
 		setSelector: #preferredHeight:; 
+		default: 400;
 		label: 'Playground height';
 		description: 'The preferred height of new Playground windows'.
 	(aBuilder setting: #GTPlaygroundRememberPreferredExtent)
@@ -92,6 +94,7 @@ GTPlayground class >> extentSettingsOn: aBuilder [
 		getSelector: #rememberPreferredExtent;
 		setSelector: #rememberPreferredExtent:; 
 		label: 'Remember extent of Playground';
+		default: true;
 		description: 'Enable or disable remembering of the extent of Playground windows on resize. When the preference is true, resizing a Playground window will affect the preferred width and height of future Playground windows'.
 	
 
@@ -108,13 +111,13 @@ GTPlayground class >> isGTPlaygroundEnabled [
 { #category : #'world menu' }
 GTPlayground class >> menuCommandOn: aBuilder [
 	<worldMenu>
-	(aBuilder item: Smalltalk tools workspace title asSymbol)
+	(aBuilder item: #Playground)
 		parent: #Tools;
 		action: [ Smalltalk tools openWorkspace ];
 		order: 10;
 		keyText: 'o, w';
 		help: 'A window used as a scratchpad area where fragments of Pharo code can be entered, stored, edited, and evaluated.';
-		icon: Smalltalk tools workspace taskbarIcon
+		icon: (self iconNamed: #workspaceIcon)
 ]
 
 { #category : #'instance creation' }
@@ -160,6 +163,20 @@ GTPlayground class >> openLabel: aLabel [
 	page := GTPlayPage new
 		title: aLabel;
 		yourself.
+	^ self openOn: page
+]
+
+{ #category : #'instance creation' }
+GTPlayground class >> openUrl: urlOrString [
+	"Open a new Playground with the contents of a text/plain web resource at urlOrString,
+	like the one you get from remote publishing a Playground as a Shared Smalltalk Workspace. 
+	See http://ws.stfx.eu - a Pastebin for Smalltalk - https://en.wikipedia.org/wiki/Pastebin"
+	
+	"self openUrl: 'http://ws.stfx.eu/1WS4U'"
+	
+	| page |
+	page := GTPlayPage basicLoadFromPublishUrl: urlOrString asUrl.
+	page title: urlOrString asUrl printString.
 	^ self openOn: page
 ]
 
@@ -247,16 +264,20 @@ GTPlayground class >> settingsOn: aBuilder [
 		getSelector: #isGTPlaygroundEnabled;
 		setSelector: #setGTPlaygroundEnabledStatus:; 
 		label: 'GTPlayground';
+		default: true;
 		description: 'Enable or disable the GTPlayground.'.
 	(aBuilder setting: #cacheDirectory)
 		parent: #gt;
+		default: true;
 		type: #Directory;
+		default: GTPlayBook defaultCacheDirectory;
 		target: GTPlayBook;
 		description: 'The path to the local Playground cache that stores all Playground scripts in ph files';
 		label: 'Local Playground cache directory'.
 	(aBuilder setting: #stashDirectory)
 		parent: #gt;
 		type: #Directory;
+		default: (FileLocator localDirectory / 'play-cache') resolve;
 		target: GTPlayBook;
 		description: 'The path to the local Playground stash that stores all named Playground scripts in ph files';
 		label: 'Local Playground stash directory'
@@ -367,6 +388,7 @@ GTPlayground >> codePresentationIn: composite [
 { #category : #building }
 GTPlayground >> compose [
 	self title: self defaultPlaygroundTitle.
+	self titleIcon: self playgroundIcon.
 	self act: [:b | b update] icon: GLMUIThemeExtraIcons glamorousRefresh entitled: 'Update'.
 	self act: [:b | 
 		HelpBrowser open selectTopicSatisfying: [:each |
@@ -506,6 +528,12 @@ GTPlayground >> playgroundActionsIn: aGTPlayground [
 	"Build Playground actions that appears on the title bar."
 	self playgroundActions do: [ :eachAction | 
 		aGTPlayground addAction: eachAction ]
+]
+
+{ #category : #accessing }
+GTPlayground >> playgroundIcon [
+	
+	^ self iconNamed: #workspace
 ]
 
 { #category : #'accessing-dynamic' }

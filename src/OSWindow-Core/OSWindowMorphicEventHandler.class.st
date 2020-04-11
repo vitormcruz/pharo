@@ -104,6 +104,7 @@ OSWindowMorphicEventHandler >> convertModifiers: modifiers [
 { #category : #events }
 OSWindowMorphicEventHandler >> dispatchMorphicEvent: anEvent [
 	morphicWorld defer: [
+				
 		(morphicWorld activeHand isNotNil and: [ anEvent hand isNotNil ]) ifTrue: [
 			morphicWorld activeHand handleEvent: anEvent
 		]
@@ -135,9 +136,7 @@ OSWindowMorphicEventHandler >> handleEvent: anEvent [
 	
 	morphicEvent := anEvent accept: self.
 	morphicEvent isMorphicEvent ifFalse: [ ^ self ].
-	
-	self flag: #todo. "Why this was in a queue who was never called?"
-	"self enqueue: morphicEvent."
+		
 	self dispatchMorphicEvent: morphicEvent
 	
 ]
@@ -251,7 +250,7 @@ OSWindowMorphicEventHandler >> visitMouseButtonReleaseEvent: anEvent [
 		setType: #mouseUp
 		position: anEvent position 
 		which: (self convertButton: anEvent button)
-		buttons: (self convertModifiers: anEvent modifiers)
+		buttons: (self convertModifiers: anEvent modifiers) | (self convertModifiers: anEvent modifiers)
 		hand: self activeHand
 		stamp: Time millisecondClockValue
 ]
@@ -312,21 +311,37 @@ OSWindowMorphicEventHandler >> visitTextInputEvent: anEvent [
 
 { #category : #visiting }
 OSWindowMorphicEventHandler >> visitUnknownEvent: anEvent [
-	Transcript
-		show: 'Unknown event: ';
-		show: anEvent data printString;
-		cr
+	self
+		traceCr: ('Unknown event: <1s>' expandMacrosWith: anEvent data printString)
 ]
 
 { #category : #visiting }
 OSWindowMorphicEventHandler >> visitWindowCloseEvent: anEvent [
 	anEvent suppressDefaultAction.
-	morphicWorld osWindowCloseButtonPressed
+	
+	morphicWorld worldState worldRenderer handleOSWindowCloseEvent: anEvent
+
+]
+
+{ #category : #visiting }
+OSWindowMorphicEventHandler >> visitWindowDropEvent: anEvent [
+
+	| dropEvent |
+	
+	"The OSWindow drop events are generated one-per file (unlike the case the non-headless VM)"
+	
+	dropEvent := DropFilesEvent new 
+				setPosition: self activeHand position
+				contents: 1
+				hand: self activeHand;
+				fileNames: { anEvent filePath }. 
+				
+	^ dropEvent
 ]
 
 { #category : #visiting }
 OSWindowMorphicEventHandler >> visitWindowResizeEvent: anEvent [
 
 	"window resized"
-	morphicWorld checkNewWindowSize.
+	morphicWorld worldState worldRenderer checkForNewScreenSize.
 ]

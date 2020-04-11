@@ -3,9 +3,9 @@ RBPatternVariableNode is an AST node that is used to match several other types o
 
 The different types of matches are determined by the name of the node. If the name contains a # character, then it will match a literal. If it contains, a . then it matches statements. If it contains no extra characters, then it matches only variables. These options are mutually exclusive.
 
-The @ character can be combined with the name to match lists of items. If combined with the . character, then it will match a list of statement nodes (0 or more). If used without the . or # character, then it matches anything except for list of statements. Combining the @ with the # is not supported.
+The @ character can be combined with the name to match lists of items. If combined with the . character, then it will match a list of statement nodes (0 or more). If used without the . or # character, then it matches anything except for a list of statements. Combining the @ with the # is not supported.
 
-Adding another ` in the name will cause the search/replace to look for more matches inside the node that this node matched. This option should not be used for top level expressions since that would cause infinite recursion (e.g., searching only for ""``@anything"").
+Adding another ` in the name will cause the search/replace to look for more matches inside the node that this node matched. This option should not be used for top-level expressions since that would cause infinite recursion (e.g., searching only for ""``@anything"").
 
 Instance Variables:
 	isAnything	<Boolean>	can we match any type of node
@@ -43,7 +43,7 @@ RBPatternVariableNode >> copyInContext: aDictionary [
 		ifFalse: [ (aDictionary at: self) copy ]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RBPatternVariableNode >> initializePatternVariables [
 	| myname |
 	myname := self name.
@@ -120,7 +120,7 @@ RBPatternVariableNode >> matchingClass [
 	^RBVariableNode
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RBPatternVariableNode >> named: aName start: aPosition [
 
 	super named: aName start: aPosition.

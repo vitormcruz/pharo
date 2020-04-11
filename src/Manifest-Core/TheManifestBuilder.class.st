@@ -10,30 +10,30 @@ Class {
 	#instVars : [
 		'manifestClass'
 	],
-	#category : #'Manifest-Core'
+	#category : #'Manifest-Core-Base'
 }
 
-{ #category : #utilities }
+{ #category : #accessing }
 TheManifestBuilder class >> allManifestClasses [
 
 	^ PackageManifest subclasses
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> falsePositiveBeginningTag [
 	"the string that identifies uniquely the beginning of a selector who give  the set of false positive for a rule"
 	
 	^ 'rule'
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> falsePositiveEndTag [
 	"the string that identifies uniquely the end of a selector who give  the set of false positive for a rule"
 	
 	^ 'FalsePositive'
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> falsePositiveMiddleTag [
 	"the string that identifies uniquely the middle of a selector who give  the set of false positive for a rule"
 	
@@ -55,15 +55,29 @@ TheManifestBuilder class >> hasPackageNamed: aPackageName [
 	
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - manifest' }
 TheManifestBuilder class >> manifestClassComment [
 	
 	^ 'I store metadata for this package. These meta data are used by other tools such as the SmalllintManifestChecker and the critics Browser'
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - manifest' }
+TheManifestBuilder class >> manifestClassNameFor: aPackageName [
+	"Returns a symbol representing a suitable name for a Manifest class for the given package"
+	
+	^(self manifestTag, (aPackageName select: [:each | each isAlphaNumeric ])) asSymbol
+]
+
+{ #category : #'accessing - manifest' }
+TheManifestBuilder class >> manifestClassPrefix [
+	"Return a string that serves as a prefix for Manifest classes (identifies uniquely the beginning of a Manifest class name)"
+	
+	^ 'Manifest'
+]
+
+{ #category : #'accessing - manifest' }
 TheManifestBuilder class >> manifestTag [
-	"the string that identifies uniquely the beginning of a Manifest class name"
+	"Return a string that serves as a tag within a package for Manifest classes"
 	
 	^ 'Manifest'
 ]
@@ -90,42 +104,42 @@ TheManifestBuilder class >> ofPackageNamed: aPackageName [
 	^ builder
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> rejectClassesTag [
 	"the string that identifies uniquely the beginning of a selector who give  the set of rejected classes"
 	
 	^ 'rejectClasses'
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> rejectRulesTag [
 	"the string that identifies uniquely the beginning of a selector who give  the set of rejected rules"
 	
 	^ 'rejectRules'
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> toDoBeginningTag [
 	"the string that identifies uniquely the beginning of a selector who give  the set of TODO for a rule"
 	
 	^ 'rule'
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> toDoEndTag [
 	"the string that identifies uniquely the end of a selector who give  the set of TODO for a rule"
 	
 	^ 'TODO'
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> toDoMiddleTag [
 	"the string that identifies uniquely the middle of a selector who give  the set of TODO for a rule"
 	
 	^ 'V'
 ]
 
-{ #category : #utilities }
+{ #category : #'accessing - tags' }
 TheManifestBuilder class >> truePositiveEndTag [
 	"the string that identifies uniquely the end of a selector who give  the set of false positive for a rule"
 	
@@ -331,13 +345,16 @@ TheManifestBuilder >> containsTruePositive: aItem onRule: ruleId version: versio
 
 { #category : #manifest }
 TheManifestBuilder >> createManifestNamed: packageName [
-
-	 manifestClass := PackageManifest subclass: (self class manifestTag, packageName onlyLetters) asSymbol
-			instanceVariableNames: ''
-			classVariableNames: ''
-			poolDictionaries: ''
-			category: packageName.
-	manifestClass comment: self class manifestClassComment.
+	 
+	manifestClass := PackageManifest 
+							subclass: (self class manifestClassNameFor: packageName) 
+							instanceVariableNames: ''
+							classVariableNames: ''
+							poolDictionaries: ''
+							package: packageName.
+	manifestClass 
+		tagWith: self class manifestTag;
+		comment: self class manifestClassComment.
 	^ manifestClass
 ]
 
@@ -353,7 +370,7 @@ TheManifestBuilder >> dateOf: ringobject forSelector: aSelector [
 	| critics |
 
 	critics := self manifest perform: aSelector.
-	^ ((critics detect: [:each | ((self browsedEnvironment at: each first first) manifestReadOn: (each first at: 2)) = ringobject ]) at: 2) asDateAndTime
+	^ ((critics detect: [:each | ((self definitionClassFor: each first first) manifestReadOn: (each first at: 2)) = ringobject ]) at: 2) asDateAndTime
 		
 		
 ]
@@ -387,6 +404,20 @@ TheManifestBuilder >> dateOfTruePositive: aItem onRule: ruleId version: versionI
 	^ self dateOf: ( aItem asRingDefinition) forSelector:  (self selectorTruePositiveOf: ruleId version: versionId)
 		
 		
+]
+
+{ #category : #private }
+TheManifestBuilder >> definitionClassFor: aName [
+
+	"find Ring definition for a given name. Handle classes renamings"
+	
+	| finalName |
+	
+	finalName := (aName = #RGPackage)
+		ifTrue: [ #RGPackageDefinition ]
+		ifFalse: [ aName ].
+
+	^ self browsedEnvironment at: finalName
 ]
 
 { #category : #manifest }
@@ -507,7 +538,7 @@ TheManifestBuilder >> removeAllItem: aSet selector: selector [
 	set := set
 		reject: [ :each | 
 			| tmp |
-			tmp := (self browsedEnvironment at: each first first) manifestReadOn: (each first at: 2).
+			tmp := (self definitionClassFor: each first first) manifestReadOn: (each first at: 2).
 			aSet anySatisfy: [ :fp | tmp = fp asRingDefinition ] ].
 	arrayString := self buildArrayString: set.
 	self compileSelector: selector returnValue: arrayString
@@ -555,7 +586,7 @@ TheManifestBuilder >> removeObsoleteFalsePositiveOf: aMethod [
 
 	| set arrayString  |
 	set := (self manifest perform: aMethod selector) asOrderedCollection.
-	set := set select: [ :each | ((self browsedEnvironment at: each first first) manifestReadOn:  (each first at: 2)) isDefined ].
+	set := set select: [ :each | ((self definitionClassFor: each first first) manifestReadOn:  (each first at: 2)) isDefined ].
 	arrayString := self buildArrayString: set.
 	self compileSelector: aMethod selector returnValue: arrayString
 	
@@ -567,7 +598,7 @@ TheManifestBuilder >> removeRejectClass: aClass [
 	|  classes |
 	classes :=  self manifest rejectClasses asOrderedCollection.
 	classes := classes reject: [ :each | 
-			((self browsedEnvironment at: each first first) manifestReadOn:  (each first at: 2)) =  aClass asRingDefinition ].	
+			((self definitionClassFor: each first first) manifestReadOn:  (each first at: 2)) =  aClass asRingDefinition ].	
 	self compileSelector: (self class rejectClassesTag) returnValue:  (self buildArrayString: classes)
 	
 ]
@@ -651,7 +682,7 @@ TheManifestBuilder >> unwrap: aCollection [
 	unwrapCollection := OrderedCollection new.
 	aCollection
 		do: [ :each | 
-			rgobject := (self browsedEnvironment at: each first first) manifestReadOn:  (each first at: 2).
+			rgobject := (self definitionClassFor: each first first) manifestReadOn:  (each first at: 2).
 			(rgobject isClass and: [ rgobject  realClass notNil ])
 				ifTrue: [ unwrapCollection add: rgobject realClass ].
 			(rgobject isMethod and: [ rgobject method notNil ])

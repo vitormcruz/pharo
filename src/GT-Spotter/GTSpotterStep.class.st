@@ -70,13 +70,6 @@ GTSpotterStep >> asyncTask [
 ]
 
 { #category : #private }
-GTSpotterStep >> basicRelevantProcessorsProcess: aSpotterContext [
-	self basicRelevantProcessorsProcess: aSpotterContext do: [ :processor | 
-		processor filterInContext: aSpotterContext ].
-	aSpotterContext continueFilter
-]
-
-{ #category : #private }
 GTSpotterStep >> basicRelevantProcessorsProcess: aSpotterContext do: aBlock [
 	aSpotterContext text substrings 
 		detect: [ :each | each beginsWith: '#' ]
@@ -85,10 +78,7 @@ GTSpotterStep >> basicRelevantProcessorsProcess: aSpotterContext do: aBlock [
 			aSpotterContext text: (aSpotterContext text copyReplaceAll: categoryQuery with: '').
 			categoryQueryPrefix := categoryQuery allButFirst asLowercase.
 			self processors 
-				select: [ :each | 
-					self 
-						processor: each 
-						isRelevantForQuery: categoryQueryPrefix ]
+				select: [ :each | each isRelevantForQuery: categoryQueryPrefix ]
 				thenDo: aBlock ]
 		ifNone: [ 
 			self processors do: aBlock ]
@@ -117,9 +107,11 @@ GTSpotterStep >> candidates [
 
 	^ candidates ifNil: [
 		candidates := GTSpotterCandidatesList new.
-		candidates announcer subscribe: GTSpotterCandidateAdded send: #onCandidateAdded to: self.
-		candidates announcer subscribe: GTSpotterAllCandidatesAdded send: #onCandidateAdded to: self.
-		candidates announcer subscribe: GTSpotterAllCandidatesRemoved do: [ self deselect ].
+		candidates announcer when: GTSpotterCandidateAdded send: #onCandidateAdded to: self.
+		candidates announcer when: GTSpotterAllCandidatesAdded send: #onCandidateAdded to: self.
+		candidates announcer when: GTSpotterAllCandidatesRemoved do: [ self deselect ].
+		candidates announcer when: GTSpotterQueryStarted send: #propagateEvent: to: self.
+		candidates announcer when: GTSpotterQueryEnded send: #propagateEvent: to: self.
 		candidates ]
 ]
 
@@ -168,29 +160,6 @@ GTSpotterStep >> diveIn [
 ]
 
 { #category : #actions }
-GTSpotterStep >> diveInCategory [
-	"dive in category of selected candidate"
-	^ self diveInCategoryDueTo: #unknown
-	
-]
-
-{ #category : #actions }
-GTSpotterStep >> diveInCategory: aProcessor dueTo: anEventType [
-	"dive in specified aCategory"
-
-	self spotter
-		requestNextCategoryStepWith: (self candidates getProcessorLink: aProcessor) for: #diveInCategory;
-		notifyDiveInCategory: aProcessor for: anEventType
-]
-
-{ #category : #actions }
-GTSpotterStep >> diveInCategoryDueTo: anEventType [
-	"dive in category of selected candidate"
-
-	self diveInCategory: self selected processor dueTo: anEventType
-]
-
-{ #category : #actions }
 GTSpotterStep >> diveInDueTo: anEventType [
 	self canDiveInSelectedCandidate ifTrue: [ 
 		self spotter
@@ -207,12 +176,6 @@ GTSpotterStep >> event [
 { #category : #accessing }
 GTSpotterStep >> event: anObject [
 	event := anObject
-]
-
-{ #category : #'accessing - dynamic' }
-GTSpotterStep >> exceptionHandler [
-	^ GTCurrentSpotterExceptionHandler value ifNil: [ self spotter exceptionHandler ]
-	" #ifNil: is necessary because the sender chain of #spotterProcessorsFor:pragma: may have multiple callees outside of the exception handler (async) ... so we have to provide a global but yet easy fallback "
 ]
 
 { #category : #actions }
@@ -276,12 +239,6 @@ GTSpotterStep >> isCategorySelected: aProcessor [
 	<return: #Boolean>
 	
 	^ self hasSelected and: [ self selected processor == aProcessor ]
-]
-
-{ #category : #'zz-deprecated' }
-GTSpotterStep >> isEmpty [
-	self deprecated: 'Use hasCandidates instead'.
-	^ self hasCandidates not
 ]
 
 { #category : #testing }
@@ -399,18 +356,9 @@ GTSpotterStep >> process: aString [
 
 { #category : #processing }
 GTSpotterStep >> processContext: aSpotterContext [
-	self spotter handleExceptionsDuring: [ 
-		self stream removeAllCandidates.
-		self relevantProcessorsProcess: aSpotterContext  ]
-]
 
-{ #category : #private }
-GTSpotterStep >> processor: aProcessor isRelevantForQuery: aString [
-	| trimmedProcessorTitle |
-	trimmedProcessorTitle := aProcessor title asLowercase 
-										copyReplaceAll: String space
-										with: ''.
-	^ trimmedProcessorTitle beginsWith: aString
+	self stream removeAllCandidates.
+	self relevantProcessorsProcess: aSpotterContext
 ]
 
 { #category : #accessing }
@@ -438,14 +386,19 @@ GTSpotterStep >> processorsFilter [
 	^ self spotter processorsFilter
 ]
 
+{ #category : #'event processing' }
+GTSpotterStep >> propagateEvent: ann [ 
+
+	self announcer announce: ann
+
+	
+]
+
 { #category : #private }
 GTSpotterStep >> relevantProcessorsProcess: aSpotterContext [
-	[ self basicRelevantProcessorsProcess: aSpotterContext ]
-		on: Error
-		do: [ :exception | 
-			self exceptionHandler 
-				handleException: exception 
-				do: [ ('[Spotter] Exception in process: ', exception asString) logCr ] ]
+	self basicRelevantProcessorsProcess: aSpotterContext do: [ :processor | 
+		processor filterInContext: aSpotterContext ].
+	aSpotterContext continueFilter
 ]
 
 { #category : #selecting }
@@ -561,7 +514,6 @@ GTSpotterStep >> selectedCategory [
 	"Return a category processor that produced a currently selected candidate.
 	Note: Since selected link can not be accessed if there is no selected one,
 	always check #hasSelected before using me"
-	<return: #GTSpotterProcessor>
 	
 	^ self selected processor
 ]

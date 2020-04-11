@@ -21,7 +21,7 @@ Class {
 		'LastStats',
 		'WordSize'
 	],
-	#category : #'System-Support'
+	#category : #'System-Support-VM'
 }
 
 { #category : #gc }
@@ -34,15 +34,6 @@ VirtualMachine >> allocationsBetweenGC [
 VirtualMachine >> allocationsBetweenGC: anInteger [
 	"allocations between GCs (read-write)"
 	^ self parameterAt: 5 put: anInteger
-]
-
-{ #category : #accessing }
-VirtualMachine >> binary [
-	"Answer the a file reference to the virtual machine binary."
-	"SmalltalkImage current vmBinary"
-
-	^ FileLocator vmBinary
-
 ]
 
 { #category : #accessing }
@@ -74,10 +65,8 @@ VirtualMachine >> command [
 
 { #category : #accessing }
 VirtualMachine >> directory [
-	"Answer the full path name for the current virtual machine."
-
-	<primitive: 142>
-	self primitiveFailed
+	
+	^ self primVmPath asByteArray utf8Decoded
 ]
 
 { #category : #modules }
@@ -133,6 +122,17 @@ VirtualMachine >> flagInterpretedMethods: aBoolean [
 	"The Cog VM can be instructed to set the flag bit of CompiledMethods that it executes but will only interpret.  This can be used e.g. to profile startup. See CompiledMethod>>#flag & CompiledMethod>>#clearFlag. This flag persists across snapshots, stored in the image header."
 	
 	self parameterAt: 48 put: ((self parameterAt: 48) bitClear: 2) + (aBoolean ifTrue: [2] ifFalse: [0])
+]
+
+{ #category : #accessing }
+VirtualMachine >> for32bit: aBlockFor32bit for64bit: aBlockFor64bit [
+
+	"evaluates a block or returns a provided value depending on bitness of the current VM"
+
+	self is32bit ifTrue: [ ^ aBlockFor32bit value ].
+	self is64bit ifTrue: [ ^ aBlockFor64bit value ].
+
+	self error: 'Unknown VM bitness'
 ]
 
 { #category : #modules }
@@ -333,11 +333,19 @@ VirtualMachine >> is64bit [
 ]
 
 { #category : #testing }
+VirtualMachine >> isAIOInterrupt [
+	"Answer true, if the vm is capable of being interupted until there is an AIO event. 
+	 (This means we are going idle until we have something real to process)"
+
+	^ (self getSystemAttribute: 1010) = 'AIO'
+]
+
+{ #category : #testing }
 VirtualMachine >> isPharoVM [
 	"Answers if this VM is a valid PharoVM (made with our sources)"
 	| version |
 	
-	self flag: #todo. "We need a certain way of identify PharoVM, but in the mean time this ensures "
+	self flag: #pharoTodo. "We need a certain way of identify PharoVM, but in the mean time this ensures "
 	version := self version.
 	^ (version beginsWith: 'PharoVM')
 		or: [ 
@@ -364,6 +372,13 @@ VirtualMachine >> isRunningCogit [
 	 (vmParameterAt: 46 is the size of the machine code zone)"
 
 	^[(self parameterAt: 46) > 0] on: Error do:[:ex| ex return: false]
+]
+
+{ #category : #testing }
+VirtualMachine >> isRunningInWorkerThread [
+	"Answers whether the vm is running on worker thread ot not"
+
+	^ (self getSystemAttribute: 1011) = 'WORKER_THREAD'
 ]
 
 { #category : #testing }
@@ -445,10 +460,9 @@ VirtualMachine >> maxExternalSemaphores: aSize [
 	self maxExternalSemaphores ifNil: [ ^ 0 ].
 	
 	[ self maxExternalSemaphoresSilently: aSize.
-	self
-		crTrace: 'WARNING: Had to increase size of semaphore signal handling table due to many external objects concurrently in use';
-		crTrace: 'You should increase this size at startup using #maxExternalSemaphoresSilently:';
-		crTrace: 'Current table size: ' , self maxExternalSemaphores printString ] forkAt: Processor userBackgroundPriority.
+	SystemNotification signal: ('WARNING: Had to increase size of semaphore signal handling table due to many external objects concurrently in use', String cr,
+		'You should increase this size at startup using #maxExternalSemaphoresSilently:', String cr,
+		'Current table size: ' , self maxExternalSemaphores printString) ] forkAt: Processor userBackgroundPriority.
 	
 	self error: 'Not enough space for external objects, set a larger size at startup!'.
 	^ self maxExternalSemaphores
@@ -659,7 +673,12 @@ VirtualMachine >> path [
 	"Answer the path for the directory containing the Smalltalk virtual machine. Return the 	empty string if this primitive is not implemented."
 
 	"Smalltalk vm path"
-
+	self
+		deprecated: 'Use #directory instead'
+		on: '12 November 2018'
+		in: #Pharo7
+		transformWith: '`@receiver path' 
+						-> '`@receiver directory'.
 	^ self primVmPath
 ]
 
@@ -675,16 +694,8 @@ VirtualMachine >> platformSourceVersion [
 	"Smalltalk vm platformSourceVersion"
 
 	<primitive: 'primitivePlatformSourceVersion'>
-	self notify: 'This virtual machine does not support the optional primitive #primitivePlatformSourceVersion' translated.
+	self notify: 'This virtual machine does not support the optional primitive #primitivePlatformSourceVersion'.
 	^''
-]
-
-{ #category : #primitives }
-VirtualMachine >> primVmDirectoryPath [
-	"Answer the full path name for the current virtual machine."
-
-	<primitive: 142>
-	self primitiveFailed
 ]
 
 { #category : #primitives }
@@ -1027,14 +1038,21 @@ VirtualMachine >> versionLabel [
 	"Smalltalk vm versionLabel"
 
 	<primitive: 'primitiveVMVersion'>
-	self notify: 'This virtual machine does not support the optional primitive #primitiveVMVersion' translated.
+	self notify: 'This virtual machine does not support the optional primitive #primitiveVMVersion'.
 	^''
 ]
 
 { #category : #accessing }
-VirtualMachine >> vmDirectory [ 
-	^ self directory
+VirtualMachine >> vmDirectory [
 
+	self
+		deprecated: 'Use #directory instead'
+		on: '12 November 2018'
+		in: #Pharo7
+		transformWith: '`@receiver vmDirectory' 
+						-> '`@receiver directory'.
+
+	^ self directory
 ]
 
 { #category : #accessing }

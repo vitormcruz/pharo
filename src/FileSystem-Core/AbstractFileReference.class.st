@@ -31,6 +31,11 @@ AbstractFileReference >> absolutePath [
 	^ self subclassResponsibility
 ]
 
+{ #category : #accessing }
+AbstractFileReference >> accessTime [
+	^ self resolve accessTime 
+]
+
 { #category : #enumerating }
 AbstractFileReference >> allChildren [
 	"Return all the files and folders recursively nested in the receiver"
@@ -134,12 +139,12 @@ AbstractFileReference >> basenameWithoutExtension: anExtension [
 	^ self fullPath basenameWithoutExtension: anExtension
 ]
 
-{ #category : #'streams-compatibility' }
+{ #category : #streams }
 AbstractFileReference >> binaryReadStream [
 	^ self subclassResponsibility
 ]
 
-{ #category : #'streams-compatibility' }
+{ #category : #streams }
 AbstractFileReference >> binaryReadStreamDo: aBlock [
 	| stream |
 	stream := self binaryReadStream.
@@ -147,14 +152,14 @@ AbstractFileReference >> binaryReadStreamDo: aBlock [
 		ensure: [ stream close ]
 ]
 
-{ #category : #'streams-compatibility' }
+{ #category : #streams }
 AbstractFileReference >> binaryReadStreamDo: doBlock ifAbsent: absentBlock [
 	^ self isFile 
 		ifTrue: [ self binaryReadStreamDo: doBlock ]
 		ifFalse: absentBlock
 ]
 
-{ #category : #'streams-compatibility' }
+{ #category : #streams }
 AbstractFileReference >> binaryReadStreamIfAbsent: absentBlock [
 	^ self isFile
 		ifTrue: [ self binaryReadStream ]
@@ -191,6 +196,11 @@ AbstractFileReference >> canonicalize [
 	"Answer the receiver with references to the current folder (.) and parent folder (..) removed"
 
 	^ self withPath: self resolve path canonicalize
+]
+
+{ #category : #accessing }
+AbstractFileReference >> changeTime [
+	^ self resolve changeTime 
 ]
 
 { #category : #private }
@@ -301,13 +311,15 @@ AbstractFileReference >> delete [
 
 { #category : #operations }
 AbstractFileReference >> deleteAll [
-	"Delete this directory and all children of it, raise an error if the file does not exist."
+	"Delete this directory and all children of it, raise an error if the file does not exist.
+	Don't follow symbolic links (so files outside the receiver's tree will not be deleted)."
 	DeleteVisitor delete: self resolve
 ]
 
 { #category : #operations }
 AbstractFileReference >> deleteAllChildren [
-	"delete all children of the receiver, raise an error if the receiver does not exist"
+	"Delete all children of the receiver, raise an error if the receiver does not exist.
+	Don't follow symbolic links (so files outside the receiver's tree will not be deleted)."
 	
 	self children do: [:aReference | aReference deleteAll ]
 ]
@@ -316,6 +328,11 @@ AbstractFileReference >> deleteAllChildren [
 AbstractFileReference >> deleteIfAbsent: aBlock [
 	"Delete the receiver, when it does not exist evaluate the block"
 	self resolve deleteIfAbsent: aBlock
+]
+
+{ #category : #testing }
+AbstractFileReference >> deviceId [
+	^ self resolve deviceId
 ]
 
 { #category : #enumerating }
@@ -371,17 +388,16 @@ AbstractFileReference >> ensureDelete [
 { #category : #operations }
 AbstractFileReference >> ensureDeleteAll [
 	"Delete this directory and all children of it, and does not raise an error if the file does not exist."
-	
-	self exists ifFalse: [ ^ self  ].
+
+	self ifAbsent: [ ^ self ].
 	self deleteAll
-	
 ]
 
 { #category : #operations }
 AbstractFileReference >> ensureDeleteAllChildren [
 	"delete all children of the receiver and does not raise an error if the receiver does not exist"
-	
-	self exists ifFalse: [ ^ self  ].
+
+	self ifAbsent: [ ^ self ].
 	self deleteAllChildren
 ]
 
@@ -477,6 +493,11 @@ AbstractFileReference >> fullPath [
 	^ self subclassResponsibility
 ]
 
+{ #category : #accessing }
+AbstractFileReference >> gid [
+	^ self resolve gid
+]
+
 { #category : #enumerating }
 AbstractFileReference >> glob: aBlock [
 	^ SelectVisitor breadthFirst: self resolve select: aBlock
@@ -508,6 +529,27 @@ AbstractFileReference >> humanReadableSize [
 	^ self size humanReadableSIByteSize
 ]
 
+{ #category : #delegated }
+AbstractFileReference >> ifAbsent: aBlock [
+	"Return self, or evaluate the block if I do not exist"
+
+	^ self exists ifTrue: [ self ] ifFalse: [ aBlock cull: self ]
+]
+
+{ #category : #delegated }
+AbstractFileReference >> ifExists: aBlock [
+	"Evaluate the block, unless I do not exist. If the receiver exists, pass it as argument to the block."
+
+	^ self exists ifTrue: [ aBlock cull: self ] ifFalse: [ self ]
+]
+
+{ #category : #delegated }
+AbstractFileReference >> ifExists: aBlock ifAbsent: anotherBlock [
+	"If the receiver exists, pass it as argument to aBlock. Else execute anotherBlock "
+
+	^ self exists ifTrue: [ aBlock cull: self ] ifFalse: [ anotherBlock cull: self ]
+]
+
 { #category : #testing }
 AbstractFileReference >> ifFile: fBlock ifDirectory: dBlock ifAbsent: aBlock [
 	^ self isFile
@@ -535,9 +577,24 @@ AbstractFileReference >> indicator [
 		ifFalse: ['?']
 ]
 
+{ #category : #accessing }
+AbstractFileReference >> inode [
+	^ self resolve inode
+]
+
 { #category : #testing }
 AbstractFileReference >> isAbsolute [ 
 	self subclassResponsibility 
+]
+
+{ #category : #accessing }
+AbstractFileReference >> isBlock [
+	^ self resolve isBlock 
+]
+
+{ #category : #accessing }
+AbstractFileReference >> isCharacter [
+	^ self resolve isCharacter
 ]
 
 { #category : #testing }
@@ -554,6 +611,16 @@ AbstractFileReference >> isContainedBy: anObject [
 { #category : #testing }
 AbstractFileReference >> isDirectory [
 	^ self resolve isDirectory
+]
+
+{ #category : #testing }
+AbstractFileReference >> isExecutable [
+	^ self resolve isExecutable
+]
+
+{ #category : #testing }
+AbstractFileReference >> isFIFO [
+	^ self resolve isFIFO
 ]
 
 { #category : #testing }
@@ -577,6 +644,16 @@ AbstractFileReference >> isRoot [
 ]
 
 { #category : #testing }
+AbstractFileReference >> isSocket [
+	^ self resolve isSocket
+]
+
+{ #category : #testing }
+AbstractFileReference >> isSymlink [
+	^ self resolve isSymlink
+]
+
+{ #category : #testing }
 AbstractFileReference >> isWritable [
 	^ self resolve isWritable
 ]
@@ -591,11 +668,6 @@ AbstractFileReference >> makeRelative: anObject [
 	^ anObject relativeToReference: self resolve
 ]
 
-{ #category : #delegated }
-AbstractFileReference >> mimeTypes [
-	^ self resolve mimeTypes
-]
-
 { #category : #accessing }
 AbstractFileReference >> modificationTime [
 	^ self resolve modificationTime 
@@ -608,13 +680,20 @@ AbstractFileReference >> moveTo: aReference [
 	(FileSystem disk workingDirectory / 'paf' ) ensureCreateFile.
 	(FileSystem disk workingDirectory / 'fooFolder') ensureCreateDirectory. 
 	(FileSystem disk workingDirectory / 'paf' ) moveTo: (FileSystem disk workingDirectory / 'fooFolder' / 'paf')
-	"
+	
+	Note that the receiver is modified to point to the new location."
+
 	^ self resolve moveTo: aReference
 ]
 
 { #category : #utilities }
 AbstractFileReference >> nextVersion [
 	^ self resolve nextVersion
+]
+
+{ #category : #accessing }
+AbstractFileReference >> numberOfHardLinks [
+	^ self resolve numberOfHardLinks
 ]
 
 { #category : #streams }
@@ -759,6 +838,16 @@ AbstractFileReference >> streamWritable: writable do: aBlock [
 	^ writable 
 		ifTrue: [ self writeStreamDo: aBlock ]
 		ifFalse: [ self readStreamDo: aBlock ]
+]
+
+{ #category : #accessing }
+AbstractFileReference >> targetPath [
+	^ self resolve targetPath
+]
+
+{ #category : #accessing }
+AbstractFileReference >> uid [
+	^ self resolve uid
 ]
 
 { #category : #accessing }

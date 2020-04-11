@@ -9,7 +9,7 @@ Using null driver allows most of the code which relies on existance of at least 
 Class {
 	#name : #OSNullWindowDriver,
 	#superclass : #OSWindowDriver,
-	#category : #'OSWindow-Core'
+	#category : #'OSWindow-Core-Utilities'
 }
 
 { #category : #'as yet unclassified' }
@@ -20,7 +20,7 @@ OSNullWindowDriver class >> isSupported [
 
 { #category : #'window creation' }
 OSNullWindowDriver >> createWindowWithAttributes: anOSWindowAttributes osWindow: osWindow [
-	^ OSNullWindowHandle fromAttributes: anOSWindowAttributes for: osWindow
+	^ OSNullBackendWindow fromAttributes: anOSWindowAttributes for: osWindow
 ]
 
 { #category : #testing }

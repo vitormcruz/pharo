@@ -39,7 +39,7 @@ RBRenameTemporaryRefactoring class >> renameTemporaryFrom: anInterval to: newNam
 		newName: newName
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RBRenameTemporaryRefactoring >> class: aClass selector: aSelector interval: anInterval newName: aString [ 
 	class := self classObjectFor: aClass.
 	selector := aSelector.
@@ -67,7 +67,7 @@ RBRenameTemporaryRefactoring >> renameNode: aParseTree [
 		ifNotNil: [ self refactoringError: newName asString , ' is already defined' ].
 	(aParseTree allDefinedVariables includes: newName)
 		ifTrue: [ self refactoringError: newName asString , ' is already defined' ].
-	(RBParseTreeRewriter rename: oldName to: newName) executeTree: aParseTree
+	(self parseTreeRewriterClass rename: oldName to: newName) executeTree: aParseTree
 ]
 
 { #category : #printing }

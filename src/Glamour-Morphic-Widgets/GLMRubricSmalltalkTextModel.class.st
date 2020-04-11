@@ -55,11 +55,6 @@ GLMRubricSmalltalkTextModel >> formatSourceCode [
 ]
 
 { #category : #bindings }
-GLMRubricSmalltalkTextModel >> guessTypeForName: aString [ 
-	^ nil
-]
-
-{ #category : #bindings }
 GLMRubricSmalltalkTextModel >> hasBindingOf: aSymbol [
 
 	^ self variableBindings includesKey: aSymbol
@@ -88,11 +83,6 @@ GLMRubricSmalltalkTextModel >> highlightSmalltalkContext [
 { #category : #shout }
 GLMRubricSmalltalkTextModel >> highlightSmalltalkContext: aClassOrMetaclass [
 	highlightSmalltalkContext := aClassOrMetaclass
-]
-
-{ #category : #testing }
-GLMRubricSmalltalkTextModel >> isCodeCompletionAllowed [ 
-	^true
 ]
 
 { #category : #accessing }

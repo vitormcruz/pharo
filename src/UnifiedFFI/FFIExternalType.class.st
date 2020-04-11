@@ -100,8 +100,8 @@ FFIExternalType class >> sizeOf: aTypeName [
 ]
 
 { #category : #'emitting code' }
-FFIExternalType >> basicEmitArgument: aBuilder context: aContext [
-	self loader 
+FFIExternalType >> basicEmitArgument: aBuilder context: aContext inCallout: aCallout [
+	self loader
 		emitArgument: aBuilder 
 		context: aContext
 ]
@@ -116,13 +116,13 @@ FFIExternalType >> basicHandle: aHandle at: index put: value [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : #callbacks }
 FFIExternalType >> callbackReturnOn: callbackContext for: anObject [
 	"By default, I answer an integral return (not a float)"
 	^ callbackContext wordResult: anObject
 ]
 
-{ #category : #accessing }
+{ #category : #callbacks }
 FFIExternalType >> callbackValueFor: anObject at: index [
 	"This is the value for a callback. 
 	 The callback parameters came from an external adress who can be treated as a ByteArray, so it 
@@ -130,9 +130,20 @@ FFIExternalType >> callbackValueFor: anObject at: index [
 	^ self handle: anObject at: index
 ]
 
+{ #category : #accessing }
+FFIExternalType >> defaultReturnOnError [
+	"In case of a callback error, the image will try to show a debugger and that will most ot the 
+	 time crashes the VM (because it will break the process and will let a C function waiting and 
+	 and in incorrect state). 
+	 To prevent that, we use #on:fork:return: (look for senders) and, while forking the error to 
+	 allow user to debug his error, we also return a 'default' value, that may be also wrong."
+
+	^ self subclassResponsibility
+]
+
 { #category : #'emitting code' }
-FFIExternalType >> emitArgument: aBuilder context: aContext [ 
-	self basicEmitArgument: aBuilder context: aContext.
+FFIExternalType >> emitArgument: aBuilder context: aContext inCallout: aCallout [
+	self basicEmitArgument: aBuilder context: aContext inCallout: aCallout.
 	self needsArityPacking 
 		ifTrue: [ self  emitPointerArityRoll: aBuilder context: aContext ]
 ]
@@ -153,6 +164,12 @@ FFIExternalType >> emitPointerArityRoll: aBuilder context: aContext [
 { #category : #'emitting code' }
 FFIExternalType >> emitReturn: aBuilder resultTempVar: resultVar context: aContext [ 
 	^ aBuilder returnTop	
+]
+
+{ #category : #'emitting code' }
+FFIExternalType >> emitReturn: aBuilder resultTempVar: resultVar context: aContext inCallout: aCallout [
+	
+	^ self emitReturn: aBuilder resultTempVar: resultVar context: aContext 
 ]
 
 { #category : #'emitting code' }
@@ -207,8 +224,20 @@ FFIExternalType >> initialize [
 ]
 
 { #category : #testing }
+FFIExternalType >> isExternalStructure [
+
+	^ false
+]
+
+{ #category : #testing }
 FFIExternalType >> isExternalType [
 	^ true
+]
+
+{ #category : #testing }
+FFIExternalType >> isFloatType [
+
+	^ false
 ]
 
 { #category : #testing }

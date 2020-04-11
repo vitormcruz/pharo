@@ -92,7 +92,10 @@ Class {
 		'cursor',
 		'segments',
 		'getMenuPolicy',
-		'mouseDownPoint'
+		'mouseDownPoint',
+		'completionEngine',
+		'maxLength',
+		'findReplaceService'
 	],
 	#classVars : [
 		'BackgroundColor',
@@ -104,12 +107,15 @@ Class {
 		'LineNumbersTextColor',
 		'WalkAlongDisplayedLine'
 	],
+	#classInstVars : [
+		'defaultFindReplaceServiceClass'
+	],
 	#category : #'Rubric-Editing-Core'
 }
 
 { #category : #settings }
 RubAbstractTextArea class >> backgroundColor [
-	^ BackgroundColor ifNil: [ BackgroundColor := Color white] 
+	^ BackgroundColor ifNil: [ self theme backgroundColor ]
 ]
 
 { #category : #settings }
@@ -125,6 +131,18 @@ RubAbstractTextArea class >> caseSensitiveFinds [
 { #category : #settings }
 RubAbstractTextArea class >> caseSensitiveFinds: aBoolean [
 	CaseSensitiveFinds := aBoolean
+]
+
+{ #category : #accessing }
+RubAbstractTextArea class >> defaultFindReplaceServiceClass [
+
+	^ defaultFindReplaceServiceClass ifNil: [ RubFindReplaceService ]
+]
+
+{ #category : #accessing }
+RubAbstractTextArea class >> defaultFindReplaceServiceClass: aClass [
+
+	^ defaultFindReplaceServiceClass := aClass
 ]
 
 { #category : #settings }
@@ -295,7 +313,7 @@ RubAbstractTextArea class >> highlightMessageSend: aBoolean [
 
 { #category : #settings }
 RubAbstractTextArea class >> lineNumbersBackgroundColor [
-	^ LineNumbersBackgroundColor ifNil: [ LineNumbersBackgroundColor := Smalltalk ui theme backgroundColor darker] 
+	^ LineNumbersBackgroundColor ifNil: [ LineNumbersBackgroundColor := self theme backgroundColor darker] 
 ]
 
 { #category : #settings }
@@ -315,7 +333,7 @@ RubAbstractTextArea class >> lineNumbersFont: aFont [
 
 { #category : #settings }
 RubAbstractTextArea class >> lineNumbersTextColor [
-	^ LineNumbersTextColor ifNil: [ LineNumbersTextColor := Smalltalk ui theme lineNumberColor ]
+	^ LineNumbersTextColor ifNil: [ LineNumbersTextColor := self theme lineNumberColor ]
 ]
 
 { #category : #settings }
@@ -331,11 +349,13 @@ RubAbstractTextArea class >> rubricSettingsOn: aBuilder [
 		parent: #codeEditing;
 		with: [ (aBuilder setting: #backgroundColor)
 				target: self;
+				default: Color white;
 				description: 'The default editor background color';
 				label: 'Background'.
 			(aBuilder setting: #textColor)
 				target: self;
 				description: 'The default editor text color';
+				default: Color black;
 				label: 'Text color'.
 			(aBuilder group: #LineNumbers)
 				target: self;
@@ -343,18 +363,22 @@ RubAbstractTextArea class >> rubricSettingsOn: aBuilder [
 				description: 'line numbers settings';
 				with: [ (aBuilder setting: #lineNumbersFont)
 						target: self;
+						default: (TextStyle default fontOfPointSize: 7);
 						description: 'Font used for line numbers';
 						label: 'Line numbers font'.
 					(aBuilder setting: #lineNumbersTextColor)
 						target: self;
+						default: Color veryDarkGray;
 						description: 'Color used for line numbers';
 						label: 'Line numbers color'.
 					(aBuilder setting: #lineNumbersBackgroundColor)
 						target: self;
+						default: (Color r: 0.9198435972629521 g: 0.9198435972629521 b: 0.9198435972629521 alpha: 1.0);
 						description: 'Color used for line numbers background';
 						label: 'Line numbers background color' ].
 			(aBuilder setting: #highlightMessageSend)
 				target: self;
+				default: true;
 				description: 'In a Smalltalk text editor, highlight message sends on mouse over with shift key pressed.';
 				label: 'Highlight Message Send' ]
 ]
@@ -535,11 +559,27 @@ RubAbstractTextArea >> closingDelimiters [
 
 ]
 
+{ #category : #completion }
+RubAbstractTextArea >> completionEngine [
+	
+	^ completionEngine 
+	
+]
+
+{ #category : #completion }
+RubAbstractTextArea >> completionPostAction [
+	
+	self hasCompletionEngine 
+		ifTrue: [ completionEngine closeMenu ]
+
+]
+
 { #category : #composing }
 RubAbstractTextArea >> compose [
 
 	self prepareParagraphToCompose.
-	self paragraph compose 
+	self paragraph compose.
+	self markBackgroundColors
 ]
 
 { #category : #composing }
@@ -589,8 +629,16 @@ RubAbstractTextArea >> defaultBounds [
 
 { #category : #defaults }
 RubAbstractTextArea >> defaultColor [
-	"answer the default color/fill style for the receiver"
-	^ self class backgroundColor
+	"Answer the default color/fill style for the receiver. If the settings has been used then honor it, else returns the theme color"
+
+  	^ self class backgroundColor
+
+]
+
+{ #category : #'event handling' }
+RubAbstractTextArea >> defaultFindReplaceServiceClass [
+
+	^ self class defaultFindReplaceServiceClass
 ]
 
 { #category : #menu }
@@ -791,6 +839,12 @@ RubAbstractTextArea >> findRegex [
 	^ self editor findRegex
 ]
 
+{ #category : #'event handling' }
+RubAbstractTextArea >> findReplaceService [
+	^ findReplaceService ifNil: [
+		findReplaceService := self defaultFindReplaceServiceClass newFor: self].
+]
+
 { #category : #'find-replace' }
 RubAbstractTextArea >> findText [
 	^ self editor findText
@@ -891,9 +945,9 @@ RubAbstractTextArea >> handleBoundsChange: aBlock [
 { #category : #editing }
 RubAbstractTextArea >> handleEdit: editBlock [
 	"Ensure that changed areas get suitably redrawn"
-	editBlock value.
-	self selectionChanged.  "Note new selection"
 
+	editBlock value.
+	self selectionChanged	"Note new selection"
 ]
 
 { #category : #'event handling' }
@@ -908,8 +962,7 @@ RubAbstractTextArea >> handleKeystroke: anEvent [
 		ifTrue: [
 			"We need to check for completion here because otherwise it will try to handle the keystroke, 
 			even if it was already processed."
-			(Smalltalk tools hasToolNamed: #codeCompletion) 
-				ifTrue: [ Smalltalk tools codeCompletion uniqueInstance closeMenu ].
+			self completionPostAction.
 			^ self].
 	(self handlesKeyStroke: anEvent)
 		ifFalse: [^ self].
@@ -953,17 +1006,18 @@ RubAbstractTextArea >> handleReturnKey [
 { #category : #'accessing selection' }
 RubAbstractTextArea >> handleSelectionChange: aBlock [
 	| prevMarkBlock prevPointBlock |
-	self flag: 'hack here because text segments are not well designed regarding text editing'.
+	self flag: #pharoFixMe. "hack here because text segments are not well designed regarding text editing".
 	self primarySelection ifNil: [ self addPrimarySelection  ].
 	prevMarkBlock := self markBlock.
 	prevPointBlock := self pointBlock.
 	aBlock value.
-	(prevMarkBlock ~= self markBlock or: [ prevPointBlock ~= self pointBlock ])
-		ifTrue: [ 
-			"have to invalidate the full surface because of the selection"
-			self invalidRect: (self expandFullBoundsForDropShadow: self drawingBounds).
-			self scrollPane ifNotNil: [ :sp | sp selectionChanged ].
-			self announce: (RubSelectionChanged from: self previousMarkBlock: prevMarkBlock previousPointBlock: prevPointBlock) ] 
+
+	(prevMarkBlock ~= self markBlock or: [ prevPointBlock ~= self pointBlock ]) ifFalse: [ ^ self ].
+	
+	"have to invalidate the full surface because of the selection"
+	self invalidRect: (self expandFullBoundsForDropShadow: self drawingBounds).
+	self scrollPane ifNotNil: [ :sp | sp selectionChanged ].
+	self announce: (RubSelectionChanged from: self previousMarkBlock: prevMarkBlock previousPointBlock: prevPointBlock)
 ]
 
 { #category : #'event handling' }
@@ -982,6 +1036,13 @@ RubAbstractTextArea >> handlesMouseOver: evt [
 	^ self enabled
 ]
 
+{ #category : #completion }
+RubAbstractTextArea >> hasCompletionEngine [
+	
+	^ completionEngine isNil not
+	
+]
+
 { #category : #'accessing decorators' }
 RubAbstractTextArea >> hasDecorator: aDecorator [
 	^ self paragraph hasDecorator: aDecorator
@@ -996,7 +1057,7 @@ RubAbstractTextArea >> hasDecoratorNamed: aKey [
 
 { #category : #'find-replace' }
 RubAbstractTextArea >> hasFindReplaceFocus [
-	^ RubFindReplaceService default dialogIsActiveFor: self
+	^ self findReplaceService dialogIsActiveFor: self
 ]
 
 { #category : #'accessing editing state' }
@@ -1025,7 +1086,7 @@ RubAbstractTextArea >> highlightMessageSend [
 	^ self class highlightMessageSend
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 RubAbstractTextArea >> initialize [
 	super initialize.
 	self compose.
@@ -1055,12 +1116,20 @@ RubAbstractTextArea >> isReadOnly [
 { #category : #'event handling' }
 RubAbstractTextArea >> keyStroke: anEvent [
 	"Handle a keystroke event."
+
 	anEvent keyCharacter = Character cr
-		ifTrue: [ self handleReturnKey ifTrue: [ ^ self ] ].
-	anEvent hand anyButtonPressed ifTrue: [ ^self ].
-	self scrollPane ifNotNil: [ :sp | (sp scrollByKeyboard: anEvent) ifTrue: [^self] ].
-	anEvent isUserInterrupt ifTrue: [^self].
-	self handleEdit: [ self editor keystroke: anEvent ].
+		ifTrue: [ self handleReturnKey
+				ifTrue: [ ^ self ] ].
+	anEvent hand anyButtonPressed
+		ifTrue: [ ^ self ].
+	self scrollPane
+		ifNotNil: [ :sp | 
+			(sp scrollByKeyboard: anEvent)
+				ifTrue: [ ^ self ] ].
+	anEvent isUserInterrupt
+		ifTrue: [ ^ self ].
+	self
+		handleEdit: [ self editor keystroke: anEvent ].
 	self scrollSelectionIntoView: nil
 ]
 
@@ -1132,6 +1201,21 @@ RubAbstractTextArea >> margins: aMargin [
 	margins := m
 ]
 
+{ #category : #composing }
+RubAbstractTextArea >> markBackgroundColors [
+	"Scan through text to find spans of TextBackgroundColor, and mark them using TextBackgroundColorSegmentMorph."
+
+	self text runs
+		withStartStopAndValueDo: [ :start :stop :value | 
+			value do: [ :v | 
+					(v isKindOf: TextBackgroundColor)
+						ifTrue: [ self addSegment: 
+							(RubTextBackgroundColorSegmentMorph
+								color: v color
+								from: start
+								to: stop+1) ] ] ] 
+]
+
 { #category : #'accessing selection' }
 RubAbstractTextArea >> markBlock [
 	^ self editingState markBlock
@@ -1156,6 +1240,20 @@ RubAbstractTextArea >> markIndex [
 { #category : #'accessing selection' }
 RubAbstractTextArea >> markIndex: markIndex pointIndex: pointIndex [
 	self handleSelectionChange: [ self editingState markIndex: markIndex pointIndex: pointIndex ]
+]
+
+{ #category : #accessing }
+RubAbstractTextArea >> maxLength [
+	"Answer the maximum number of characters that may be typed."
+
+	^ maxLength 
+]
+
+{ #category : #accessing }
+RubAbstractTextArea >> maxLength: anInteger [
+	"Set the maximum number of characters that may be typed."
+
+	maxLength := anInteger max: 0
 ]
 
 { #category : #accessing }
@@ -1208,6 +1306,8 @@ RubAbstractTextArea >> mouseDown: evt [
 	already, and repond to the text selection gesture.
 	Changed to not take keyboard focus if an owner is a
 	PluggableTextMorph that doesn't want focus."
+
+	self doAnnounce: (MorphClosePopups morph: self).
 
 	(evt yellowButtonPressed and: [ evt commandKeyPressed not ])
 		ifTrue: [ ^ self yellowButtonActivity: evt shiftPressed ].	"First check for option (menu) click"
@@ -1309,6 +1409,17 @@ RubAbstractTextArea >> newPrimarySelection [
 
 ]
 
+{ #category : #editing }
+RubAbstractTextArea >> newSizeAfterUpdateFrom: start to: stop with: aText [
+	" compute and return my text new size avec an insertion/replacement with aText.
+	the receiver is not update "
+
+	| replSize |
+	" replSize is the additional size"
+	replSize := aText size - (stop - start + 1).
+	^ self text size + replSize
+]
+
 { #category : #'interactive error protocol' }
 RubAbstractTextArea >> nextTokenFrom: start direction: dir [
 	^ self editor nextTokenFrom: start direction: dir
@@ -1366,6 +1477,7 @@ RubAbstractTextArea >> paragraphReplacedTextFrom: start to: stop with: aText [
 				ifFalse: [ self updateExtentFromParagraph ] ].
 	self scrollPane ifNotNil: [ :sp | sp textChanged ].
 	self announce: (RubTextChanged from: start to: stop with: aText).
+	self markBackgroundColors .
 
 ]
 
@@ -1378,12 +1490,12 @@ RubAbstractTextArea >> paragraphWasComposedFrom: startIndex to: stopIndex [
 				ifFalse: [ self updateExtentFromParagraph ] ]
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 RubAbstractTextArea >> plugFindReplace [
 	self announcer 
-		when:  MorphGotFocus send: #whenTextAreaGotFocus: to: RubFindReplaceService default;
-	 	when:  MorphLostFocus send: #whenTextAreaLostFocus: to: RubFindReplaceService default;	
-		when:  RubSelectionChanged send: #whenTextAreaSelectionChanged: to: RubFindReplaceService default
+		when:  MorphGotFocus send: #whenTextAreaGotFocus: to: self findReplaceService;
+	 	when:  MorphLostFocus send: #whenTextAreaLostFocus: to: self findReplaceService;	
+		when:  RubSelectionChanged send: #whenTextAreaSelectionChanged: to: self findReplaceService
 ]
 
 { #category : #'accessing selection' }
@@ -1433,8 +1545,19 @@ RubAbstractTextArea >> privateMoveBy: delta [
 
 { #category : #editing }
 RubAbstractTextArea >> privateReplaceFrom: start to: stop with: aText [
-	self paragraph replaceFrom: start to: stop with: aText.
-
+	self maxLength
+		ifNotNil: [ | newSize |
+			newSize := self newSizeAfterUpdateFrom: start to: stop with: aText.
+			newSize > self maxLength
+				ifTrue: [ | t |
+					t := self text.
+					t replaceFrom: start to: stop with: aText.
+					self paragraph
+						replaceFrom: 1
+						to: self text size
+						with: (t copyFrom: 1 to: maxLength).
+					^ self ] ].
+	self paragraph replaceFrom: start to: stop with: aText
 ]
 
 { #category : #private }
@@ -1679,6 +1802,12 @@ RubAbstractTextArea >> selectionStop [
 	^ self editingState selectionStop
 ]
 
+{ #category : #completion }
+RubAbstractTextArea >> setCompletionEngine: anEngine [
+
+	completionEngine := anEngine
+]
+
 { #category : #private }
 RubAbstractTextArea >> setEmphasisHere [
 	self editor setEmphasisHere
@@ -1688,7 +1817,7 @@ RubAbstractTextArea >> setEmphasisHere [
 RubAbstractTextArea >> setTextWith: stringOrText [
 	"Accept new text contents."
 
-	self handleParagraphChange: [self privateText: stringOrText]
+	self handleParagraphChange: [ self privateText: (self validateTextFrom: stringOrText) ]
 ]
 
 { #category : #'find-replace' }
@@ -1698,15 +1827,15 @@ RubAbstractTextArea >> sharesFindReplace [
 
 { #category : #'event handling' }
 RubAbstractTextArea >> showOverEditableTextCursor [
-	| o |
-	owner isNil
-		ifTrue: [^ self].
-	o := owner isWorldMorph 
-		ifTrue: [self] 
-		ifFalse: [owner].
-	(o boundsInWorld containsPoint: self currentHand position)
-		ifTrue: [self currentHand showTemporaryCursor: (self theme overTextCursorFor: self)]
 
+	| o |
+
+	owner ifNil: [ ^ self ].
+	o := owner isWorldMorph
+		ifTrue: [ self ]
+		ifFalse: [ owner ].
+	( o boundsInWorld containsPoint: self currentHand position )
+		ifTrue: [ self currentHand showTemporaryCursor: ( self theme overTextCursorFor: self ) ]
 ]
 
 { #category : #'accessing selection' }
@@ -1770,7 +1899,6 @@ RubAbstractTextArea >> textColor [
 
 { #category : #'accessing text' }
 RubAbstractTextArea >> textColor: newColor [
-	textColor = newColor ifTrue: [^ self].
 	textColor := newColor.
 	self addAttribute: (TextColor color: newColor).
 	self changed.
@@ -1800,7 +1928,7 @@ RubAbstractTextArea >> textStyle: aTextStyle [
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #updating }
 RubAbstractTextArea >> themeChanged [
 	
 	(self decoratorNamed: #shoutStyler) ifNotNil: [ :styler | 
@@ -1838,9 +1966,9 @@ RubAbstractTextArea >> unplug [
 	
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 RubAbstractTextArea >> unplugFindReplace [
-	self announcer unsubscribe: RubFindReplaceService default
+	self announcer unsubscribe: self findReplaceService
 
 ]
 
@@ -1875,13 +2003,13 @@ RubAbstractTextArea >> updateMarginsWith: aMargin [
 { #category : #'accessing text' }
 RubAbstractTextArea >> updateTextWith: aStringOrText [
 	self
-		handleEdit: [ 
-			self
+		handleEdit: [ self
 				beEditableWhile: [ 
-					aStringOrText = self text
-						ifFalse: [ 
-							self selectAll.							
-							self editor replaceSelectionWith: aStringOrText.
+					| s |
+					s := self validateTextFrom: aStringOrText.
+					s = self text
+						ifFalse: [ self selectAll.
+							self editor replaceSelectionWith: s.
 							self deselect ] ] ]
 ]
 
@@ -1890,6 +2018,15 @@ RubAbstractTextArea >> userString [
 	"Do I have a text string to be searched on?"
 
 	^ self text string
+]
+
+{ #category : #'accessing text' }
+RubAbstractTextArea >> validateTextFrom: aStringOrText [
+	^ self maxLength
+		ifNil: [ aStringOrText ]
+		ifNotNil: [ aStringOrText size <= self maxLength
+				ifFalse: [ aStringOrText copyFrom: 1 to: self maxLength ]
+				ifTrue: [ aStringOrText ] ]
 ]
 
 { #category : #copying }
@@ -2012,6 +2149,7 @@ RubAbstractTextArea >> yellowButtonActivity: shiftKeyState [
 		ifFalse: [ ^ false ].	
 	(self getMenu: shiftKeyState)
 		ifNotNil: [ :menu|
+			menu privateOwner: self.
 			menu setInvokingView: self editor.
 			menu invokeModal. 
 			self changed.

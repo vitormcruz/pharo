@@ -1,7 +1,7 @@
 "
 I am a specialized variable node for temporary variables.
 
-Parsing a method or block code will just use RBVariableNodes for block/method arguments, until we call doSemanticAnalysis on the method node.
+Parsing a method or block code will just use RBVariableNodes for block/method arguments until we call doSemanticAnalysis on the method node.
 "
 Class {
 	#name : #RBTemporaryNode,
@@ -10,8 +10,8 @@ Class {
 }
 
 { #category : #visiting }
-RBTemporaryNode >> acceptVisitor: aProgramNodeVisitor [ 
-	^aProgramNodeVisitor visitTemporaryNode: self
+RBTemporaryNode >> acceptVisitor: aProgramNodeVisitor [
+	^ aProgramNodeVisitor visitTemporaryNode: self
 ]
 
 { #category : #testing }

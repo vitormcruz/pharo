@@ -66,7 +66,7 @@ MCCacheRepository class >> initialize [
 	self resetIfInvalid
 ]
 
-{ #category : #utilities }
+{ #category : #initialization }
 MCCacheRepository class >> reset [
 
 	default := nil.
@@ -74,8 +74,7 @@ MCCacheRepository class >> reset [
 
 { #category : #utilities }
 MCCacheRepository class >> resetIfInvalid [
-
-	default notNil and: [default directory exists ifFalse: [default := nil]]
+	default notNil and: [ default directory ifAbsent: [ default := nil ] ]
 ]
 
 { #category : #accessing }

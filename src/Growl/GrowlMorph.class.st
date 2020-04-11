@@ -21,7 +21,6 @@ Class {
 		'alpha',
 		'actionBlock',
 		'vanishDelay',
-		'attr',
 		'labelAttr',
 		'contentsAttr',
 		'labelColor',
@@ -29,7 +28,8 @@ Class {
 	],
 	#classVars : [
 		'DefaultBackgroundColor',
-		'Position'
+		'Position',
+		'Type'
 	],
 	#category : #'Growl-Base'
 }
@@ -37,9 +37,7 @@ Class {
 { #category : #'instance creation' }
 GrowlMorph class >> contents: contentString [
 	
-	^ self new
-		label: '' contents: contentString;
-		yourself
+	^ self label: '' contents: contentString
 ]
 
 { #category : #settings }
@@ -59,12 +57,25 @@ GrowlMorph class >> growlSettingsOn: aBuilder [
 		parent: #appearance;
 		description: 'All settings concerned with the notifications popup look''n feel';
 		with: [
+			(aBuilder pickOne: #type)
+				label: 'Popup notifycation type';
+				target: self;
+				default: #growl;
+				order: 1;
+				domainValues: self growlTypeChoices.
 			(aBuilder pickOne: #position)
 				label: 'Popup position';
 				target: self;
-				default: #topRight;
-				order: 1;
+				default: #bottomLeft;
+				order: 2;
 				domainValues: self growlPositionChoices.]
+]
+
+{ #category : #settings }
+GrowlMorph class >> growlTypeChoices [
+
+	^#(growl 'Growl Morph' 
+		window 'Dialog window') pairsCollect: [:a :b | b -> a]
 ]
 
 { #category : #'instance creation' }
@@ -77,32 +88,44 @@ GrowlMorph class >> label: aString contents: contentString [
 
 { #category : #'instance creation' }
 GrowlMorph class >> openWithContents: contentString [
-	
-	^ (self contents: contentString) openInWorld
+
+	^ self openWithLabel: '' 
+		contents: contentString 
+		backgroundColor: nil 
+		labelColor: nil
 ]
 
 { #category : #'instance creation' }
 GrowlMorph class >> openWithLabel: aString contents: contentString [
-	
-	^ (self label: aString contents: contentString) openInWorld
+
+	^ self openWithLabel: aString 
+		contents: contentString 
+		backgroundColor: nil 
+		labelColor: nil
 ]
 
 { #category : #'instance creation' }
 GrowlMorph class >> openWithLabel: aString contents: contentString backgroundColor: aColor labelColor: aLabelColor [
 	
-	^ (self label: aString contents: contentString)
-			backgroundColor: aColor;
-			labelColor: aLabelColor;
-			contentsColor: aLabelColor; 
-			openInWorld
+	^ self type = #window 
+		ifTrue: [ MessageDialogWindow new message: contentString ]
+		ifFalse: [ 
+			| anInstance |
+			anInstance := self label: aString contents: contentString.
+			aColor ifNotNil: [ anInstance backgroundColor: aColor ].
+			aLabelColor ifNotNil: [ 
+				anInstance labelColor: aLabelColor.
+				anInstance contentsColor: aLabelColor ].
+			anInstance openInWorld ]
 ]
 
 { #category : #'instance creation' }
 GrowlMorph class >> openWithLabel: aString contents: contentString color: aColor [
 	
-	^ (self label: aString contents: contentString)
-			backgroundColor: aColor;
-			openInWorld
+	^ self openWithLabel: aString 
+		contents: contentString 
+		backgroundColor: aColor 
+		labelColor: nil
 ]
 
 { #category : #position }
@@ -125,6 +148,26 @@ GrowlMorph class >> possiblePositions [
 	^ #( bottomRight bottomLeft topRight topLeft )
 ]
 
+{ #category : #position }
+GrowlMorph class >> possibleTypes [
+
+	^ #( growl window )
+]
+
+{ #category : #position }
+GrowlMorph class >> type [
+
+	^ Type ifNil: [ Type := #growl ]
+]
+
+{ #category : #position }
+GrowlMorph class >> type: aSymbol [
+
+	(self possibleTypes includes: aSymbol) ifFalse: [ ^ self ].
+
+	Type := aSymbol
+]
+
 { #category : #building }
 GrowlMorph >> actionBlock: aBlock [
 
@@ -134,7 +177,7 @@ GrowlMorph >> actionBlock: aBlock [
 { #category : #internal }
 GrowlMorph >> activeGrowlMorphs [
 
-	^World submorphs select: [ :morph | morph isKindOf: GrowlMorph ].
+	^self currentWorld submorphs select: [ :morph | morph isKindOf: GrowlMorph ].
 ]
 
 { #category : #accessing }
@@ -146,7 +189,6 @@ GrowlMorph >> alpha [
 { #category : #accessing }
 GrowlMorph >> alpha: newAlpha [
 
-	"self alpha = newAlpha ifTrue: [^ self]."
 	alpha := newAlpha.
 	labelAttr color: (self labelColor alpha: alpha).
 	contentsAttr color: (self contentsColor alpha: alpha).
@@ -167,7 +209,7 @@ GrowlMorph >> backgroundColor [
 GrowlMorph >> contents: contentsString [
 
 	self streamDo: [ :w |
-		w withAttributes: self contentsAttributes do: [w nextPutAll: contentsString asString]].
+		w withAttributes: self contentsAttributes do: [w nextPutAll: contentsString asString]]
 ]
 
 { #category : #initialization }
@@ -185,7 +227,7 @@ GrowlMorph >> contentsColor [
 GrowlMorph >> contentsColor: aColor [
 	"when you set this contentsColor, it takes precedence over theme one. In certain case (such as for green as in SUnit) it is needed, normally you do not need it."
 	contentsColor := aColor.
-	contentsAttr color: aColor.
+	contentsAttr color: aColor
 	
 ]
 
@@ -220,13 +262,13 @@ GrowlMorph >> defaultVanishDelay [
 	^ 1  seconds
 ]
 
-{ #category : #stepping }
+{ #category : #accessing }
 GrowlMorph >> enabled [
 
 	^ false
 ]
 
-{ #category : #interaction }
+{ #category : #'event handling' }
 GrowlMorph >> handlesMouseDown: evt [
 	^ actionBlock notNil or: [super handlesMouseDown: evt]
 ]
@@ -234,7 +276,7 @@ GrowlMorph >> handlesMouseDown: evt [
 { #category : #initialization }
 GrowlMorph >> initialize [
 	super initialize.
- 	self  borderStyle: BorderStyle thinGray.
+ 	self  borderStyle: (BorderStyle color: self defaultBorderColor width: 1).
 	
 	self setProperty: #autoFitContents toValue: false.
  
@@ -296,7 +338,7 @@ GrowlMorph >> minimumExtent [
 	^ 256@38
 ]
 
-{ #category : #interaction }
+{ #category : #'event handling' }
 GrowlMorph >> mouseDown: evt [
 	super mouseDown: evt.
 	evt yellowButtonPressed ifTrue: [^ self].
@@ -308,11 +350,10 @@ GrowlMorph >> nextColorStep: aColor [
 	^ aColor alpha: self alpha
 ]
 
-{ #category : #internal }
-GrowlMorph >> openInWorld [
+{ #category : #opening }
+GrowlMorph >> preOpenInWorld: aWorld [
 
-	self position: self unoccupiedPosition.
-	super openInWorld
+	self position: self unoccupiedPosition
 ]
 
 { #category : #internal }
@@ -330,7 +371,7 @@ GrowlMorph >> resetVanishTimer [
 { #category : #stepping }
 GrowlMorph >> step [
 
-	(self containsPoint: ActiveHand position) ifTrue: [
+	(self containsPoint: self activeHand position) ifTrue: [
 		self resetAlpha.
 		^ self].
 	vanishTime ifNotNil: [DateAndTime now < vanishTime ifTrue: [^self]].
@@ -373,7 +414,7 @@ GrowlMorph >> unoccupiedPositionBottomLeft [
 	| startPos area rect morphs |
 	
 	startPos := 10 negated @ (self height + 10).
-	area := World clearArea.
+	area := self currentWorld clearArea.
 	rect := (area bottomLeft - startPos) extent: self extent.
 	
 	morphs := self activeGrowlMorphs.
@@ -390,7 +431,7 @@ GrowlMorph >> unoccupiedPositionBottomRight [
 	| startPos area rect morphs |
 	
 	startPos := (self width + 10 ) @ (self height + 10).
-	area := World clearArea.
+	area := self currentWorld clearArea.
 	rect := (area bottomRight - startPos) extent: self extent.
 	
 	morphs := self activeGrowlMorphs.	
@@ -407,7 +448,7 @@ GrowlMorph >> unoccupiedPositionTopLeft [
 	| startPos area rect morphs |
 	
 	startPos := 10@10.
-	area := World clearArea.
+	area := self currentWorld clearArea.
 	rect := area topLeft + (startPos) extent: self extent.
 	
 	morphs := self activeGrowlMorphs.
@@ -424,7 +465,7 @@ GrowlMorph >> unoccupiedPositionTopRight [
 	| startPos area rect morphs |
 	
 	startPos := (self width + 10 @ 10 negated).
-	area := World clearArea.
+	area := self currentWorld clearArea.
 	rect := (area topRight - startPos) extent: self extent.
 	
 	morphs := self activeGrowlMorphs.	

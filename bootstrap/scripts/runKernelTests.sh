@@ -6,9 +6,6 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
-# Next line is for debugging purpose. We suspect that multiple slaves uses the same dinectory.
-touch ${2}
-
 # The first parameter is the architecture
 # The second parameter is the stage name
 
@@ -16,33 +13,36 @@ CACHE="${BOOTSTRAP_CACHE:-bootstrap-cache}"
 
 find ${CACHE}
 
-# Since there is random failure during tests execution we print the content of the current directory to find potential problems
-bootstrap/scripts/printFolderContent.sh
+# I will use the name of the image to determine the vm version (because file name is in the format Pharo7.0.0-rc1)
+#
+# WARNING: I'm assuming CACHE=bootstrap-cache
+# WARNING: If you change this, you will need to change "runTests.sh" too
+#
+TEST_NAME_PREFIX=$(find ${CACHE} -name "Pharo*.zip" | head -n 1 | cut -d'/' -f 2 | cut -d'-' -f 1-2)
+#TEST_VM_VERSION=$(echo "${TEST_NAME_PREFIX}" | cut -d'-' -f 1| cut -c 6- | cut -d'.' -f 1-2 | sed 's/\.//')
+TEST_VM_VERSION="70"
 
-bootstrap/scripts/getPharoVM.sh 70 vm ${1}
+${BOOTSTRAP_REPOSITORY:-.}/bootstrap/scripts/getPharoVM.sh ${TEST_VM_VERSION} vm ${1}
 					
-IMAGE_ARCHIVE=$(find ${CACHE} -name Pharo7.0-bootstrap-${1}bit-*.zip)
+IMAGE_ARCHIVE=$(find ${CACHE} -name ${TEST_NAME_PREFIX}-bootstrap-${1}bit-*.zip)
 unzip $IMAGE_ARCHIVE
-IMAGE_FILE=$(find . -name Pharo7.0-bootstrap-${1}bit-*.image)
+IMAGE_FILE=$(find . -name ${TEST_NAME_PREFIX}-bootstrap-${1}bit-*.image)
 
-HERMES_ARCHIVE=$(find ${CACHE} -name Pharo7.0-hermesPackages-${1}bit-*.zip)
+HERMES_ARCHIVE=$(find ${CACHE} -name ${TEST_NAME_PREFIX}-hermesPackages-${1}bit-*.zip)
 unzip $HERMES_ARCHIVE
 
-RPACKAGE_ARCHIVE=$(find ${CACHE} -name Pharo7.0-rpackage-${1}bit-*.zip)
+RPACKAGE_ARCHIVE=$(find ${CACHE} -name ${TEST_NAME_PREFIX}-rpackage-${1}bit-*.zip)
 unzip $RPACKAGE_ARCHIVE
 
 mv $IMAGE_FILE bootstrap.image
 
 export PHARO_CI_TESTING_ENVIRONMENT=1
-
-# Since there is random failure during tests execution we print the content of the current directory to find potential problems
-bootstrap/scripts/printFolderContent.sh
 	
 #Initializing the Image
 ./pharo bootstrap.image
 #Adding packages removed from the bootstrap
 ./pharo bootstrap.image loadHermes Hermes-Extensions.hermes --save
-./pharo bootstrap.image loadHermes Math-Operations-Extensions.hermes Debugging-Core.hermes Kernel-Chronology-Extras.hermes Collections-Atomic.hermes AST-Core.hermes Collections-Arithmetic.hermes Jobs.hermes InitializePackagesCommandLineHandler.hermes ReflectionMirrors-Primitives.hermes --save --no-fail-on-undeclared --on-duplication=ignore
+./pharo bootstrap.image loadHermes  Kernel-Chronology-Extras.hermes AST-Core.hermes Jobs.hermes InitializePackagesCommandLineHandler.hermes --save --no-fail-on-undeclared --on-duplication=ignore
 
 #Initializing the package manager
 ./pharo bootstrap.image initializePackages --packages=packagesKernel.txt --protocols=protocolsKernel.txt --save
@@ -53,8 +53,5 @@ bootstrap/scripts/printFolderContent.sh
 #Loading Tests
 ./pharo bootstrap.image loadHermes SUnit-Core.hermes JenkinsTools-Core.hermes JenkinsTools-Core.hermes SUnit-Tests.hermes --save --no-fail-on-undeclared --on-duplication=ignore
 
-#Running tests.
-./pharo bootstrap.image test --junit-xml-output --stage-name=${2} SUnit-Core SUnit-Tests	
-
-# Since there is random failure during tests execution we print the content of the current directory to find potential problems
-bootstrap/scripts/printFolderContent.sh
+#Running tests
+./pharo bootstrap.image test --junit-xml-output --stage-name=${2} SUnit-Core SUnit-Tests

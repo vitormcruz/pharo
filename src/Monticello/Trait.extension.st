@@ -2,12 +2,19 @@ Extension { #name : #Trait }
 
 { #category : #'*Monticello' }
 Trait >> asClassDefinition [
-	self usesSpecialVariables ifFalse: [  
+
+	| classTraitCompositionToUse |
+
+	classTraitCompositionToUse := self class traitCompositionString.
+
+	self needsSlotClassDefinition ifFalse: [  
 		^ MCTraitDefinition
 			name: self name
 			traitComposition: self traitCompositionString
 			category: self category 
-			instVarNames: self instVarNames
+			instVarNames: (self localSlots collect: #name)
+			classInstVarNames: (self class localSlots collect: #name)
+			classTraitComposition: classTraitCompositionToUse
 			comment: self organization classComment asString
 			commentStamp: self organization commentStamp ].
 		
@@ -16,6 +23,8 @@ Trait >> asClassDefinition [
 			traitComposition: self traitCompositionString
 			category: self category 
 			instVarNames: (self localSlots collect: #definitionString)
+			classInstVarNames: (self classSide localSlots collect: #definitionString)
+			classTraitComposition: classTraitCompositionToUse
 			comment: self organization classComment asString
 			commentStamp: self organization commentStamp.
 		

@@ -30,9 +30,7 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'globals',
-		'deferredStartupActions',
 		'specialObjectsArray',
-		'session',
 		'vm'
 	],
 	#classVars : [
@@ -47,7 +45,7 @@ Class {
 		'SpecialSelectors',
 		'Tools'
 	],
-	#category : #'System-Support'
+	#category : #'System-Support-Image'
 }
 
 { #category : #cleanup }
@@ -62,7 +60,10 @@ SmalltalkImage class >> cleanUp [
 
 { #category : #settings }
 SmalltalkImage class >> compilerClass [
-	^CompilerClass
+
+	^CompilerClass ifNil: [ 
+		"use OpalCompiler as the fallback compiler if installed"
+		self class environment at: #OpalCompiler ifAbsent: [ nil ] ]
 ]
 
 { #category : #settings }
@@ -164,10 +165,23 @@ SmalltalkImage >> arguments [
 
 	"Smalltalk commandLine arguments"
 
+	^ self argumentsStartingAtIndex: 1
+]
+
+{ #category : #private }
+SmalltalkImage >> argumentsInclude: aString [
+
+	^ (self argumentsStartingAtIndex: 0) includes: aString
+]
+
+{ #category : #private }
+SmalltalkImage >> argumentsStartingAtIndex: anIndex [
+	"Answer an array with all the command line arguments"
+
 	^ Array
 		streamContents: [ :str | 
 			| arg i |
-			i := 1.
+			i := anIndex.
 			[ i > 998 or: [ (arg := self argumentAt: i) isNil ] ]
 				whileFalse: [ 
 					str nextPut: arg.
@@ -203,6 +217,13 @@ SmalltalkImage >> at: key ifPresent: aBlock [
 	"Lookup the given key in the globals. If it is present, answer the value of evaluating the given block with the value associated with the key. Otherwise, answer nil."
 
 	^globals at: key ifPresent: aBlock
+]
+
+{ #category : #'to clean later' }
+SmalltalkImage >> at: key ifPresent: aBlock ifAbsent: anotherBlock [
+	"Lookup the given key in the globals. If it is present, answer the value of evaluating the given block with the value associated with the key. Otherwise answer the value of the second block."
+
+	^ globals at: key ifPresent: aBlock ifAbsent: anotherBlock
 ]
 
 { #category : #'to clean later' }
@@ -292,14 +313,6 @@ SmalltalkImage >> changeImagePathTo: aString [
 ]
 
 { #category : #'image, changes name' }
-SmalltalkImage >> changesFile [
-	"Answer the file containing the current changes."
-
-	^ FileLocator changes
-
-]
-
-{ #category : #'image, changes name' }
 SmalltalkImage >> changesName [
 	"Answer the name for the changes file corresponding to the image file name."
 	"Smalltalk changesName"
@@ -313,8 +326,8 @@ SmalltalkImage >> changesSuffix [
 ]
 
 { #category : #'class and trait names' }
-SmalltalkImage >> classNamed: className [ 
-	^globals classOrTraitNamed: className.
+SmalltalkImage >> classNamed: className [
+	^ globals classOrTraitNamed: className
 ]
 
 { #category : #'class and trait names' }
@@ -443,9 +456,15 @@ SmalltalkImage >> compiler [
 		environment: self globals
 ]
 
-{ #category : #compiler }
+{ #category : #accessing }
 SmalltalkImage >> compilerClass [
-	^CompilerClass ifNil: [CompilerClass := OpalCompiler].
+	^ self class compilerClass
+]
+
+{ #category : #accessing }
+SmalltalkImage >> compilerClass: aClass [
+
+	self class compilerClass: aClass
 ]
 
 { #category : #'memory space' }
@@ -704,14 +723,14 @@ SmalltalkImage >> getFileNameFromUser [
 
 	| givenName strippedName imageFile changesFile |
 	givenName := UIManager default
-		request: 'New File Name?' translated
+		request: 'New File Name?'
 		initialAnswer: (self imageFile basename copyUpToLast:  Path extensionDelimiter).
 	strippedName := self stripImageExtensionFrom: givenName.
 	strippedName isEmptyOrNil ifTrue: [^nil].
 	imageFile := self fileForImageNamed: strippedName.
 	changesFile := self fileForChangesNamed: strippedName.
 	((imageFile exists or: [changesFile exists]) and:
-		[(self confirm: ('{1} already exists. Overwrite?' translated format: {strippedName})) not])
+		[(self confirm: ('{1} already exists. Overwrite?' format: {strippedName})) not])
 			ifTrue: [^nil].
 	^strippedName
 ]
@@ -752,6 +771,12 @@ SmalltalkImage >> hasClassNamed: aString [
 	^ globals hasClassNamed: aString
 ]
 
+{ #category : #compiler }
+SmalltalkImage >> hasCompiler [
+
+	^ self compilerClass isNotNil
+]
+
 { #category : #image }
 SmalltalkImage >> image [
 	"Answer the object to query about the current object memory and execution environment."
@@ -763,13 +788,7 @@ SmalltalkImage >> image [
 SmalltalkImage >> imageDirectory [
 	"Answer the directory containing the current image."
 
-	^ self primImagePath asFileReference parent
-]
-
-{ #category : #'image, changes name' }
-SmalltalkImage >> imageFile [
-
-	^ FileLocator image
+	^ self imagePath asFileReference parent
 ]
 
 { #category : #image }
@@ -782,7 +801,7 @@ SmalltalkImage >> imageFormatVersion [
 	"Smalltalk image imageFormatVersion"
 
 	<primitive: 'primitiveImageFormatVersion'>
-	self notify: 'This virtual machine does not support the optional primitive #primitiveImageFormatVersion' translated.
+	self notify: 'This virtual machine does not support the optional primitive #primitiveImageFormatVersion'.
 	^''
 ]
 
@@ -792,14 +811,14 @@ SmalltalkImage >> imagePath [
 
 	"SmalltalkImage current imagePath"
 
-	^ self primImagePath
+	^ self primImagePath asByteArray utf8Decoded 
 ]
 
 { #category : #'image, changes name' }
 SmalltalkImage >> imagePath: newPath [
 	"Set the the full path name for the current image.  All further snapshots will use this."
 
-	self primImagePath: newPath
+	self primImagePath: newPath utf8Encoded asString
 ]
 
 { #category : #'image, changes name' }
@@ -1061,6 +1080,19 @@ SmalltalkImage >> logStdErrorDuring: aBlock [
 	] on: Error do: [ :e| "we don't care if the logging to stdout fails..." ].
 ]
 
+{ #category : #miscellaneous }
+SmalltalkImage >> logStdOutDuring: aBlock [
+	| stderr |
+	"install the line end conversion and force initialize the converter"
+	stderr := ZnNewLineWriterStream
+		on: (ZnCharacterWriteStream on: Stdio stdout encoding: 'utf8').
+	
+	[aBlock value: stderr.] 
+		on: Error do: [ "If the block fails we don't do nothing. This can lead to recursive errors" ].
+
+	stderr flush.
+]
+
 { #category : #'memory space' }
 SmalltalkImage >> lowSpaceThreshold [ 
 	"Return the low space threshold. When the amount of free memory (after garbage collection) falls below this limit, the system is in serious danger of completely exhausting memory and crashing. This limit should be made high enough to allow the user open a debugger to diagnose a problem or to save the image."
@@ -1130,7 +1162,7 @@ SmalltalkImage >> memoryHogs [
 SmalltalkImage >> metacelloPlatformAttributes [
     "Returns the tags for the conditional platform loading in Metacello. Pay attention the order is important: from most  to least general." 
     "For release integrators, we should not have #'pharo1.3x' **and** #'pharo1.4.x'"
-   ^ #(#squeakCommon #pharo #'pharo7.x' #'pharo7.0.x')
+   ^ #(#squeakCommon #pharo #'pharo9.x' #'pharo9.0.x')
 ]
 
 { #category : #'special objects' }
@@ -1154,7 +1186,7 @@ SmalltalkImage >> newSpecialObjectsArray [
 	"This association holds the active process (a ProcessScheduler)"
 	newArray at: 4 put: (self globals associationAt: #Processor).
 	"Numerous classes below used for type checking and instantiation"
-	newArray at: 5 put: Bitmap.
+	newArray at: 5 put: (self globals at: #Bitmap ifAbsent: [nil]).
 	newArray at: 6 put: SmallInteger.
 	newArray at: 7 put: ByteString.
 	newArray at: 8 put: Array.
@@ -1164,7 +1196,7 @@ SmalltalkImage >> newSpecialObjectsArray [
 	newArray at: 12 put: nil. "was BlockContext."
 	newArray at: 13 put: Point.
 	newArray at: 14 put: LargePositiveInteger.
-	newArray at: 15 put: Display.
+	newArray at: 15 put: (self globals at: #Display ifAbsent: [nil]).
 	newArray at: 16 put: Message.
 	newArray at: 17 put: CompiledMethod.
 	newArray at: 18 put: ((self primitiveGetSpecialObjectsArray at: 18) ifNil: [Semaphore new]). "low space Semaphore"
@@ -1329,7 +1361,7 @@ SmalltalkImage >> primBytesLeft [
 	^0
 ]
 
-{ #category : #'image, changes name' }
+{ #category : #primitives }
 SmalltalkImage >> primImagePath [
 	"Answer the full path name for the current image."
 	"Smalltalk imageName"
@@ -1338,7 +1370,7 @@ SmalltalkImage >> primImagePath [
 	self primitiveFailed
 ]
 
-{ #category : #'image, changes name' }
+{ #category : #primitives }
 SmalltalkImage >> primImagePath: newName [
 	"Set the the full path name for the current image.  All further snapshots will use this."
 
@@ -1399,15 +1431,13 @@ SmalltalkImage >> privSaveImageWithCleanup [
  
 	[
 		self snapshot: true andQuit: true.
-	] ifError: [:e |
-		| rep |
-		rep := FileStream forceNewFileNamed: 'PharoDebug.log'.
-		rep nextPutAll: 'Error:'; cr.
-		rep nextPutAll: e asString; cr.
-  		rep nextPutAll: thisContext stack size asString.
- 	  	thisContext stack copy withIndexDo: [:stck :i |
-			[ rep nextPutAll: i asString; space; nextPutAll: stck asString; cr] ifError: []].
-		rep close. 
+	] ifErrorDo: [:e |
+		'PharoDebug.log' asFileReference ensureDelete; writeStreamDo: [ :rep |
+			rep nextPutAll: 'Error:'; cr.
+			rep nextPutAll: e asString; cr.
+	  		rep nextPutAll: thisContext stack size asString.
+	 	  	thisContext stack copy withIndexDo: [:stck :i |
+				[ rep nextPutAll: i asString; space; nextPutAll: stck asString; cr] ifErrorDo: []]]. 
 		Smalltalk exitFailure ]
 ]
 
@@ -1487,7 +1517,7 @@ SmalltalkImage >> removeAllLineFeedsQuietlyCalling: aBlock [
 					oldCodeString := cls sourceCodeAt: selector.
 					(oldCodeString includes: Character lf)
 						ifTrue: [
-							newCodeString := oldCodeString withSqueakLineEndings.
+							newCodeString := oldCodeString withInternalLineEndings.
 							nameString := cls name , '>>' , selector.
 							((cls compiledMethodAt: selector) hasLiteralSuchThat: [ :lit | lit asString includes: Character lf ])
 								ifTrue: [(authors at: 'OK')
@@ -1561,12 +1591,7 @@ SmalltalkImage >> renameClass: aClass from: oldName [
 SmalltalkImage >> renameClassNamed: oldName as: newName [
 	"Invoked from fileouts:  if there is currently a class in the system named oldName, then rename it to newName.  If anything untoward happens, report it in the Transcript.  "
 
-	| oldClass |
-	(oldClass := self at: oldName asSymbol ifAbsent: [ nil ]) 
-		ifNil: [ 
-			self crTrace: 'Class-rename for ' , oldName , ' ignored because ' , oldName , ' does not exist.'.
-			^ self ].
-	oldClass rename: newName
+	^ globals renameClassNamed: oldName as: newName
 ]
 
 { #category : #'memory space' }
@@ -1853,7 +1878,7 @@ SmalltalkImage >> supportsQueueingFinalization: aBoolean [
 
 { #category : #'sources, change log' }
 SmalltalkImage >> systemInformationString [
-	^ String cr, 'Pharo ', SystemVersion current dottedMajorMinor,  String cr, self lastUpdateString, String cr, String cr, String cr, self licenseString
+	^ String cr, 'Pharo ', SystemVersion current dottedMajorMinorPatch,  String cr, self lastUpdateString, String cr, String cr, String cr, self licenseString
 ]
 
 { #category : #'sources, change log' }

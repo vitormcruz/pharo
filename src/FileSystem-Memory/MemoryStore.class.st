@@ -7,12 +7,27 @@ Class {
 	#instVars : [
 		'root'
 	],
+	#classVars : [
+		'CurrentFS'
+	],
 	#category : #'FileSystem-Memory-Store'
 }
+
+{ #category : #current }
+MemoryStore class >> currentFileSystem [
+	^ CurrentFS ifNil: [ CurrentFS := FileSystem store: MemoryStore new ]
+]
 
 { #category : #public }
 MemoryStore class >> delimiter [
 	^ $/
+]
+
+{ #category : #'class initialization' }
+MemoryStore class >> initialize [
+	"self initialize"
+
+	SessionManager default registerSystemClassNamed: self name
 ]
 
 { #category : #public }
@@ -20,9 +35,19 @@ MemoryStore class >> isCaseSensitive [
 	^ true
 ]
 
+{ #category : #initialization }
+MemoryStore class >> reset [
+	CurrentFS := nil
+]
+
 { #category : #public }
 MemoryStore class >> separator [ 
 	^ $:
+]
+
+{ #category : #'system startup' }
+MemoryStore class >> startUp [
+	self reset
 ]
 
 { #category : #public }
@@ -164,6 +189,15 @@ MemoryStore >> delete: path [
 		ifAbsent: [ DirectoryDoesNotExist signalWith: path parent ]
 ]
 
+{ #category : #public }
+MemoryStore >> entryFromNode: node path: path for: aFileSystem [
+
+	| entryPath |
+	entryPath := path / (self basenameFromEntry: node).
+	^MemoryDirectoryEntry reference: (FileReference fileSystem: aFileSystem path: entryPath).
+
+]
+
 { #category : #printing }
 MemoryStore >> forReferencePrintOn: aStream [
 	aStream nextPutAll: 'memory://'
@@ -184,24 +218,55 @@ MemoryStore >> isMemoryFileSystem [
 	^ true
 ]
 
+{ #category : #testing }
+MemoryStore >> isReadable: aPath [
+	"Answer a boolean indicating whether the supplied path is a readable entry (directory or file).
+	MemoryStore doesn't implement access controls, always true if the file exists."
+
+	^self exists: aPath
+
+]
+
+{ #category : #accessing }
+MemoryStore >> isRegular: aPath [
+	"Answer a boolean indicating whether the entry at aPath is writable.
+	Memory store only supports regular files."
+
+	^self isFile: aPath
+]
+
+{ #category : #testing }
+MemoryStore >> isWritable: aPath [
+	"Answer a boolean indicating whether the supplied path is a writable entry (directory or file).
+	MemoryStore doesn't implement access controls, always true if the file exists."
+
+	^self exists: aPath
+
+]
+
 { #category : #private }
-MemoryStore >> nodeAt: aPath ifPresent: presentBlock ifAbsent: absentBlock [
+MemoryStore >> nodeAt: aPath [
 	| current |
 	current := self root.
 	aPath do: [ :segment | 
 		current isDirectory
-			ifTrue: [ current := current fileEntryAt: segment ifAbsent: [ ^ absentBlock value ]]
-			ifFalse: [ ^ absentBlock value ]].
-	^ presentBlock value: current
+			ifTrue: [ current := current fileEntryAt: segment ifAbsent: [ ^ FileDoesNotExistException signalWith: aPath ]]
+			ifFalse: [ ^ FileDoesNotExistException signalWith: aPath ]].
+	^ current
 ]
 
-{ #category : #public }
-MemoryStore >> openFileStream: path writable: isWriteStream [
-	| entry |
-	entry := self basicOpen: path writable: isWriteStream.
-	^ isWriteStream 
-		ifTrue: [ entry writeStream ]
-		ifFalse: [ entry readStream ]
+{ #category : #private }
+MemoryStore >> nodeAt: aPath ifPresent: presentBlock ifAbsent: absentBlock [
+	| current |
+	aPath isRoot
+		ifTrue: [ ^ presentBlock value: self root ].
+	current := self root.
+	aPath
+		do: [ :segment | 
+			current isDirectory
+				ifTrue: [ current := current fileEntryAt: segment ifAbsent: [ ^ absentBlock value ] ]
+				ifFalse: [ ^ absentBlock value ] ].
+	^ presentBlock value: current
 ]
 
 { #category : #public }

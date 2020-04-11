@@ -28,25 +28,27 @@ RBReturnNode class >> value: aNode [
 ]
 
 { #category : #comparing }
-RBReturnNode >> = anObject [ 
-	self == anObject ifTrue: [^true].
-	self class = anObject class ifFalse: [^false].
-	^self value = anObject value
+RBReturnNode >> = anObject [
+	self == anObject
+		ifTrue: [ ^ true ].
+	self class = anObject class
+		ifFalse: [ ^ false ].
+	^ self value = anObject value
 ]
 
 { #category : #visiting }
-RBReturnNode >> acceptVisitor: aProgramNodeVisitor [ 
-	^aProgramNodeVisitor visitReturnNode: self
+RBReturnNode >> acceptVisitor: aProgramNodeVisitor [
+	^ aProgramNodeVisitor visitReturnNode: self
 ]
 
 { #category : #accessing }
 RBReturnNode >> children [
-	^Array with: value
+	^ Array with: value
 ]
 
 { #category : #testing }
 RBReturnNode >> containsReturn [
-	^true
+	^ true
 ]
 
 { #category : #matching }
@@ -69,11 +71,9 @@ RBReturnNode >> hash [
 
 { #category : #initialization }
 RBReturnNode >> initialize [
-
 	super initialize.
 
-	return := 0.
-	value := nil.
+	return := 0
 ]
 
 { #category : #testing }
@@ -98,9 +98,15 @@ RBReturnNode >> postCopy [
 	self value: self value copy
 ]
 
+{ #category : #'adding/removing' }
+RBReturnNode >> removeNode: aNode [
+
+	self parent removeNode: self
+]
+
 { #category : #replacing }
 RBReturnNode >> replaceNode: aNode withNode: anotherNode [ 
-	value == aNode ifTrue: [self value: anotherNode]
+	value == aNode ifTrue: [ self value: anotherNode ]
 ]
 
 { #category : #'accessing-token' }
@@ -113,15 +119,15 @@ RBReturnNode >> return: anInteger [
 	return := anInteger
 ]
 
-{ #category : #'initialize-release' }
-RBReturnNode >> return: returnInteger value: aValueNode [ 
+{ #category : #initialization }
+RBReturnNode >> return: returnInteger value: anExpression [ 
 	return := returnInteger.
-	self value: aValueNode
+	self value: anExpression
 ]
 
 { #category : #accessing }
 RBReturnNode >> start [
-	^return
+	^ return
 ]
 
 { #category : #accessing }
@@ -137,11 +143,11 @@ RBReturnNode >> stop: anInteger [
 
 { #category : #evaluating }
 RBReturnNode >> value [
-	^value
+	^ value
 ]
 
 { #category : #accessing }
-RBReturnNode >> value: valueNode [ 
-	value := valueNode.
+RBReturnNode >> value: anExpression [ 
+	value := anExpression.
 	value parent: self
 ]

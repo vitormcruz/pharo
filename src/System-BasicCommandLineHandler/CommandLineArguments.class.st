@@ -15,7 +15,7 @@ Class {
 	#classInstVars : [
 		'singleton'
 	],
-	#category : #'System-BasicCommandLineHandler'
+	#category : #'System-BasicCommandLineHandler-Utilities'
 }
 
 { #category : #'instance creation' }
@@ -111,7 +111,7 @@ CommandLineArguments >> initialize [
 		ifFalse: [ arguments addFirst: documentPath ].
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 CommandLineArguments >> initializeWithArguments: aCollection [
 	super initialize.
 	arguments := aCollection.

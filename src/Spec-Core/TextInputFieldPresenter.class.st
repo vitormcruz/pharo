@@ -182,18 +182,18 @@ TextInputFieldPresenter >> initialize [
 	isEncrypted whenChangedDo: [ :bool | self changed: #encrypted: with: { bool } ].
 ]
 
-{ #category : #NOCompletion }
-TextInputFieldPresenter >> isCodeCompletionAllowed [
-	
-	^ false
-]
-
 { #category : #api }
 TextInputFieldPresenter >> removeEntryCompletion [
 	"< api:#do>"
 	"Remove the entry completion"
 	
 	self entryCompletion: nil
+]
+
+{ #category : #'api-events' }
+TextInputFieldPresenter >> text [ 
+	
+	^ self getText asString
 ]
 
 { #category : #accessing }

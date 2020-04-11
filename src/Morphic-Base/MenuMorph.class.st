@@ -15,7 +15,8 @@ Class {
 		'stayUp',
 		'popUpOwner',
 		'activeSubMenu',
-		'titleMorph'
+		'titleMorph',
+		'selection'
 	],
 	#classVars : [
 		'CloseBoxImage',
@@ -45,7 +46,7 @@ MenuMorph class >> chooseFrom: aList lines: linesArray title: queryString [
 		menu add: (aList at: i) asString target: [:v| result := v] selector: #value: argument: i.
 		(linesArray includes: i) ifTrue: [menu addLine]].
 	
-	menu invokeAt: ActiveHand position in: ActiveWorld allowKeyboard: true.
+	menu invokeModal.
 	^result
 ]
 
@@ -70,7 +71,7 @@ MenuMorph class >> chooseFrom: aList values: valueList lines: linesArray title: 
 		menu add: (aList at: i) asString target: [:v| result := v] selector: #value: argument: (valueList at: i).
 		(linesArray includes: i) ifTrue:[menu addLine]].
 
-	menu invokeAt: ActiveHand position in: ActiveWorld allowKeyboard: true.
+	menu invokeModal.
 	^result
 ]
 
@@ -128,10 +129,7 @@ MenuMorph class >> confirm: queryString trueChoice: trueChoice falseChoice: fals
 		target: aBlock
 		selector: #value:
 		argument: false.
-	[ menu
-		invokeAt: ActiveHand position
-		in: ActiveWorld
-		allowKeyboard: true.
+	[ menu invokeModal.
 	result isNil ] whileTrue.
 	^ result
 ]
@@ -294,6 +292,19 @@ MenuMorph >> add: aLabelString target: target selector: aSymbol argumentList: ar
 ]
 
 { #category : #construction }
+MenuMorph >> add: aLabelString target: anObject selector: aSymbol iconName: iconName [
+	"Append a menu item with the given label and the iconName. If the item is selected, it will send the given selector to the target object."
+
+	^ (self
+		add: aLabelString
+		target: anObject
+		selector: aSymbol
+		argumentList: EmptyArray)
+		icon: (self iconNamed: iconName);
+		yourself
+]
+
+{ #category : #construction }
 MenuMorph >> addAllFrom: aMenuMorph [
 	"This is a fast add..."
 	
@@ -388,6 +399,12 @@ MenuMorph >> addMenuItem: anItem [
 	self addMorphBack: anItem.
 	^ anItem
 
+]
+
+{ #category : #utils }
+MenuMorph >> addSeparator [
+	
+	self addMenuItem: MenuLineMorph new
 ]
 
 { #category : #'construction-UIManager' }
@@ -515,7 +532,7 @@ MenuMorph >> addUpdating: wordingSelector target: target selector: aSymbol argum
  
 	|aString str|
 	aString := (MessageSend receiver: target selector: wordingSelector) valueWithEnoughArguments: argList.
-	self flag: #CleanYesNoOnOffAfter.
+	self flag: #pharoFixMe.
 	(aString isKindOf: Association)
 	     ifTrue: [aString := aString value]
 		ifFalse: [
@@ -535,7 +552,7 @@ MenuMorph >> addUpdating: wordingSelector target: target selector: aSymbol argum
 MenuMorph >> addWithLabel: aLabelString enablement: anEnablementSelector action: aSymbol [
 	"Append a menu item with the given label. If the item is selected, it will send the given selector to the target object with the given arguments. If the selector takes one more argument than the number of arguments in the given list, then the triggering event is supplied as as the last argument.  In this variant, the wording of the menu item is constant, and the optional enablementSelector determines whether or not the item should be enabled."
 
-	self flag: #ToDeprecate.
+	self flag: #pharoToDeprecate.
 	self
 		addToggle: aLabelString
 		target: defaultTarget
@@ -692,7 +709,7 @@ MenuMorph >> detachSubMenu: evt [
 { #category : #control }
 MenuMorph >> displayAt: aPoint during: aBlock [
 	"Add this menu to the Morphic world during the execution of the given block."
-	ActiveWorld addMorph: self centeredNear: aPoint.
+	self currentWorld addMorph: self centeredNear: aPoint.
 	self world displayWorld.  "show myself"
 	aBlock value.
 	self delete
@@ -736,8 +753,8 @@ MenuMorph >> displayFiltered: evt [
 { #category : #menu }
 MenuMorph >> doButtonAction [
 	"Do the receiver's inherent button action.  Makes sense for the kind of MenuMorph that is a wrapper for a single menu-item -- pass it on the the item"
-	self flag: '?'.
-	self hasItems ifTrue: [self menuItems first doButtonAction]
+
+	self hasItems ifTrue: [ self menuItems first doButtonAction ]
 ]
 
 { #category : #drawing }
@@ -746,8 +763,8 @@ MenuMorph >> drawOn: aCanvas [
 
 	super drawOn: aCanvas.
 
-	(ActiveHand notNil
-			and: [ActiveHand keyboardFocus == self
+	(self activeHand notNil
+			and: [ self activeHand keyboardFocus == self
 					and: [self rootMenu hasProperty: #hasUsedKeyboard]])
 		ifTrue: [
 			aCanvas
@@ -834,18 +851,14 @@ MenuMorph >> hasSubMenu: aMenuMorph [
 { #category : #initialization }
 MenuMorph >> initialize [
 	super initialize.
-	
+
 	self setDefaultParameters.
 	self listDirection: #topToBottom.
 	self hResizing: #shrinkWrap.
 	self vResizing: #shrinkWrap.
-	defaultTarget := nil.
-	selectedItem := nil.
 	stayUp := false.
-	popUpOwner := nil.
 	self setProperty: #morphicLayerNumber toValue: self morphicLayerNumber.
-	self theme currentSettings preferRoundCorner
-		ifTrue: [ self useRoundedCorners ]
+	self theme currentSettings preferRoundCorner ifTrue: [ self useRoundedCorners ]
 ]
 
 { #category : #keymapping }
@@ -859,21 +872,22 @@ MenuMorph >> invokeAt: aPoint in: aWorld [
 	"Add this menu to the given world centered at the given point. Wait for the user to make a selection and answer it. The selection value returned is an integer in keeping with PopUpMenu, if the menu is converted from an MVC-style menu."
 	"Details: This is invoked synchronously from the caller. In order to keep processing inputs and updating the screen while waiting for the user to respond, this method has its own version of the World's event loop."
 
-	^ self invokeAt: aPoint in: aWorld allowKeyboard: self  menuKeyboardControl
+	^ self invokeAt: aPoint in: aWorld allowKeyboard: self menuKeyboardControl
 ]
 
 { #category : #invoking }
 MenuMorph >> invokeAt: aPoint in: aWorld allowKeyboard: aBoolean [
-	"Add this menu to the given world centered at the given point. Wait for the user to make a selection and answer it. The selection value returned is an integer in keeping with PopUpMenu, if the menu is converted from an MVC-style menu."
-	"Details: This is invoked synchronously from the caller. In order to keep processing inputs and updating the screen while waiting for the user to respond, this method has its own version of the World's event loop." 
-	| w originalFocusHolder |
+	"Add this menu to the given world centered at the given point. Wait for the user to make a selection and answer it."
+	"Details: This is invoked synchronously from the caller.
+	In order to keep processing inputs and updating the screen while waiting for the user to respond,
+	this method has its own version of the World's event loop." 
+	| originalFocusHolder |
 	originalFocusHolder := aWorld primaryHand keyboardFocus.
 	self popUpAt: aPoint forHand: aWorld primaryHand in: aWorld allowKeyboard: aBoolean.
-	w := aWorld outermostWorldMorph. "containing hand"
-	[self isInWorld] whileTrue: [w doOneSubCycle].
+	MorphicRenderLoop new doOneCycleWhile: [ self isInWorld ].
 	self delete.
 	self restoreFocus: originalFocusHolder in: aWorld.
-	^ selectedItem ifNotNil: [selectedItem target]
+	^ selection ifNil: [ selectedItem ifNotNil: [selectedItem target] ]
 
 ]
 
@@ -883,13 +897,11 @@ MenuMorph >> invokeMetaMenu: evt [
 	^super invokeMetaMenu: evt
 ]
 
-{ #category : #'modal control' }
+{ #category : #invoking }
 MenuMorph >> invokeModal [
 	"Invoke this menu and don't return until the user has chosen a value.
-	See example below on how to use modal menu morphs."
-	^ self invokeModal: self menuKeyboardControl
-
-	"Example:
+	See example below on how to use modal menu morphs.
+	Example:
 	| menu sub entry |
 	menu := MenuMorph new.
 	1 to: 3 do: [:i |
@@ -899,48 +911,16 @@ MenuMorph >> invokeModal [
 		#('Item A' 'Item B' 'Item C')  do:[:subEntry|
 			sub add: subEntry target: menu 
 				selector: #modalSelection: argument: {entry. subEntry}]].
-	menu invokeModal.
-"
-
-
-]
-
-{ #category : #'modal control' }
-MenuMorph >> invokeModal: allowKeyboardControl [
-	"Invoke this menu and don't return until the user has chosen a value.  If the allowKeyboarControl boolean is true, permit keyboard control of the menu"
-
-	^ self invokeModalAt: ActiveHand position in: ActiveWorld allowKeyboard: allowKeyboardControl
-]
-
-{ #category : #'modal control' }
-MenuMorph >> invokeModalAt: aPoint in: aWorld allowKeyboard: aBoolean [
-	"Invoke this menu and don't return until the user has chosen a value.
-	See senders of this method for finding out how to use modal menu morphs."
-	| w originalFocusHolder |
-	originalFocusHolder := aWorld primaryHand keyboardFocus.
-	self popUpAt: aPoint forHand: aWorld primaryHand in: aWorld allowKeyboard: aBoolean.
-	self isModalInvokationDone: false.
-	w := aWorld outermostWorldMorph. "containing hand"
-	[self isInWorld and: [ self isModalInvokationDone not ] ] whileTrue: [w doOneSubCycle].
-	self delete.
-	self restoreFocus: originalFocusHolder in: aWorld.
-	^ self modalSelection
+	menu invokeModal."
+	
+  ^ self
+		invokeAt: self currentWorld activeHand position
+		in: self currentWorld
 ]
 
 { #category : #testing }
 MenuMorph >> isMenuMorph [
 	^ true
-]
-
-{ #category : #'modal control' }
-MenuMorph >> isModalInvokationDone [
-	^self valueOfProperty: #isModalInvokationDone ifAbsent:[false]
-]
-
-{ #category : #'modal control' }
-MenuMorph >> isModalInvokationDone: aBool [
-	self setProperty: #isModalInvokationDone toValue: aBool
-
 ]
 
 { #category : #accessing }
@@ -1090,13 +1070,13 @@ MenuMorph >> menuItems [
 
 { #category : #'modal control' }
 MenuMorph >> modalSelection [
-	^self valueOfProperty: #modalSelection ifAbsent:[nil]
+	^ selection
 ]
 
 { #category : #'modal control' }
 MenuMorph >> modalSelection: anObject [
-	self setProperty: #modalSelection toValue: anObject.
-	self isModalInvokationDone: true
+	selection := anObject.
+	self deleteIfPopUp
 ]
 
 { #category : #private }
@@ -1248,7 +1228,7 @@ MenuMorph >> popUpEvent: evt in: aWorld [
 	"Present this menu in response to the given event."
 
 	| aHand aPosition |
-	aHand := evt ifNotNil: [evt hand] ifNil: [ActiveHand].
+	aHand := evt ifNotNil: [evt hand] ifNil: [ self activeHand ].
 	aPosition := aHand position truncated.
 	^ self popUpAt: aPosition forHand: aHand in: aWorld
 
@@ -1282,7 +1262,7 @@ MenuMorph >> popUpInWorld: aWorld [
 MenuMorph >> popUpNoKeyboard [
 	"Present this menu in the current World, *not* allowing keyboard input into the menu"
 
-	^ self popUpAt: ActiveHand position forHand: ActiveHand in: ActiveWorld allowKeyboard: false
+	^ self popUpAt: self activeHand position forHand: self activeHand in: self currentWorld allowKeyboard: false
 ]
 
 { #category : #accessing }
@@ -1320,7 +1300,7 @@ MenuMorph >> positionAt: aPoint relativeTo: aMenuItem inWorld: aWorld [
 
 	"Make sure that the menu fits in the world."
 	delta := self bounds amountToTranslateWithin:
-		(aWorld worldBounds withHeight: ((aWorld worldBounds height - 18) max: (ActiveHand position y) + 1)).
+		(aWorld worldBounds withHeight: ((aWorld worldBounds height - 18) max: (aWorld activeHand position y) + 1)).
 	delta = (0 @ 0) ifFalse: [self position: self position + delta]
 ]
 

@@ -4,9 +4,6 @@ Renderer for font glyphs
 Class {
 	#name : #GlyphRenderer,
 	#superclass : #Object,
-	#instVars : [
-		'font'
-	],
 	#category : #'Athens-Text'
 }
 
@@ -15,7 +12,7 @@ GlyphRenderer class >> forFont: aFont [
 	^ self basicNew initForFont: aFont
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - initialization' }
 GlyphRenderer >> initForFont: aFont [
 
 	self subclassResponsibility 

@@ -47,7 +47,7 @@ Class {
 		'STONCharacters',
 		'STONSimpleSymbolCharacters'
 	],
-	#category : #'STON-Core'
+	#category : #'STON-Core-Writer'
 }
 
 { #category : #'class initialization' }
@@ -127,6 +127,8 @@ STONWriter >> encodeCharacter: char [
 
 { #category : #private }
 STONWriter >> encodeKey: key value: value [
+	(jsonMode and: [ key isString not ])
+		ifTrue: [ self error: 'JSON key names in objects must be strings' ].
 	self nextPut: key.
 	self prettyPrintSpace.
 	writeStream nextPut: $:.
@@ -259,12 +261,19 @@ STONWriter >> initialize [
 
 { #category : #private }
 STONWriter >> isSimpleSymbol: symbol [
-	symbol isEmpty ifTrue: [ ^ false ].
+	(symbol isEmpty or: [ symbol isWideString ]) 
+		ifTrue: [ ^ false ].
 	^ (symbol class 
 		findFirstInString: symbol 
 		inSet: STONSimpleSymbolCharacters 
 		startingAt: 1) = 0
 
+]
+
+{ #category : #accessing }
+STONWriter >> jsonMode [
+
+	^ jsonMode 
 ]
 
 { #category : #'initialize-release' }
@@ -406,6 +415,16 @@ STONWriter >> writeFloat: float [
 ]
 
 { #category : #writing }
+STONWriter >> writeFraction: fraction [
+	jsonMode
+		ifTrue: [ self writeFloat: fraction asFloat ]
+		ifFalse: [ writeStream
+				print: fraction numerator;
+				nextPut: $/;
+				print: fraction denominator ]
+]
+
+{ #category : #writing }
 STONWriter >> writeInteger: integer [
 	writeStream print: integer
 ]
@@ -468,6 +487,27 @@ STONWriter >> writeObject: object listSingleton: element [
 ]
 
 { #category : #writing }
+STONWriter >> writeObject: anObject named: stonName do: block [
+	(jsonMode and: [ anObject class ~= STON listClass and: [ anObject class ~= STON mapClass ] ])
+		ifTrue: [ self error: 'wrong object class for JSON mode' ].
+	self with: anObject do: [
+		writeStream nextPutAll: stonName.
+		self prettyPrintSpace.
+		block value ]
+]
+
+{ #category : #writing }
+STONWriter >> writeObject: object named: stonName listSingleton: element [
+	self writeObject: object named: stonName do: [
+		writeStream nextPut: $[.
+		self 
+			prettyPrintSpace;
+			nextPut: element;
+			prettyPrintSpace.
+		writeStream nextPut: $] ]
+]
+
+{ #category : #writing }
 STONWriter >> writeObject: object streamList: block [
 	self writeObject: object do: [ | listWriter |
 		listWriter := STONListWriter on: self.
@@ -508,6 +548,18 @@ STONWriter >> writeReference: index [
 	writeStream
 		nextPut: $@;
 		print: index
+]
+
+{ #category : #writing }
+STONWriter >> writeScaledDecimal: scaledDecimal [
+	jsonMode
+		ifTrue: [ self writeFloat: scaledDecimal asFloat ]
+		ifFalse: [ writeStream
+				print: scaledDecimal numerator;
+				nextPut: $/;
+				print: scaledDecimal denominator;
+				nextPut: $s;
+				print: scaledDecimal scale ]
 ]
 
 { #category : #writing }

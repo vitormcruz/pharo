@@ -5,11 +5,10 @@ Class {
 	#name : #MorphHandlingMiddleButton,
 	#superclass : #Morph,
 	#instVars : [
-		'menu',
 		'receivedBlueButtonUp',
 		'receivedBlueButtonDown'
 	],
-	#category : #'SUnit-Support-UITesting'
+	#category : #'SUnit-Support-UITesting-Morphic'
 }
 
 { #category : #'meta-actions' }

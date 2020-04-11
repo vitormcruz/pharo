@@ -107,8 +107,7 @@ AndreasSystemProfiler class >> spyOnWorldFor: seconds [
 
 	^self spyOn: [  | deadline |
 		deadline := Time totalSeconds + seconds.
-		[Time totalSeconds < deadline]
-			whileTrue: [ World doOneCycle ]].
+		MorphicRenderLoop new doOneCycleWhile: [Time totalSeconds < deadline] ].
 ]
 
 { #category : #reporting }

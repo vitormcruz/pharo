@@ -17,13 +17,11 @@ Class {
 		'nonEmpty',
 		'otherList',
 		'link',
-		'collectionWithNil',
 		'collectionWithoutNil',
 		'nonEmpty1Element',
 		'collectionWithoutEqualElements',
 		'elementNotIn',
 		'elementIn',
-		'sameAtendAndBegining',
 		'collection5Elements',
 		'collectResult',
 		'unsortedCollection',
@@ -111,9 +109,9 @@ LinkedListTest >> collectionWithSortableElements [
 
 { #category : #requirements }
 LinkedListTest >> collectionWithoutEqualElements [
+	" return a collection not including equal elements "
 
-" return a collection not including equal elements "
-	^collectionWithoutEqualElements 
+	^ collectionWithoutEqualElements
 ]
 
 { #category : #requirements }
@@ -328,190 +326,190 @@ LinkedListTest >> tearDown [
 
 { #category : #tests }
 LinkedListTest >> test01add [
-	self assert: list isEmpty.
+	self assertEmpty: list.
 	list add: link1.
-	self assert: list size = 1.
-	self assert: list first = link1.
-	
+	self assert: list size equals: 1.
+	self assert: list first equals: link1.
+
 	list add: link2.
-	self assert: list size = 2.
-	self assert: list first = link1.
-	self assert: list second = link2.
-	
+	self assert: list size equals: 2.
+	self assert: list first equals: link1.
+	self assert: list second equals: link2.
+
 	list add: link3.
-	self assert: list size = 3.
-	self assert: list first = link1.
-	self assert: list second = link2.
-	self assert: list third = link3.
-	
+	self assert: list size equals: 3.
+	self assert: list first equals: link1.
+	self assert: list second equals: link2.
+	self assert: list third equals: link3.
+
 	list add: link4.
-	self assert: list size = 4.
-	self assert: list first = link1.
-	self assert: list second = link2.
-	self assert: list third = link3.
-	self assert: list fourth = link4
+	self assert: list size equals: 4.
+	self assert: list first equals: link1.
+	self assert: list second equals: link2.
+	self assert: list third equals: link3.
+	self assert: list fourth equals: link4
 ]
 
 { #category : #tests }
 LinkedListTest >> test02addLast [
-	self assert: list isEmpty.
-	
+	self assertEmpty: list.
+
 	list addLast: link1.
-	self assert: list size = 1.
-	self assert: list first = link1.
-	
+	self assert: list size equals: 1.
+	self assert: list first equals: link1.
+
 	list addLast: link2.
-	self assert: list size = 2.
-	self assert: list first = link1.
-	self assert: list second = link2.
-	
+	self assert: list size equals: 2.
+	self assert: list first equals: link1.
+	self assert: list second equals: link2.
+
 	list addLast: link3.
-	self assert: list size = 3.
-	self assert: list first = link1.
-	self assert: list second = link2.
-	self assert: list third = link3.
-	
+	self assert: list size equals: 3.
+	self assert: list first equals: link1.
+	self assert: list second equals: link2.
+	self assert: list third equals: link3.
+
 	list addLast: link4.
-	self assert: list size = 4.
-	self assert: list first = link1.
-	self assert: list second = link2.
-	self assert: list third = link3.
-	self assert: list fourth = link4
+	self assert: list size equals: 4.
+	self assert: list first equals: link1.
+	self assert: list second equals: link2.
+	self assert: list third equals: link3.
+	self assert: list fourth equals: link4
 ]
 
 { #category : #tests }
 LinkedListTest >> test03addFirst [
-	self assert: list isEmpty.
-	
+	self assertEmpty: list.
+
 	list addFirst: link1.
-	self assert: list size = 1.
-	self assert: list first = link1.
-	
+	self assert: list size equals: 1.
+	self assert: list first equals: link1.
+
 	list addFirst: link2.
-	self assert: list size = 2.
-	self assert: list first = link2.
-	self assert: list second = link1.
-	
+	self assert: list size equals: 2.
+	self assert: list first equals: link2.
+	self assert: list second equals: link1.
+
 	list addFirst: link3.
-	self assert: list size = 3.
-	self assert: list first = link3.
-	self assert: list second = link2.
-	self assert: list third = link1.
-	
+	self assert: list size equals: 3.
+	self assert: list first equals: link3.
+	self assert: list second equals: link2.
+	self assert: list third equals: link1.
+
 	list addFirst: link4.
-	self assert: list size = 4.
-	self assert: list first = link4.
-	self assert: list second = link3.
-	self assert: list third = link2.
-	self assert: list fourth = link1
+	self assert: list size equals: 4.
+	self assert: list first equals: link4.
+	self assert: list second equals: link3.
+	self assert: list third equals: link2.
+	self assert: list fourth equals: link1
 ]
 
 { #category : #tests }
 LinkedListTest >> test04addBefore [
-	self assert: list isEmpty.
-	
+	self assertEmpty: list.
+
 	list add: link1.
-	self assert: list size = 1.
-	self assert: list first == link1.
-	
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link1.
+
 	list add: link2 before: link1.
-	self assert: list size = 2.
-	self assert: list first == link2.
-	self assert: list second == link1.
-	
+	self assert: list size equals: 2.
+	self assert: list first identicalTo: link2.
+	self assert: list second identicalTo: link1.
+
 	list add: link3 before: link1.
-	self assert: list size = 3.
-	self assert: list first == link2.
-	self assert: list second == link3.
-	self assert: list third == link1.
-	
+	self assert: list size equals: 3.
+	self assert: list first identicalTo: link2.
+	self assert: list second identicalTo: link3.
+	self assert: list third identicalTo: link1.
+
 	list add: link4 before: link1.
-	self assert: list size = 4.
-	self assert: list first == link2.
-	self assert: list second == link3.
-	self assert: list third == link4.
-	self assert: list fourth == link1
+	self assert: list size equals: 4.
+	self assert: list first identicalTo: link2.
+	self assert: list second identicalTo: link3.
+	self assert: list third identicalTo: link4.
+	self assert: list fourth identicalTo: link1
 ]
 
 { #category : #tests }
 LinkedListTest >> test05addBefore [
-	self assert: list isEmpty.
-	
+	self assertEmpty: list.
+
 	list add: link1.
-	self assert: list size = 1.
-	self assert: list first == link1.
-	
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link1.
+
 	list add: link2 before: link1.
-	self assert: list size = 2.
-	self assert: list first == link2.
-	self assert: list second == link1.
-	
+	self assert: list size equals: 2.
+	self assert: list first identicalTo: link2.
+	self assert: list second identicalTo: link1.
+
 	list add: link3 before: link2.
-	self assert: list size = 3.
-	self assert: list first == link3.
-	self assert: list second == link2.
-	self assert: list third == link1.
-	
+	self assert: list size equals: 3.
+	self assert: list first identicalTo: link3.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link1.
+
 	list add: link4 before: link3.
-	self assert: list size = 4.
-	self assert: list first == link4.
-	self assert: list second == link3.
-	self assert: list third == link2.
-	self assert: list fourth == link1
+	self assert: list size equals: 4.
+	self assert: list first identicalTo: link4.
+	self assert: list second identicalTo: link3.
+	self assert: list third identicalTo: link2.
+	self assert: list fourth identicalTo: link1
 ]
 
 { #category : #tests }
 LinkedListTest >> test06addAfter [
-	self assert: list isEmpty.
-	
+	self assertEmpty: list.
+
 	list add: link1.
-	self assert: list size = 1.
-	self assert: list first == link1.
-	
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link1.
+
 	list add: link2 after: link1.
-	self assert: list size = 2.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	
+	self assert: list size equals: 2.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+
 	list add: link3 after: link2.
-	self assert: list size = 3.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	self assert: list third == link3.
-	
+	self assert: list size equals: 3.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link3.
+
 	list add: link4 after: link3.
-	self assert: list size = 4.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	self assert: list third == link3.
-	self assert: list fourth == link4
+	self assert: list size equals: 4.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link3.
+	self assert: list fourth identicalTo: link4
 ]
 
 { #category : #tests }
 LinkedListTest >> test07addAfter [
-	self assert: list isEmpty.
-	
+	self assertEmpty: list.
+
 	list add: link1.
-	self assert: list size = 1.
-	self assert: list first == link1.
-	
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link1.
+
 	list add: link2 after: link1.
-	self assert: list size = 2.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	
+	self assert: list size equals: 2.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+
 	list add: link3 after: link1.
-	self assert: list size = 3.
-	self assert: list first == link1.
-	self assert: list second == link3.
-	self assert: list third == link2.
-	
+	self assert: list size equals: 3.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link3.
+	self assert: list third identicalTo: link2.
+
 	list add: link4 after: link1.
-	self assert: list size = 4.
-	self assert: list first == link1.
-	self assert: list second == link4.
-	self assert: list third == link3.
-	self assert: list fourth == link2
+	self assert: list size equals: 4.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link4.
+	self assert: list third identicalTo: link3.
+	self assert: list fourth identicalTo: link2
 ]
 
 { #category : #tests }
@@ -519,15 +517,15 @@ LinkedListTest >> test08addAfter [
 	| l first |
 	l := LinkedList new.
 	first := self class new n: 1.
-	
+
 	l add: first.
 	l add: (self class new n: 3).
 
-	self assert: (l collect:[:e | e n]) asArray  = #(1 3).
-	
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 3).
+
 	l add: (self class new n: 2) after: first.
 
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2 3).
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2 3)
 ]
 
 { #category : #tests }
@@ -537,24 +535,22 @@ LinkedListTest >> test09addAfter [
 	last := self class new n: 2.
 	l add: (self class new n: 1).
 	l add: last.
-	
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2).
-	 
+
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2).
+
 	l add: (self class new n: 3) after: last.
 
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2 3).
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2 3)
 ]
 
 { #category : #'tests - fixture' }
 LinkedListTest >> test0FixtureIndexAccessTest [
 	| res |
 	self collectionMoreThan1NoDuplicates.
-	self assert: self collectionMoreThan1NoDuplicates size = 5.
+	self assert: self collectionMoreThan1NoDuplicates size equals: 5.
 	res := true.
-	self collectionMoreThan1NoDuplicates
-		detect: [ :each | (self collectionMoreThan1NoDuplicates occurrencesOf: each) > 1 ]
-		ifNone: [ res := false ].
-	self assert: res = false.
+	self collectionMoreThan1NoDuplicates detect: [ :each | (self collectionMoreThan1NoDuplicates occurrencesOf: each) > 1 ] ifNone: [ res := false ].
+	self assert: res equals: false.
 	self elementInForIndexAccessing.
 	self assert: (self collectionMoreThan1NoDuplicates includes: self elementInForIndexAccessing).
 	self elementNotInForIndexAccessing.
@@ -567,30 +563,30 @@ LinkedListTest >> test10removeFirst [
 	list add: link2.
 	list add: link3.
 	list add: link4.
-	
-	self assert: list size = 4.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	self assert: list third == link3.
-	self assert: list fourth == link4.
-	
+
+	self assert: list size equals: 4.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link3.
+	self assert: list fourth identicalTo: link4.
+
 	list removeFirst.
-	self assert: list size = 3.
-	self assert: list first == link2.
-	self assert: list second == link3.
-	self assert: list third == link4.
-	
+	self assert: list size equals: 3.
+	self assert: list first identicalTo: link2.
+	self assert: list second identicalTo: link3.
+	self assert: list third identicalTo: link4.
+
 	list removeFirst.
-	self assert: list size = 2.
-	self assert: list first == link3.
-	self assert: list second == link4.
-	
+	self assert: list size equals: 2.
+	self assert: list first identicalTo: link3.
+	self assert: list second identicalTo: link4.
+
 	list removeFirst.
-	self assert: list size = 1.
-	self assert: list first == link4.
-	
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link4.
+
 	list removeFirst.
-	self assert: list isEmpty
+	self assertEmpty: list
 ]
 
 { #category : #tests }
@@ -599,30 +595,30 @@ LinkedListTest >> test11removeLast [
 	list add: link2.
 	list add: link3.
 	list add: link4.
-	
-	self assert: list size = 4.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	self assert: list third == link3.
-	self assert: list fourth == link4.
-	
+
+	self assert: list size equals: 4.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link3.
+	self assert: list fourth identicalTo: link4.
+
 	list removeLast.
-	self assert: list size = 3.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	self assert: list third == link3.
-	
+	self assert: list size equals: 3.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link3.
+
 	list removeLast.
-	self assert: list size = 2.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	
+	self assert: list size equals: 2.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+
 	list removeLast.
-	self assert: list size = 1.
-	self assert: list first == link1.
-	
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link1.
+
 	list removeFirst.
-	self assert: list isEmpty
+	self assertEmpty: list
 ]
 
 { #category : #tests }
@@ -631,30 +627,30 @@ LinkedListTest >> test12remove [
 	list add: link2.
 	list add: link3.
 	list add: link4.
-	
-	self assert: list size = 4.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	self assert: list third == link3.
-	self assert: list fourth == link4.
-	
+
+	self assert: list size equals: 4.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link3.
+	self assert: list fourth identicalTo: link4.
+
 	list remove: link3.
-	self assert: list size = 3.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	self assert: list third == link4.
-	
+	self assert: list size equals: 3.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link4.
+
 	list remove: link2.
-	self assert: list size = 2.
-	self assert: list first == link1.
-	self assert: list second == link4.
-	
+	self assert: list size equals: 2.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link4.
+
 	list remove: link1.
-	self assert: list size = 1.
-	self assert: list first == link4.
-	
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link4.
+
 	list remove: link4.
-	self assert: list isEmpty
+	self assertEmpty: list
 ]
 
 { #category : #tests }
@@ -663,48 +659,48 @@ LinkedListTest >> test13remove [
 	list add: link2.
 	list add: link3.
 	list add: link4.
-	
-	self assert: list size = 4.
-	self assert: list first == link1.
-	self assert: list second == link2.
-	self assert: list third == link3.
-	self assert: list fourth == link4.
-	
+
+	self assert: list size equals: 4.
+	self assert: list first identicalTo: link1.
+	self assert: list second identicalTo: link2.
+	self assert: list third identicalTo: link3.
+	self assert: list fourth identicalTo: link4.
+
 	list remove: link1.
-	self assert: list size = 3.
-	self assert: list first == link2.
-	self assert: list second == link3.
-	self assert: list third == link4.
-	
+	self assert: list size equals: 3.
+	self assert: list first identicalTo: link2.
+	self assert: list second identicalTo: link3.
+	self assert: list third identicalTo: link4.
+
 	list remove: link4.
-	self assert: list size = 2.
-	self assert: list first == link2.
-	self assert: list second == link3.
-	
+	self assert: list size equals: 2.
+	self assert: list first identicalTo: link2.
+	self assert: list second identicalTo: link3.
+
 	list remove: link2.
-	self assert: list size = 1.
-	self assert: list first == link3.
-	
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link3.
+
 	list remove: link3.
-	self assert: list isEmpty
+	self assertEmpty: list
 ]
 
 { #category : #tests }
 LinkedListTest >> test14removeIfAbsent [
 	list add: link1.
-	
-	self assert: list size = 1.
-	self assert: list first == link1.
-	
+
+	self assert: list size equals: 1.
+	self assert: list first identicalTo: link1.
+
 	list remove: link1.
-	self assert: list isEmpty.
-	
-	[list remove: link1]
+	self assertEmpty: list.
+
+	[ list remove: link1 ]
 		on: Error
-		do: [^ self].
-		
+		do: [ ^ self ].
+
 	"The execution should not get here. If yes, something went wrong."
-	self assert: false
+	self fail
 ]
 
 { #category : #tests }
@@ -742,29 +738,27 @@ LinkedListTest >> test22addAll [
 
 { #category : #tests }
 LinkedListTest >> testAddAfter [
-
 	| l first |
 	l := LinkedList new.
 	first := self class new n: 1.
-	
+
 	l add: first.
 	l add: (self class new n: 3).
-	self assert: (l collect:[:e | e n]) asArray  = #(1 3).
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 3).
 	l add: (self class new n: 2) after: first.
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2 3).
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2 3)
 ]
 
 { #category : #tests }
 LinkedListTest >> testAddAfterLast [
-
 	| l last |
 	l := LinkedList new.
 	last := self class new n: 2.
 	l add: (self class new n: 1).
 	l add: last.
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2). 
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2).
 	l add: (self class new n: 3) after: last.
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2 3).
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2 3)
 ]
 
 { #category : #tests }
@@ -776,14 +770,14 @@ LinkedListTest >> testAddAfterLast2 [
 	first := self class new n: 1.
 	second := self class new n: 2.
 	third := self class new n: 3.
-	fourth :=self class new n: 4.
+	fourth := self class new n: 4.
 	l addLast: first.
 	l addLast: second.
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2). 
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2).
 	l add: third after: second.
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2 3).
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2 3).
 	l addLast: fourth.
-	self assert: (l collect:[:e | e n]) asArray  = #(1 2 3 4).
+	self assert: (l collect: [ :e | e n ]) asArray equals: #(1 2 3 4)
 ]
 
 { #category : #'tests - sequenceable' }
@@ -837,17 +831,17 @@ LinkedListTest >> testRemoveAll [
 	list add: link4.
 	list2 := list copy.
 	list removeAll.
-	
-	self assert: list size = 0.
+
+	self assert: list size equals: 0.
 	self assert: list2 size = 4 description: 'the copy has not been modified'
 ]
 
 { #category : #requirements }
 LinkedListTest >> testSort [
-	|aLinkedList|
-	 aLinkedList := (LinkedList with: 1 with: 2).
-	aLinkedList  sort: [ :a :b | a > b].
-	self assert: (aLinkedList = (LinkedList with: 2 with: 1)).
+	| aLinkedList |
+	aLinkedList := LinkedList with: 1 with: 2.
+	aLinkedList sort: [ :a :b | a > b ].
+	self assert: aLinkedList equals: (LinkedList with: 2 with: 1)
 ]
 
 { #category : #'tests - swap' }
@@ -907,13 +901,10 @@ LinkedListTest >> testSwapStartAndEnd [
 
 { #category : #'tests - adding' }
 LinkedListTest >> testTAdd [
-
 	| added |
 	added := self otherCollection add: self element.
-	self assert: added = self element. "equality or identity ?"
-	self assert: (self otherCollection includes: self element).
-
-	
+	self assert: added equals: self element.	"equality or identity ?"
+	self assert: (self otherCollection includes: self element)
 ]
 
 { #category : #requirements }

@@ -98,6 +98,13 @@ DateAndTime class >> epoch [
   
 ]
 
+{ #category : #'instance creation' }
+DateAndTime class >> fromInternalTime: anInteger [
+	"Answer an instance of the receiver with the time represented by anInteger. Pharo internal time is an integer representing time in the local timezone with an epoch of 1 Jan. 1901"
+
+	^(self fromSeconds: anInteger offset: 0) translateTo: self localOffset.
+]
+
 { #category : #input }
 DateAndTime class >> fromString: aString [ 
 	^ self readFrom: aString readStream
@@ -193,7 +200,7 @@ DateAndTime class >> now [
 	[ 10000 timesRepeat: [ self now. ] ] timeToRun / 10000.0 . "
 
 	| nanoTicks |
-	nanoTicks := self clock microsecondClockValue * 1e3.
+	nanoTicks := self clock microsecondClockValue * 1000.
 	^ self basicNew
 		setJdn: SqueakEpoch 
 		seconds: 0
@@ -207,6 +214,18 @@ DateAndTime class >> unixEpoch [
 	^ self basicNew
 		ticks: #(2440588 0 0) offset: Duration zero;
 		yourself.
+]
+
+{ #category : #'clock provider' }
+DateAndTime class >> year: aYearInteger month: aMonthNumber [
+    "Return a date starting the first day of the month"
+
+    ^ self
+        year: aYearInteger
+        month: aMonthNumber
+        day: 1
+        hour: 0
+        minute: 0
 ]
 
 { #category : #arithmetic }
@@ -262,8 +281,9 @@ DateAndTime >> = other [
 
 { #category : #converting }
 DateAndTime >> asDate [
-
-	^ Date starting: self
+    "Convert the receiver in a date object."
+    "(DateAndTime fromString: ' 2019-08-17T13:33:00+02:00') asDate printString >>> (Date newDay: 17 month: 8 year: 2019) printString"
+    ^ Date starting: self
 ]
 
 { #category : #converting }
@@ -399,7 +419,8 @@ DateAndTime >> midnight [
 DateAndTime >> minute [
 	"Answer a number that represents the number of complete minutes in the receiver' time part, 
 	after the number of complete hours has been removed."
-	
+	"(DateAndTime fromString: ' 2004-02-29T13:33:00+02:00') minute >>> 33"
+		
  	^ self localSeconds // SecondsInMinute \\ 60
 ]
 
@@ -462,7 +483,8 @@ DateAndTime >> printOn: aStream withLeadingSpace: printLeadingSpaceToo [
 DateAndTime >> second [
 	"Answer a number that represents the number of complete seconds in the receiver's time part, 
 	after the number of complete minutes has been removed."
- 
+   "(DateAndTime fromString: ' 2004-02-29T13:33:12+02:00') second >>> 12" 
+
  	^ self localSeconds \\ 60
 ]
 

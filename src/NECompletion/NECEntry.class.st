@@ -1,25 +1,22 @@
 "
 I represent a completion entry that is management by a ECModel and shown in the ECMenuMorph as a menu entry.
+
+Each of my subclass will represent a specific kind of entity. For example a globalvariable, self...
 "
 Class {
 	#name : #NECEntry,
 	#superclass : #Object,
 	#instVars : [
 		'contents',
-		'type',
+		'node',
 		'description'
 	],
 	#category : #'NECompletion-Model'
 }
 
 { #category : #'instance creation' }
-NECEntry class >> contents: aString [ 
-	^ self new setContents: aString
-]
-
-{ #category : #'instance creation' }
-NECEntry class >> contents: aString type: aSymbol [
-	^ self new setContents: aString type: aSymbol
+NECEntry class >> contents: aString node: aNode [
+	^ self new contents: aString node: aNode
 ]
 
 { #category : #operations }
@@ -27,23 +24,21 @@ NECEntry >> <= aECEntry [
 	^ contents <= aECEntry contents
 ]
 
-{ #category : #conversion }
-NECEntry >> asNECEntry [
-	^ self
-]
-
 { #category : #operations }
-NECEntry >> browseWith: anECContext [ 
-	| guessType |
-	guessType := self guessTypeWith: anECContext.
-	guessType ifNil: [^ false].
-	Smalltalk tools browser openOnClass: guessType.
-	^ true
+NECEntry >> activateOn: aCompletionContext [
+
+	| entryContents |
+	"By default insert the contents of the entry instead of the token in the text editor"
+	entryContents := self contents asSymbol separateKeywords.
+	entryContents := (NECPreferences spaceAfterCompletion
+				ifTrue: [ entryContents , ' ' ]
+				ifFalse: [ entryContents ]).
+	aCompletionContext replaceTokenInEditorWith: entryContents
 ]
 
-{ #category : #accessing }
-NECEntry >> completion [
-	^ self contents asSymbol
+{ #category : #private }
+NECEntry >> browse [
+	self subclassResponsibility
 ]
 
 { #category : #accessing }
@@ -52,47 +47,24 @@ NECEntry >> contents [
 ]
 
 { #category : #accessing }
-NECEntry >> contentsAsSymbol [
-	^ contents asSymbol 
+NECEntry >> contents: aString node: aNode [
+	contents := aString.
+	node := aNode
 ]
 
 { #category : #'detail information' }
-NECEntry >> createDescriptionWith: anECContext [ 
-	| clazz |
-	clazz := self guessTypeWith: anECContext.
-	^ clazz 
-		ifNil: [ NECEntryDescription label: self label ]
-		ifNotNil: 
-			[ NECEntryDescription 
-				label: self label
-				title: clazz printString
-				description: clazz comment ]
+NECEntry >> createDescription [
+	self subclassResponsibility
 ]
 
 { #category : #operations }
-NECEntry >> descriptionWith: anECContext [ 
-	description ifNotNil: [ ^ description ].
-	^ description := self createDescriptionWith: anECContext
+NECEntry >> description [
+	^description ifNil: [ description := self createDescription ]
 ]
 
-{ #category : #operations }
-NECEntry >> guessTypeWith: anECContext [ 
-	^ nil
-]
-
-{ #category : #testing }
-NECEntry >> isInstance [
-	^ false
-]
-
-{ #category : #testing }
-NECEntry >> isLocal [
-	^ false
-]
-
-{ #category : #testing }
-NECEntry >> isSelector [
-	^ false
+{ #category : #accessing }
+NECEntry >> hightlightSymbol [
+	^nil
 ]
 
 { #category : #accessing }
@@ -102,26 +74,11 @@ NECEntry >> label [
 
 { #category : #printing }
 NECEntry >> printOn: aStream [ 
-	aStream nextPutAll: self class name;
-		 nextPut: $(;
-		 nextPutAll: contents asString;
-		 nextPut: $,;
-		 nextPutAll: self type;
-		 nextPut: $)
-]
-
-{ #category : #accessing }
-NECEntry >> setContents: aString [ 
-	contents := aString.
-]
-
-{ #category : #accessing }
-NECEntry >> setContents: aString type: aSymbol [ 
-	contents := aString.
-	type := aSymbol
-]
-
-{ #category : #accessing }
-NECEntry >> type [
-	^type
+	aStream 
+		nextPutAll: self class name;
+		nextPut: $(;
+		nextPutAll: contents;
+		nextPut: $,;
+		nextPutAll: self hightlightSymbol;
+		nextPut: $)
 ]

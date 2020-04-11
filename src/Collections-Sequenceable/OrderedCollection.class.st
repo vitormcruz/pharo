@@ -87,7 +87,21 @@ OrderedCollection class >> arrayType [
 	^ Array
 ]
 
-{ #category : #initialization }
+{ #category : #cleanup }
+OrderedCollection class >> cleanUp: aggressive [
+	"Rehash all instances when cleaning aggressively"
+
+	aggressive ifTrue: [self compactAll].
+]
+
+{ #category : #cleanup }
+OrderedCollection class >> compactAll [
+	"OrderedCollection compactAll"	
+		
+	self allSubclassesDo: #compactAllInstances
+]
+
+{ #category : #cleanup }
 OrderedCollection class >> compactAllInstances [
 	self allInstances do: #compact
 ]
@@ -146,7 +160,9 @@ OrderedCollection class >> streamSpecies [
 
 { #category : #adding }
 OrderedCollection >> add: newObject [
-
+	"Add a new object at the end of the collection"
+	"((OrderedCollection new add: 42; yourself) add: 43; yourself) asArray >>> #(42 43)"
+	
 	^self addLast: newObject
 ]
 
@@ -246,6 +262,12 @@ OrderedCollection >> addLast: newObject [
 
 { #category : #converting }
 OrderedCollection >> asArray [
+	"Convert an OrderedCollection into an Array."
+	"#(a b c) asOrderedCollection asArray >>> #(a b c)"
+	"OrderedCollection new class >>> OrderedCollection"
+	"OrderedCollection new asArray class >>> Array"
+	"(OrderedCollection new add: 42; add: 43; yourself) asArray >>> #(42 43)"
+	
 	^ (Array new: self size) replaceFrom: 1 to: self size with: array startingAt: firstIndex.
 ]
 
@@ -259,7 +281,11 @@ OrderedCollection >> asOrderedCollection [
 { #category : #accessing }
 OrderedCollection >> at: anInteger [
 	"Answer my element at index anInteger. at: is used by a knowledgeable
-	client to access an existing element"
+	client to access an existing element."
+	"((OrderedCollection new add: 34; yourself) at: 1) >>> 34"
+	"(#(40 41 42) asOrderedCollection at: 1) >>> 40"
+	"(#(40 41 42) asOrderedCollection at: 2) >>> 41"
+	"(#(40 41 42) asOrderedCollection at: 3) >>> 42"
 
 	| index |
 	anInteger < 1
@@ -301,6 +327,9 @@ OrderedCollection >> at: anInteger put: anObject [
 OrderedCollection >> capacity [
 	"Answer the current capacity of the receiver."
 
+	"OrderedCollection new capacity >>> 10"
+	"(OrderedCollection new addAll: (1 to: 15); yourself) capacity >>> 20"
+	
 	^ array size
 ]
 
@@ -310,6 +339,9 @@ OrderedCollection >> collect: aBlock [
 	resulting values into a collection that is like me. Answer the new 
 	collection. Override superclass in order to use addLast:, not at:put:."
 
+	"(#(1 2 3) asOrderedCollection collect: [ :v | v * 10 ]) asArray >>> #(10 20 30)"
+	"(#(1 2 3) asOrderedCollection collect: [ :v | 10 ]) asArray >>> #(10 10 10)"
+	
 	| newCollection |
 	newCollection := self species new: self size.
 	firstIndex to: lastIndex do:
@@ -538,6 +570,9 @@ OrderedCollection >> join: aCollection [
 OrderedCollection >> makeRoomAtFirst [
 	"Make some empty slots at the front of the array. If we have more than 50% free space, then just move the elements, so that the first 50% of the slots are free, otherwise add new free slots to the front by growing. Precondition: firstIndex = 1"
 	
+	"#(1 2 3) asOrderedCollection capacity >>> 3"
+	"#(1 2 3) asOrderedCollection makeRoomAtFirst capacity >>> 6"
+	
 	| tally newFirstIndex newLastIndex |
 	tally := self size.
 	tally * 2 >= array size ifTrue: [ ^self growAtFirst ].
@@ -672,6 +707,27 @@ OrderedCollection >> removeAt: index [
 ]
 
 { #category : #removing }
+OrderedCollection >> removeDuplicates [
+	"Remove the copies of elements, but keep the same order"
+	
+	"#(7 42 7 42 9) asOrderedCollection removeDuplicates asArray >>> #(7 42 9)"
+	"#(1 2 3) asOrderedCollection removeDuplicates asArray >>> #(1 2 3)"
+
+	| iterator |
+	self ifEmpty: [ ^ self ].
+	iterator := 1.
+	[ iterator <= self size ]
+		whileTrue: [ | each newIndex |
+			each := self at: iterator.
+			newIndex := iterator + 1.
+			[ newIndex := (self indexOf: each startingAt: newIndex).
+			newIndex > 0 ]
+				whileTrue: [ self removeAt: newIndex ].
+			iterator := iterator + 1.
+	 ]
+]
+
+{ #category : #removing }
 OrderedCollection >> removeFirst [
 	"Remove the first element of the receiver and answer it. If the receiver is 
 	empty, create an error notification."
@@ -740,7 +796,7 @@ OrderedCollection >> removeLast: n [
 	^ list
 ]
 
-{ #category : #removing }
+{ #category : #initialization }
 OrderedCollection >> reset [
 	"Quickly remove all elements. The objects will be still referenced, but will not be 	accessible."
 	
@@ -764,13 +820,14 @@ OrderedCollection >> reverseDo: aBlock [
 { #category : #converting }
 OrderedCollection >> reversed [
 	"Answer a copy of the receiver with element order reversed.  "
+	"#(2 3 4 'fred') asOrderedCollection reversed >>> #('fred' 4 3 2) asOrderedCollection"
 	| newCol |
 	newCol := self species new.
 	self reverseDo:
 		[:elem | newCol addLast: elem].
 	^ newCol
 
-"#(2 3 4 'fred') reversed"
+
 ]
 
 { #category : #enumerating }
@@ -862,5 +919,19 @@ OrderedCollection >> withIndexCollect: elementAndIndexBlock [
 		newCollection addLast: (elementAndIndexBlock
 			value: (array at: index)
 			value: index - firstIndex + 1)].
+	^ newCollection
+]
+
+{ #category : #enumerating }
+OrderedCollection >> withIndexSelect: elementAndIndexBlock select: selectBlock [
+	"Optimized version of SequenceableCollection>>#withIndexSelect: "
+
+	"(#('We' 'love' 'pharo!') asOrderedCollection withIndexSelect: [:value :index | value size - 1 <= index]) >>> (OrderedCollection with: 'We')"
+
+	| newCollection element |
+	newCollection := self copyEmpty.
+	firstIndex to: lastIndex do: [ :index | 
+		(selectBlock value: (element := array at: index) value: index)
+			ifTrue: [ newCollection addLast: element ] ].
 	^ newCollection
 ]

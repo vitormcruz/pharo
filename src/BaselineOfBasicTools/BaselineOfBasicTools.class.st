@@ -30,41 +30,44 @@ Class {
 }
 
 { #category : #baseline }
-BaselineOfBasicTools >> baseline: spec [ 
-    
+BaselineOfBasicTools >> baseline: spec [
 	<baseline>
-        
-	| repository | 
-	
+	| repository |
 	repository := self packageRepositoryURL.
+	spec for: #common do: [ 
+		spec postLoadDoIt: #postload:package:.
 
-	spec for: #common do: [
-		spec postLoadDoIt: #'postload:package:'.
-
-		spec baseline: 'UI' with: [spec repository: repository].
-		
-		spec baseline: 'Athens' with: [ 
+		"Load first SUnit core"
+		spec baseline: 'SUnitCore' with: [ 
 			spec
-				loads: 'Cairo-core';
+				loads: 'Core';
+				className: 'BaselineOfSUnit';
 				repository: repository ].
-
-		spec package: 'JenkinsTools-Core'.
-		spec package: 'JenkinsTools-ExtraReports'.
-		
-		spec baseline: 'SUnit' with: [
-			spec repository: repository.
-			spec loads: #('UI' 'Help')].
-
-		spec package: 'Morphic-Widgets-FastTable'.
-		
+		spec
+			baseline: 'UI' with: [ spec repository: repository ];
+			baseline: 'Athens' with: [ 
+				spec
+					loads: 'Cairo-core';
+					repository: repository ];
+			baseline: 'SUnit' with: [ 
+			spec
+				loads: #( 'UI' 'Help' 'JenkinsSupport' );
+				repository: repository ].
 		spec package: 'Tool-ExternalBrowser'.
-		spec package: 'BlueInk-Core'. 
+		spec package: 'BlueInk-Core'.
 		spec package: 'BlueInk-Extras'.
+
+		spec 
+			baseline: 'EnlumineurFormatter' with: [ 
+				spec
+					loads: 'UI';
+					repository: repository ].
+		
 		spec package: 'Tool-ProcessBrowser'.
 		spec package: 'Tool-Profilers'.
 		spec package: 'Tool-SystemReporter'.
 		spec package: 'NECompletion'.
-		
+		spec package: 'NECompletion-Morphic'.
 		spec package: 'Announcements-Help'.
 		spec package: 'Metacello-FileTree'.
 		spec package: 'Metacello-Cypress'.
@@ -72,7 +75,12 @@ BaselineOfBasicTools >> baseline: spec [
 		spec package: 'Metacello-Reference'.
 		spec package: 'Metacello-Tutorial'.
 		spec package: 'MonticelloGUI'.
+		spec package: 'Tests'.
+		spec package: 'RPackage-Tests'.
+		spec package: 'Monticello-Tests'.
+		spec package: 'MonticelloGUI-Tests'.
 		spec package: 'Network-Mail'.
+		spec package: 'Network-Mail-Tests'.
 		spec package: 'Pharo-Help'.
 		spec package: 'ProfStef-Core'.
 		spec package: 'ProfStef-Help'.
@@ -82,17 +90,14 @@ BaselineOfBasicTools >> baseline: spec [
 		spec package: 'Refactoring-Environment'.
 		spec package: 'Regex-Help'.
 		spec package: 'IssueTracking'.
-		spec package: 'Monticello-OldDataStreamCompatibility'. 
-		spec package: 'MonticelloFileServices'.			
-		spec package: 'Spec-Examples'.
-		spec package: 'Spec-Help'.	
+		spec package: 'Monticello-OldDataStreamCompatibility'.
+		spec package: 'MonticelloFileServices'.
+		spec package: 'Spec2-Help'.
 		spec package: 'Tool-Diff'.
 		spec package: 'Tool-FileList'.
 		spec package: 'Tool-Finder'.
-		spec package: 'Tool-ImageCleaner'.		
-		spec package: 'Tools'.
-
-	].
+		spec package: 'Tool-ImageCleaner'.
+		spec package: 'Tools' ]
 ]
 
 { #category : #actions }
@@ -104,11 +109,13 @@ BaselineOfBasicTools >> postload: loader package: packageSpec [
 	Smalltalk tools register: TestRunner as: #testRunner.
 	Smalltalk tools register: MCWorkingCopyBrowser as: #monticelloBrowser.
 	
-	BIConfigurableFormatter initialize.
-	
+	RBRefactoryChangeManager nuke.
 	Smalltalk garbageCollect.
 	Smalltalk cleanOutUndeclared. 
-
+	
+	CompletionSorter register.
+	RubSmalltalkEditor completionEngineClass: CompletionEngine.
+	
 	Author reset.
 
 	Initialized := true.

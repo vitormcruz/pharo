@@ -5,7 +5,7 @@ I am a parser created to parse the insides of a character set ([...]) construct.
 
 Instance Variables:
 
-	source	<Stream>	open on whatever is inside the square brackets we have to parse.
+	source <Stream>	open on whatever is inside the square brackets we have to parse.
 	lookahead	<Character>	The current lookahead character
 	elements	<Collection of: <RxsCharacter|RxsRange|RxsPredicate>> Parsing result
 "
@@ -17,7 +17,7 @@ Class {
 		'lookahead',
 		'elements'
 	],
-	#category : #'Regex-Core'
+	#category : #'Regex-Core-Utilities'
 }
 
 { #category : #'instance creation' }
@@ -40,7 +40,7 @@ RxCharSetParser >> addRangeFrom: firstChar to: lastChar [
 	elements add: (RxsRange from: firstChar to: lastChar)
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RxCharSetParser >> initialize: aStream [
 
 	source := aStream.
@@ -75,15 +75,20 @@ RxCharSetParser >> parse [
 RxCharSetParser >> parseCharOrRange [
 
 	| firstChar |
+
 	firstChar := lookahead.
 	self match: firstChar.
-	lookahead = $- ifTrue:
-		[self match: $-.
-		lookahead isNil
-			ifTrue: [^self addChar: firstChar; addChar: $-]
-			ifFalse: 
-				[self addRangeFrom: firstChar to: lookahead.
-				^self match: lookahead]].
+	lookahead = $-
+		ifTrue: [ self match: $-.
+			lookahead
+				ifNil: [ ^ self
+						addChar: firstChar;
+						addChar: $-
+					]
+				ifNotNil: [ self addRangeFrom: firstChar to: lookahead.
+					^ self match: lookahead
+					]
+			].
 	self addChar: firstChar
 ]
 

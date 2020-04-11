@@ -202,6 +202,7 @@ MetacelloPackageSpec >> currentPackageLoaded: loadedBlock notLoaded: notLoadedBl
 				ifTrue: [ ^ loadedBlock value: #() value: self file ].
 			^ loadedBlock value: vis value: self file ].
 	^ notLoadedBlock value
+
 ]
 
 { #category : #gofer }
@@ -230,9 +231,9 @@ MetacelloPackageSpec >> explicitLoadUsing: mcLoader [
 		ifTrue: [ 
 			(MetacelloSkipDirtyPackageLoad signal: self)
 				ifTrue:  [
-					Transcript cr; show: 'Skipping load of modified package: ', self file.
+					MetacelloNotification signal: ('Skipping load of modified package: ', self file).
 					^self]
-				ifFalse: [Transcript cr; show: 'Load over modified package: ', self file] ].
+				ifFalse: [MetacelloNotification signal: ('Load over modified package: ', self file)] ].
 	"fetch and explicitly load it"
 	fetchingSpecLoader := mcLoader fetchingSpecLoader.
 	fetchingSpecLoader
@@ -455,6 +456,7 @@ MetacelloPackageSpec >> mergeSpec: anotherSpec [
 					ifTrue: [ anotherRepositories ]
 					ifFalse: [ self repositories mergeSpec: anotherRepositories ]) ].
 	^newSpec
+
 ]
 
 { #category : #querying }
@@ -666,9 +668,9 @@ MetacelloPackageSpec >> updateForSpawnMethod: sourceSpec [
 MetacelloPackageSpec >> updatePackageRepositories: repositorySpecs [
 
 	| resolvedPackageRef |
-	Transcript cr; show: '  Looking up version -> ', self file.
+	MetacelloNotification signal: ('  Looking up version -> ', self file).
 	resolvedPackageRef := self loader resolveSpec: self from: repositorySpecs.
-	Transcript cr; show: 'Update repositoryGroup -> ', resolvedPackageRef name, ' ' , resolvedPackageRef repository description.
+	MetacelloNotification signal: ('Update repositoryGroup -> ', resolvedPackageRef name, ' ' , resolvedPackageRef repository description).
 	resolvedPackageRef version workingCopy repositoryGroup addRepository: resolvedPackageRef repository
 ]
 

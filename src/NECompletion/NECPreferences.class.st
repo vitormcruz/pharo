@@ -21,28 +21,29 @@ Class {
 		'popupShowWithShortcut',
 		'spaceAfterCompletion',
 		'smartCharactersWithSingleSpace',
-		'smartCharactersWithDoubleSpace',
-		'overrideModel'
+		'smartCharactersWithDoubleSpace'
 	],
-	#category : #'NECompletion-Model'
+	#category : #'NECompletion-Preferences'
 }
 
 { #category : #private }
-NECPreferences class >> availableControllers [
-	^NECController withAllSubclasses copyWithout: NECWorkspaceController
+NECPreferences class >> availableEngines [
+	^ AbstractCompletionEngine allSubclasses
 ]
 
 { #category : #accessing }
 NECPreferences class >> availablePopupShortcuts [
-	^ {
-		Character space shift. 
-		Character tab asKeyCombination}
+	^ {Character space shift . Character tab asKeyCombination}
+]
+
+{ #category : #private }
+NECPreferences class >> availableSorters [
+	^ CompletionSorter subclasses
 ]
 
 { #category : #accessing }
-NECPreferences class >> backgroundColor [ 
-	^backgroundColor ifNil: [ 
-		backgroundColor := (Smalltalk ui theme settings menuColor ifNil: [ Color white ]) ]
+NECPreferences class >> backgroundColor [
+	^ backgroundColor
 ]
 
 { #category : #accessing }
@@ -71,11 +72,9 @@ NECPreferences class >> caseSensitive: aBoolean [
 	caseSensitive := aBoolean
 ]
 
-{ #category : #private }
-NECPreferences class >> currentController [ 
-	^ (Smalltalk tools hasToolNamed: #codeCompletion)
-		ifTrue: [ Smalltalk tools codeCompletion ]
-		ifFalse: [ nil ]
+{ #category : #defaults }
+NECPreferences class >> defaultBackgroundColor [
+	^ self theme menuColor
 ]
 
 { #category : #defaults }
@@ -85,23 +84,22 @@ NECPreferences class >> defaultPopupDelay [
 
 { #category : #defaults }
 NECPreferences class >> defaultPopupShortcut [
-	^Character tab asShortcut
+	^ Character tab asShortcut
 ]
 
 { #category : #defaults }
 NECPreferences class >> defaultPopupShowAutomatic [
-	^true
+	^ true
 ]
 
 { #category : #defaults }
 NECPreferences class >> defaultSpaceAfterCompletion [
-	^true
+	^ true
 ]
 
 { #category : #defaults }
 NECPreferences class >> defaultUseEnterToAccept [
-	
-	^ false
+	^ true
 ]
 
 { #category : #accessing }
@@ -128,22 +126,24 @@ NECPreferences class >> expandPrefixes: aBoolean [
 { #category : #'class initialization' }
 NECPreferences class >> initialize [
 	enabled := true.
-	overrideModel := false.
 	caseSensitive := true.
 	smartCharacters := true.
 	expandPrefixes := true.
-	captureNavigationKeys := false.
-	useEnterToAccept := true.
+	captureNavigationKeys := true.
+	useEnterToAccept := self defaultUseEnterToAccept.
 	smartCharactersMapping := Dictionary new.
 	smartCharactersMapping
-		at: $( put: $);
-		at: $[ put: $];
-		at: ${ put: $};
-		at: $" put: $";
-		at: $' put: $'.
+		at: $( put: $) -> true;
+		at: $[ put: $] -> true;
+		at: ${ put: $} -> true;
+		at: $" put: $" -> true;
+		at: $' put: $' -> true;
+		at: $< put: $> -> false;
+		at: $| put: $| -> false.
+
 	smartCharactersWithSingleSpace := ''.
 	smartCharactersWithDoubleSpace := '[]{}'.
-	backgroundColor := Smalltalk ui theme settings menuColor ifNil: [ Color white ].
+	backgroundColor := self defaultBackgroundColor.
 	popupShowWithShortcut := self defaultPopupShortcut.
 	popupShowAutomatic := self defaultPopupShowAutomatic.
 	popupAutomaticDelay := self defaultPopupDelay.
@@ -151,18 +151,8 @@ NECPreferences class >> initialize [
 ]
 
 { #category : #accessing }
-NECPreferences class >> overrideModel [ 
-	^overrideModel ifNil: [ overrideModel := false].
-]
-
-{ #category : #accessing }
-NECPreferences class >> overrideModel: aBoolean [
-	overrideModel := aBoolean
-]
-
-{ #category : #accessing }
 NECPreferences class >> popupAutomaticDelay [
-	^popupAutomaticDelay ifNil: [ popupAutomaticDelay := self defaultPopupDelay ] 
+	^ popupAutomaticDelay
 ]
 
 { #category : #accessing }
@@ -172,7 +162,7 @@ NECPreferences class >> popupAutomaticDelay: anObject [
 
 { #category : #accessing }
 NECPreferences class >> popupShowAutomatic [
-	^ popupShowAutomatic ifNil: [ popupShowAutomatic := self defaultPopupShowAutomatic ]
+	^ popupShowAutomatic
 ]
 
 { #category : #accessing }
@@ -182,7 +172,7 @@ NECPreferences class >> popupShowAutomatic: aBoolean [
 
 { #category : #accessing }
 NECPreferences class >> popupShowWithShortcut [
-	^ popupShowWithShortcut ifNil: [ popupShowWithShortcut := self defaultPopupShortcut ]
+	^ popupShowWithShortcut
 ]
 
 { #category : #accessing }
@@ -197,41 +187,59 @@ NECPreferences class >> settingsOn: aBuilder [
 		target: self;
 		parentName: #codeBrowsing;
 		selector: #enabled;
+		default: true;
 		iconName: #smallConfigurationIcon;
 		description: 'Enable or disable code completion in browsers, debuggers and workspaces.';
 		with: [ 
-					| availableControllers |
-					availableControllers := self availableControllers.
+					| availableControllers availableSorters |
+					availableControllers := self availableEngines.
 					availableControllers size > 1
 						ifTrue: [ 
-							(aBuilder pickOne: #completionController)
+							(aBuilder pickOne: #completionEngineClass)
 								order: -1;
-								label: 'Controller';
-								getSelector: #currentController;
-								setSelector: #useController:;
+								label: 'CompletionEngine';
+								target: RubSmalltalkEditor;
+								getSelector: #completionEngineClass;
+								setSelector: #completionEngineClass:;
+								default: (Smalltalk at: #CoCompletionEngine);
 								domainValues: availableControllers ].
+					availableSorters := self availableSorters.
+					availableSorters size > 1
+						ifTrue: [ 
+							(aBuilder pickOne: #completionSorter)
+								order: -1;
+								label: 'Sorter';
+								target: CompletionContext;
+								getSelector: #sorterClass;
+								setSelector: #sorterClass:;
+								domainValues: availableSorters ].
 					(aBuilder setting: #backgroundColor)
+						default: (Color 
+							r: 0.823069403714565 
+							g: 0.823069403714565 
+							b: 0.823069403714565 alpha: 1.0);
 						label: 'Background Color'.
-					(aBuilder setting: #overrideModel)
-						label: 'Complete whole methods'.	
-					(aBuilder setting: #expandPrefixes)
-						label: 'Complete common prefixes using TAB in the suggested completions'.
 					(aBuilder setting: #useEnterToAccept)
 						label: 'Use ENTER to accept a suggested completion';
 						default: self defaultUseEnterToAccept.
 					(aBuilder setting: #captureNavigationKeys)
+						default: true;
 						label: 'Use navigation keys for extended completion functionality'.
 					(aBuilder setting: #caseSensitive)
 						label: 'Case Sensitive';
+						default: true;
 						description: 'Decide if you want eCompletion to be case sensitive or not.'.
 					(aBuilder setting: #smartCharacters)
 						label: 'Smart Characters';
+						default: true;
 						description: 'Decide if you want eCompletion to use smart characters, e.g, to automatically close brackets.'.
 					(aBuilder setting: #smartCharactersWithSingleSpace)
 						label: 'Smart Characters with Single Space';
+						default: '';
 				 		description: 'Enumerate the characters which are automatically inserted with a single space in between.'.
 					(aBuilder setting: #smartCharactersWithDoubleSpace) 
 						label: 'Smart Characters with Double Space';
+						default: '[]{}';
 				 		description: 'Enumerate the characters which are automatically inserted with a two spaces in between.'.
 					(aBuilder setting: #popupShowAutomatic)
 						default: self defaultPopupShowAutomatic;
@@ -291,7 +299,7 @@ NECPreferences class >> smartCharactersWithSingleSpace: aString [
 
 { #category : #accessing }
 NECPreferences class >> spaceAfterCompletion [
-	^ spaceAfterCompletion ifNil: [ spaceAfterCompletion := true ]
+	^ spaceAfterCompletion
 ]
 
 { #category : #accessing }
@@ -299,14 +307,15 @@ NECPreferences class >> spaceAfterCompletion: anObject [
 	spaceAfterCompletion := anObject
 ]
 
-{ #category : #private }
-NECPreferences class >> useController: aClass [
-	aClass registerToolsOn: Smalltalk tools
+{ #category : #accessing }
+NECPreferences class >> theme [
+	self flag: #SmalltalkReference.
+	^ Smalltalk ui theme
 ]
 
 { #category : #accessing }
 NECPreferences class >> useEnterToAccept [
-	^ useEnterToAccept ifNil: [ useEnterToAccept := self defaultUseEnterToAccept ]
+	^ useEnterToAccept
 ]
 
 { #category : #accessing }

@@ -24,10 +24,15 @@ Class {
 		'target',
 		'selector',
 		'arguments',
-		'icon'
+		'icon',
+		'keyText'
 	],
 	#classVars : [
-		'SubMenuMarker'
+		'BottomArrow',
+		'LeftArrow',
+		'SubMenuBottomArrow',
+		'SubMenuMarker',
+		'UpArrow'
 	],
 	#category : #'Morphic-Base-Menus'
 }
@@ -41,7 +46,11 @@ MenuItemMorph class >> initialize [
 		extent: 5@9
 		fromArray: #(2147483648 3221225472 3758096384 4026531840 4160749568 4026531840 3758096384 3221225472 2147483648)
 		offset: 0@0.
-	SubMenuMarker := ColorForm mappingWhiteToTransparentFrom: f.
+
+	SubMenuMarker := (ColorForm mappingWhiteToTransparentFrom: f) asFormOfDepth: 32.
+	BottomArrow := SubMenuMarker rotateBy: 90.
+	LeftArrow := SubMenuMarker rotateBy: 180.
+	UpArrow := SubMenuMarker rotateBy: 270.
 
 ]
 
@@ -130,8 +139,8 @@ MenuItemMorph >> arguments: aCollection [
 
 { #category : #private }
 MenuItemMorph >> bottomArrow [
-	^ ColorForm
-		mappingWhiteToTransparentFrom: ((SubMenuMarker rotateBy: 90) asFormOfDepth:8)
+
+	^ BottomArrow
 ]
 
 { #category : #accessing }
@@ -164,7 +173,7 @@ MenuItemMorph >> contents: aString withMarkers: aBool inverse: inverse [
 	aBool ifFalse: [^super contents: aString].
 	self removeAllMorphs.	"get rid of old markers if updating"
 	self hasIcon ifTrue: [ self icon: nil ].
-	self flag: #CleanYesNoOnOffAfter.
+	self flag: #pharoFixMe.
 	(aString isKindOf: Association)
 		ifTrue: [ super contents: aString value. 
 				marker := aString key   
@@ -384,20 +393,18 @@ MenuItemMorph >> iconForm [
 { #category : #initialization }
 MenuItemMorph >> initialize [
 	"initialize the state of the receiver"
+
 	super initialize.
 	""
-	
+
 	contents := ''.
 	hasFocus := false.
 	isEnabled := true.
-	subMenu := nil.
 	isSelected := false.
-	target := nil.
-	selector := nil.
-	arguments := nil.
 	font := StandardFonts menuFont.
-	self hResizing: #spaceFill;
-		 vResizing: #shrinkWrap
+	self
+		hResizing: #spaceFill;
+		vResizing: #shrinkWrap
 ]
 
 { #category : #events }
@@ -465,10 +472,24 @@ MenuItemMorph >> isStayUpItem [
 	^selector == #toggleStayUp:
 ]
 
+{ #category : #accessing }
+MenuItemMorph >> keyText [
+	"Answer the value of keyText"
+
+	^ keyText
+]
+
+{ #category : #accessing }
+MenuItemMorph >> keyText: anObject [
+	"Set the value of keyText"
+
+	keyText := anObject
+]
+
 { #category : #private }
 MenuItemMorph >> leftArrow [
-	^ ColorForm
-		mappingWhiteToTransparentFrom: ((SubMenuMarker rotateBy: 180)asFormOfDepth: 8)
+
+	^ LeftArrow
 ]
 
 { #category : #drawing }
@@ -512,7 +533,8 @@ MenuItemMorph >> minWidth [
 MenuItemMorph >> mouseDown: evt [
 	"Handle a mouse down event. Menu items get activated when the mouse is over them."
 
-	evt shiftPressed ifTrue: [^ super mouseDown: evt].  "enable label editing"
+	(evt shiftPressed and: [ self isEditable ])
+		ifTrue: [^ super mouseDown: evt].  "enable label editing"
 	evt hand newMouseFocus: owner. "Redirect to menu for valid transitions"
 	owner selectItem: self event: evt. 
 
@@ -539,19 +561,16 @@ MenuItemMorph >> mouseLeave: evt [
 ]
 
 { #category : #events }
-MenuItemMorph >> mouseLeaveDragging: evt [ 
+MenuItemMorph >> mouseLeaveDragging: evt [
+
 	"The mouse left the receiver. Do nothing if we're not in a 'valid menu transition', meaning that the current hand focus must be aimed at the owning menu."
 
-	owner ifNil: [^self].
-	evt hand mouseFocus == owner ifFalse: [^self].
-	"If we have a submenu, make sure we've got some time to enter it before actually leaving the menu item"
-	subMenu isNil 
-		ifTrue: [owner selectItem: nil event: evt]
-		ifFalse: 
-			[self 
-				addAlarm: #deselectTimeOut:
-				with: evt
-				after: 500]
+	owner ifNil: [ ^ self ].
+	evt hand mouseFocus == owner
+		ifFalse: [ ^ self ].	"If we have a submenu, make sure we've got some time to enter it before actually leaving the menu item"
+	subMenu
+		ifNil: [ owner selectItem: nil event: evt ]
+		ifNotNil: [ self addAlarm: #deselectTimeOut: with: evt after: 500 ]
 ]
 
 { #category : #events }
@@ -613,9 +632,9 @@ MenuItemMorph >> select: evt [
 MenuItemMorph >> selectionFillStyle [
 	"answer the fill style to use with the receiver is the selected  
 	element"
-	Display depth <= 2 ifTrue: [^ Color gray].
-	^ self theme settings menuSelectionColor.
 
+	Display depth <= 2 ifTrue: [ ^ Color gray ].
+	^ self theme menuSelectionColor
 ]
 
 { #category : #private }
@@ -695,8 +714,8 @@ MenuItemMorph >> themeChanged [
 
 { #category : #private }
 MenuItemMorph >> upArrow [
-	^ ColorForm
-		mappingWhiteToTransparentFrom: ((SubMenuMarker rotateBy: 270)asFormOfDepth: 8)
+
+	^ UpArrow
 ]
 
 { #category : #copying }

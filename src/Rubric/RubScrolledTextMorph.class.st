@@ -16,7 +16,9 @@ Class {
 		'scrollPane',
 		'rulers',
 		'enabled',
-		'highlights'
+		'highlights',
+		'getBackgroundColorSelector',
+		'askBeforeDiscardingEdits'
 	],
 	#category : #'Rubric-Editing-Widgets'
 }
@@ -27,26 +29,31 @@ RubScrolledTextMorph class >> on: aModel [
 ]
 
 { #category : #'model protocol' }
+RubScrolledTextMorph >> accept [
+	self acceptContents.
+]
+
+{ #category : #'model protocol' }
 RubScrolledTextMorph >> acceptContents [
 	(self autoAccept not and: [ self canDiscardEdits and: [ self alwaysAccept not ] ])
 		ifTrue: [ ^ self flash ].
 	self hasEditingConflicts
-		ifTrue: [  
-			(self
+		ifTrue: [ (self
 				confirm:
 					'Caution! This method may have been
 changed elsewhere since you started
 editing it here.  Accept anyway?' translated)
 				ifFalse: [ ^ self flash ] ].
 	self acceptTextInModel == true
-		ifTrue: [
-			self hasUnacceptedEdits: false.
-			self rulers do: [ :r | r textAccepted ].
-			self announcer announce: (RubTextAccepted morph: self) ]
+		ifFalse: [ ^ self ].
+	self hasUnacceptedEdits: false.
+	self rulers do: [ :r | r textAccepted ].
+	self announcer announce: (RubTextAccepted morph: self)
 ]
 
 { #category : #'model protocol' }
 RubScrolledTextMorph >> acceptTextInModel [
+
 	self model ifNil: [ ^ true ].
 	 ^ self setTextSelector numArgs = 2
 		ifTrue: [ self model perform: self setTextSelector with: self text with: self ]
@@ -93,7 +100,6 @@ RubScrolledTextMorph >> alwaysAccept: aBoolean [
 
 
 	alwaysAccept := aBoolean
-
 ]
 
 { #category : #'accessing rulers' }
@@ -111,6 +117,13 @@ RubScrolledTextMorph >> appendText: stringOrText [
 ]
 
 { #category : #accessing }
+RubScrolledTextMorph >> askBeforeDiscardingEdits: aBoolean [
+	"Set the flag that determines whether the user should be asked before discarding unaccepted edits."
+
+	askBeforeDiscardingEdits := aBoolean
+]
+
+{ #category : #accessing }
 RubScrolledTextMorph >> autoAccept [
 	"Answer whether the editor accepts its contents on each change."
 
@@ -122,18 +135,18 @@ RubScrolledTextMorph >> autoAccept: aBoolean [
 	"Whether I should accept my contents on each change."
 	autoAccept := aBoolean.
 	aBoolean
-		ifTrue: [ self withoutAdornment; acceptContents]
+		ifTrue: [ self withoutAdornment]
 		ifFalse: [ self withAdornment ]
 ]
 
 { #category : #accessing }
 RubScrolledTextMorph >> backgroundColor [
-	^self color
+	^self scrollPane color
 ]
 
 { #category : #accessing }
 RubScrolledTextMorph >> backgroundColor: aColor [
-	self color: aColor
+	self scrollPane color: aColor
 ]
 
 { #category : #'model protocol' }
@@ -152,32 +165,32 @@ RubScrolledTextMorph >> beEditable [
 	self textArea beEditable 
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> beForPlainText [
 	self textArea beForPlainText
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> beForSmalltalkCode [
 	self textArea beForSmalltalkCode.
 	self withTextSegmentIcons.
 	self textArea font: StandardFonts codeFont
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> beForSmalltalkCodeInClass: aClass [
 	self textArea beForSmalltalkCodeInClass: aClass.
 	self withTextSegmentIcons.
 	self textArea font: StandardFonts codeFont
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> beForSmalltalkCodeWithDefaultFont [
 	self textArea beForSmalltalkCodeWithDefaultFont.
 	self withTextSegmentIcons
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> beForSmalltalkComment [
 	self textArea beForSmalltalkComment
 ]
@@ -228,7 +241,8 @@ RubScrolledTextMorph >> borderWidth: anInteger [
 
 { #category : #'model protocol' }
 RubScrolledTextMorph >> canDiscardEdits [
-	^self hasUnacceptedEdits not
+	^ (self hasUnacceptedEdits and: [askBeforeDiscardingEdits]) not
+
 ]
 
 { #category : #'model protocol' }
@@ -253,10 +267,25 @@ RubScrolledTextMorph >> columnRuler [
 	^ self rulerNamed: #column
 ]
 
+{ #category : #accessing }
+RubScrolledTextMorph >> completionEngine: aCompletionEngine [
+	
+	self textArea editor completionEngine: aCompletionEngine
+]
+
 { #category : #configure }
 RubScrolledTextMorph >> configureGhostText: aTextArea [
 	aTextArea width: self scrollBounds width.
-	aTextArea center: self scrollBounds center
+
+	"If the text input is smaller in height than the ghost area 
+	we use the center, if it bigger we can use 0.
+	Using center will calculate a negative top value, that is 
+	required when the ghost is bigger than the input box"	
+			
+	(aTextArea height < self scrollBounds height)
+		ifTrue: [ aTextArea top: self scrollBounds top ]
+		ifFalse: [ aTextArea center: self scrollBounds center.
+					  aTextArea left: self scrollBounds left ] 
 ]
 
 { #category : #'interactive error protocol' }
@@ -277,7 +306,7 @@ RubScrolledTextMorph >> cursor [
 
 { #category : #defaults }
 RubScrolledTextMorph >> defaultBackgroundColor [ 
-	^ Smalltalk ui theme backgroundColor
+	^ self theme backgroundColor
 ]
 
 { #category : #defaults }
@@ -301,7 +330,7 @@ RubScrolledTextMorph >> defaultGhostTextMorph [
 	^ gt
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> defaultScrollTarget [
 	| textArea |
 	textArea := self textAreaClass new.
@@ -449,6 +478,24 @@ RubScrolledTextMorph >> formatSourceCode [
 	self textArea formatMethodCode
 ]
 
+{ #category : #accessing }
+RubScrolledTextMorph >> getBackgroundColorFromModel [
+	"Retrieve the color from the model"
+
+	self getBackgroundColorSelector ifNil: [^ self ].
+	^ self model perform: self getBackgroundColorSelector withEnoughArguments: {self}.
+]
+
+{ #category : #accessing }
+RubScrolledTextMorph >> getBackgroundColorSelector [ 
+	^ getBackgroundColorSelector 
+]
+
+{ #category : #accessing }
+RubScrolledTextMorph >> getBackgroundColorSelector: aSelector [
+	getBackgroundColorSelector := aSelector
+]
+
 { #category : #'accessing menu' }
 RubScrolledTextMorph >> getMenuPolicy: aGetMenuPolicy [
 	self textArea getMenuPolicy: aGetMenuPolicy
@@ -507,6 +554,16 @@ RubScrolledTextMorph >> getTextSelector: aSymbol [
 	getTextSelector  := aSymbol
 ]
 
+{ #category : #accessing }
+RubScrolledTextMorph >> ghostText [
+	^ (self rulerNamed: #ghostText) ghostText text
+]
+
+{ #category : #'accessing rulers' }
+RubScrolledTextMorph >> ghostText: aText [
+	self withGhostText: aText
+]
+
 { #category : #'accessing rulers' }
 RubScrolledTextMorph >> ghostTextRuler [
 	^ self rulerNamed: #ghostText
@@ -555,7 +612,7 @@ RubScrolledTextMorph >> handlesMouseWheel: evt [
 
 { #category : #'model protocol' }
 RubScrolledTextMorph >> hasEditingConflicts [
-	^ hasEditingConflicts ifNil: [ hasEditingConflicts := false ] 
+	^ hasEditingConflicts
 ]
 
 { #category : #'model protocol' }
@@ -582,7 +639,7 @@ RubScrolledTextMorph >> hasRulerNamed: aKey [
 
 { #category : #'model protocol' }
 RubScrolledTextMorph >> hasUnacceptedEdits [
-	^ hasUnacceptedEdits ifNil: [ hasUnacceptedEdits := false ] 
+	^ hasUnacceptedEdits
 ]
 
 { #category : #'model protocol' }
@@ -609,11 +666,14 @@ RubScrolledTextMorph >> horizontalRulers [
 	^self rulers select: [ :r | r isHorizontal ]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> initialize [
 	super initialize.
 	self clipSubmorphs: true.
 	enabled := true.
+	askBeforeDiscardingEdits := true.
+	hasEditingConflicts := false.
+	hasUnacceptedEdits := false.
 	rulers := SortedCollection sortBlock: [ :a :b | b level > a level ].
 	self addMorph: (scrollPane := self newScrollPane).
 	self announcer when: RubConfigurationChange send: #whenConfigurationChanged: to: self.
@@ -679,6 +739,16 @@ RubScrolledTextMorph >> margins: aMargin [
 	self textArea margins: aMargin
 ]
 
+{ #category : #accessing }
+RubScrolledTextMorph >> maxLength [
+	^ self textArea maxLength
+]
+
+{ #category : #accessing }
+RubScrolledTextMorph >> maxLength: anInteger [
+	self textArea maxLength: anInteger
+]
+
 { #category : #'accessing menu' }
 RubScrolledTextMorph >> menuAllowed: aBoolean [
 	self textArea menuAllowed: aBoolean
@@ -738,7 +808,7 @@ RubScrolledTextMorph >> moveCursorToIndex: anIndex [
 	self selectFrom: anIndex to: anIndex - 1
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> newScrollPane [
 	| sp |
 	sp := RubTextScrollPane new.
@@ -807,8 +877,8 @@ RubScrolledTextMorph >> removeAllRulers [
 
 { #category : #private }
 RubScrolledTextMorph >> resetState [
-	hasEditingConflicts := nil.
-	hasUnacceptedEdits := nil.
+	hasEditingConflicts := false.
+	hasUnacceptedEdits := false.
 	self changed
 ]
 
@@ -989,7 +1059,7 @@ RubScrolledTextMorph >> textArea [
 	^ self scrollPane ifNotNil: [:sp | sp textArea]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RubScrolledTextMorph >> textAreaClass [
 	^ RubEditingArea
 ]
@@ -1017,6 +1087,13 @@ RubScrolledTextMorph >> textColor [
 { #category : #accessing }
 RubScrolledTextMorph >> textColor: aColor [ 
 	self textArea textColor: aColor
+]
+
+{ #category : #accessing }
+RubScrolledTextMorph >> textFont [
+	"We should clean"
+	
+	^ self textArea font
 ]
 
 { #category : #accessing }
@@ -1205,6 +1282,7 @@ RubScrolledTextMorph >> withFocusBorder [
 
 { #category : #'accessing rulers' }
 RubScrolledTextMorph >> withGhostText: aText [
+	aText ifNil: [ ^ self withoutRulerNamed: #ghostText ].
 	self withRulerNamed: #ghostText.
 	self ghostTextRuler updateTextWith: aText asText.
 	self ghostTextRuler comeToFront
@@ -1339,6 +1417,11 @@ RubScrolledTextMorph >> withoutTextField [
 RubScrolledTextMorph >> withoutTextSegmentIcons [
 	self withoutRulerNamed: #textSegmentIcons
 
+]
+
+{ #category : #accessing }
+RubScrolledTextMorph >> wrapFlag: aBoolean [
+	self wrapped: aBoolean
 ]
 
 { #category : #accessing }

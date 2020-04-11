@@ -59,12 +59,13 @@ Collection >> arcTan [
 
 { #category : #'*Collections-Arithmetic' }
 Collection >> average [
-	"
-	Calculate the average of a collection, return a CollectionIsEmpty exception if the collection is empty.
-	Look averageIfEmpty: aBlock
-	#(3 5 7) average 
-	>>> 5
-	"
+	"Calculate the average of a collection, return a CollectionIsEmpty exception if the collection is empty. Look averageIfEmpty: aBlock"
+	
+	" #(2 6 7) average   
+	>>> 5 "
+	
+	" #(3 5 7 7) average 
+	>>> (11/2) "
 
 	^ self sum / self size
 ]
@@ -127,9 +128,10 @@ Collection >> min [
 	^ self inject: self anyOne into: [:min :each | min min: each]
 ]
 
-{ #category : #'*Collections-arithmetic-collectors' }
+{ #category : #'*Collections-Arithmetic' }
 Collection >> negated [
 	"Negated value of all elements in the collection"
+	"#(1 2 3) negated >>> #(-1 -2 -3)"
 	^ self collect: [:a | a negated]
 ]
 
@@ -139,14 +141,17 @@ Collection >> raisedTo: arg [
 	^ arg adaptToCollection: self andSend: #raisedTo:
 ]
 
-{ #category : #'*Collections-arithmetic' }
+{ #category : #'*Collections-Arithmetic' }
 Collection >> range [
+	"returns the difference between the max and min element, their positions notwithstanding"
+	"#( 1 51 10 ) range >>> 50"
 	^ self max - self min
 ]
 
-{ #category : #'*Collections-arithmetic-collectors' }
+{ #category : #'*Collections-Arithmetic' }
 Collection >> reciprocal [
 	"Return the reciever full of reciprocated elements"
+	"#(1 11 0.5) reciprocal >>> {1 . 1/11 . 2.0}"
 	^ self collect: [:a | a reciprocal]
 ]
 
@@ -160,8 +165,11 @@ Collection >> rounded [
 	^ self collect: [:a | a rounded]
 ]
 
-{ #category : #'*Collections-arithmetic-collectors' }
+{ #category : #'*Collections-Arithmetic' }
 Collection >> sign [
+	"Answer 1 if the receiver is greater than 0, -1 if less than 0, else 0."
+	"5 sign >>> 1"
+	"-3 sign >>> -1"
 	^self collect: [:each | each sign]
 ]
 
@@ -178,6 +186,18 @@ Collection >> sqrt [
 { #category : #'*Collections-arithmetic-collectors' }
 Collection >> squared [
 	^ self collect: [:each | each * each]
+]
+
+{ #category : #'*Collections-Arithmetic' }
+Collection >> stdev [
+	| avg sample sum |
+	"In statistics, the standard deviation is a measure that is used to quantify the amount of variation or dispersion of a set of data values.
+	For details about implementation see comment in self sum."
+	avg := self average.
+	sample := self anyOne.
+	sum := self inject: sample into: [ :accum :each | accum + (each - avg) squared ].
+	sum := sum - sample.
+	^ (sum / (self size - 1)) sqrt
 ]
 
 { #category : #'*Collections-arithmetic' }

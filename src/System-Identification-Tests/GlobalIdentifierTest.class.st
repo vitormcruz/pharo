@@ -57,29 +57,39 @@ GlobalIdentifierTest >> testBackwardCompatibility [
 	"Let's say that we have information stored using FUEL, but we use STON.
 	We do not have any STON stored value.
 	Let's check that we load the FUEL, then stores it as STON."
-	| fuelPersistence fuelPrefereces fuelDictionary  |
+
+	| fuelPersistence fuelPrefereces fuelDictionary |
 	fuelPersistence := GlobalIdentifierPersistence fuel.
-	fuelPersistence checker: (self newChecker answer: [ FileLocator workingDirectory exists ]; yourself).
+	fuelPersistence
+		checker:
+			(self newChecker
+				answer: [ FileLocator workingDirectory exists ];
+				yourself).
 	fuelPrefereces := preferences parent / 'old-preferences.fuel'.
 	fuelPersistence preferences: fuelPrefereces.
 	fuelDictionary := Dictionary new.
 	fuelDictionary at: #computerUUID put: 42.
 	fuelPersistence save: fuelDictionary.
 	identifier persistenceStrategy previous: fuelPersistence.
-	self deny: identifier computerUUID = 42.
+	self deny: identifier computerUUID equals: 42.
 	self assert: fuelPersistence preferences exists.
 	identifier ensure.
 	self assert: identifier computerUUID equals: 42 asString.
-	self assert: identifier persistenceStrategy preferences exists.
+	self assert: identifier persistenceStrategy preferences exists
 ]
 
 { #category : #tests }
 GlobalIdentifierTest >> testBackwardCompatibility2 [
 	"Let's say that we have information stored using both FUEL and STON, and we use STON.
 	We will ingnore FUEL file and load STON."
-	| fuelPersistence fuelPrefereces fuelDictionary  stonDictionary |
+
+	| fuelPersistence fuelPrefereces fuelDictionary stonDictionary |
 	fuelPersistence := GlobalIdentifierPersistence fuel.
-	fuelPersistence checker: (self newChecker answer: [ FileLocator workingDirectory exists ]; yourself).
+	fuelPersistence
+		checker:
+			(self newChecker
+				answer: [ FileLocator workingDirectory exists ];
+				yourself).
 	fuelPrefereces := preferences parent / 'old-preferences.fuel'.
 	fuelPersistence preferences: fuelPrefereces.
 	fuelDictionary := Dictionary new.
@@ -89,13 +99,12 @@ GlobalIdentifierTest >> testBackwardCompatibility2 [
 	stonDictionary := Dictionary new.
 	stonDictionary at: #computerUUID put: 21.
 	identifier persistenceStrategy save: stonDictionary.
-	self deny: identifier computerUUID = 42.
-	self deny: identifier computerUUID = 21.
+	self deny: identifier computerUUID equals: 42.
+	self deny: identifier computerUUID equals: 21.
 	self assert: fuelPersistence preferences exists.
 	self assert: identifier persistenceStrategy preferences exists.
 	identifier ensure.
-	self assert: identifier computerUUID equals: 21 asString.
-
+	self assert: identifier computerUUID equals: 21 asString
 ]
 
 { #category : #tests }
@@ -126,9 +135,14 @@ GlobalIdentifierTest >> testBackwardCompatibility4 [
 	"Let's say that we have information stored using FUEL but we cannot read the file. 
 	We use STON. The STON preference file is broken, we cannot read it.
 	Let's check that we keep FUEL file untouched and creates STON file."
+
 	| fuelPersistence fuelPrefereces data dictionary |
 	fuelPersistence := GlobalIdentifierPersistence fuel.
-	fuelPersistence checker: (self newChecker answer: [ FileLocator workingDirectory exists ]; yourself).
+	fuelPersistence
+		checker:
+			(self newChecker
+				answer: [ FileLocator workingDirectory exists ];
+				yourself).
 	fuelPrefereces := preferences parent / 'old-preferences.fuel'.
 	fuelPrefereces parent ensureCreateDirectory.
 	data := 'some data'.
@@ -146,10 +160,10 @@ GlobalIdentifierTest >> testBackwardCompatibility4 [
 	self assert: fuelPrefereces exists.
 	self assert: fuelPrefereces contents equals: data.
 	self assert: identifier persistenceStrategy preferences exists.
-	self deny: identifier persistenceStrategy preferencesContents = data.
+	self deny: identifier persistenceStrategy preferencesContents equals: data.
 	dictionary := Dictionary new.
 	identifier persistenceStrategy load: dictionary.
-	self assert: dictionary equals: identifier persistedInformation.
+	self assert: dictionary equals: identifier persistedInformation
 ]
 
 { #category : #tests }
@@ -171,7 +185,7 @@ GlobalIdentifierTest >> testDefault [
 GlobalIdentifierTest >> testDoNotStoreIfHomeDoesNotExists [
 	"Ignore persistence if HOME directory does not exists.
 	In the case that the image is deployed on a server, HOME directory may not exists.
-	See issue https://pharo.fogbugz.com/f/cases/19944."
+	See issue https://pharo.manuscript.com/f/cases/19944."
 	| strategy |
 	strategy := identifier persistenceStrategy.
 	[ strategy ] whileNotNil: [ 
@@ -204,7 +218,7 @@ GlobalIdentifierTest >> testEnsure [
 { #category : #tests }
 GlobalIdentifierTest >> testPreferenceFilesNotCollideWithRealPreferences [
 	"Ensure that setUp is done correctly and we do not override or change production preferences.
-	See https://pharo.fogbugz.com/f/cases/19501"
+	See https://pharo.manuscript.com/f/cases/19501"
 	| strategy |
 	strategy := identifier persistenceStrategy.
 	[ strategy ] whileNotNil: [ 

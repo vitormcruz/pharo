@@ -6,7 +6,7 @@ Class {
 	#superclass : #AbstractMorphicAdapter,
 	#traits : 'TViewModel',
 	#classTraits : 'TViewModel classTrait',
-	#category : #'Spec-MorphicAdapters'
+	#category : #'Spec-MorphicAdapters-Base'
 }
 
 { #category : #'spec protocol' }
@@ -127,6 +127,12 @@ MorphicTextAdapter >> doItReceiver [
 	^ self model doItReceiver
 ]
 
+{ #category : #accessing }
+MorphicTextAdapter >> editingMode [ 
+
+	^ self widget editingMode
+]
+
 { #category : #'widget API' }
 MorphicTextAdapter >> font: aFont [
 	self widgetDo: [ :w | w font: aFont ]
@@ -136,12 +142,6 @@ MorphicTextAdapter >> font: aFont [
 MorphicTextAdapter >> getText [
 
 	^ self model text
-]
-
-{ #category : #NOCompletion }
-MorphicTextAdapter >> guessTypeForName: aString [
-
-	^nil
 ]
 
 { #category : #'spec protocol' }
@@ -160,12 +160,6 @@ MorphicTextAdapter >> hasUnacceptedEdits: aBoolean [
 MorphicTextAdapter >> isAboutToStyle [
 
 	^ self model isAboutToStyle
-]
-
-{ #category : #NOCompletion }
-MorphicTextAdapter >> isCodeCompletionAllowed [
-
-	^ self model isCodeCompletionAllowed
 ]
 
 { #category : #'spec protocol' }

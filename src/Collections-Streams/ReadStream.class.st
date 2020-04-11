@@ -4,7 +4,7 @@ I represent an accessor for a sequence of objects that can only read objects fro
 Class {
 	#name : #ReadStream,
 	#superclass : #PositionableStream,
-	#category : #'Collections-Streams'
+	#category : #'Collections-Streams-Base'
 }
 
 { #category : #modes }
@@ -87,6 +87,17 @@ ReadStream >> readStream [
 ReadStream >> size [
 	"Compatibility with other streams (e.g., FileStream)"
 	^readLimit
+]
+
+{ #category : #accessing }
+ReadStream >> skipTo: anObject [
+	"fast version using indexOf:"
+	| end |
+	end := collection indexOf: anObject startingAt: position+1 ifAbsent: [ 0 ].
+
+	^(end = 0 or: [end > readLimit]) 
+		ifTrue: [ self setToEnd. false ]
+		ifFalse: [ position := end. true]
 ]
 
 { #category : #accessing }

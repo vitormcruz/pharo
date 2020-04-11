@@ -4,7 +4,7 @@ I am the adapter used to build a MenuMorph from a MenuPresenter
 Class {
 	#name : #MorphicMenuAdapter,
 	#superclass : #AbstractMorphicAdapter,
-	#category : #'Spec-MorphicAdapters'
+	#category : #'Spec-MorphicAdapters-Base'
 }
 
 { #category : #'instance creation' }
@@ -65,7 +65,7 @@ MorphicMenuAdapter >> menuGroups [
 { #category : #'spec protocol' }
 MorphicMenuAdapter >> openAt: aPoint [ 
 
-	self widgetDo: [ :w | w invokeAt: (aPoint + (2@7)) in: World allowKeyboard: true ]
+	self widgetDo: [ :w | w invokeAt: (aPoint + (2@7)) in: self currentWorld allowKeyboard: true ]
 ]
 
 { #category : #protocol }

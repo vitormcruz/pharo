@@ -1,5 +1,5 @@
 "
-RBStringReplaceRule replaces a matched tree with another tree (which may include metavariable from the matching tree). This is a very succint syntax for specifying most rewrites.
+RBStringReplaceRule replaces a matched tree with another tree (which may include metavariable from the matching tree). This is a very succinct syntax for specifying most rewrites.
 
 Instance Variables:
 	replaceTree	<RBProgramNode>	The tree to replace the matched tree with.
@@ -65,19 +65,18 @@ RBStringReplaceRule >> foundMatchFor: aProgramNode [
 	^newNode
 ]
 
-{ #category : #'initialize-release' }
-RBStringReplaceRule >> methodReplaceString: replaceString [ 
-	replaceTree := RBParser parseRewriteMethod: replaceString
+{ #category : #initialization }
+RBStringReplaceRule >> methodReplaceString: replaceString [
+	replaceTree := self parserClass parseRewriteMethod: replaceString
 ]
 
-{ #category : #'initialize-release' }
-RBStringReplaceRule >> replaceString: replaceString [ 
-	replaceTree := RBParser parseRewriteExpression: replaceString.
-	searchTree isSequence = replaceTree isSequence 
-		ifFalse: 
-			[searchTree isSequence 
-				ifTrue: [replaceTree := RBSequenceNode statements: (Array with: replaceTree)]
-				ifFalse: [searchTree := RBSequenceNode statements: (Array with: searchTree)]]
+{ #category : #initialization }
+RBStringReplaceRule >> replaceString: replaceString [
+	replaceTree := self parserClass parseRewriteExpression: replaceString.
+	searchTree isSequence = replaceTree isSequence
+		ifFalse: [ searchTree isSequence
+				ifTrue: [ replaceTree := RBSequenceNode statements: (Array with: replaceTree) ]
+				ifFalse: [ searchTree := RBSequenceNode statements: (Array with: searchTree) ] ]
 ]
 
 { #category : #'private - searching' }

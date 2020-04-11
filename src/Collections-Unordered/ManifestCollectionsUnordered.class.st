@@ -5,7 +5,7 @@ Main classes: Bag, Dictionary, Matrix, Set
 Class {
 	#name : #ManifestCollectionsUnordered,
 	#superclass : #PackageManifest,
-	#category : #'Collections-Unordered'
+	#category : #'Collections-Unordered-Manifest'
 }
 
 { #category : #'meta-data' }
@@ -15,7 +15,7 @@ ManifestCollectionsUnordered class >> dependencies [
 
 { #category : #'meta-data - dependency analyser' }
 ManifestCollectionsUnordered class >> manuallyResolvedDependencies [
-	^ #(#Jobs #'Collections-Streams' #UIManager #'System-Support')
+	^ #(#'Collections-Streams' #'Math-Operations-Extensions' #'System-Support')
 ]
 
 { #category : #'meta-data' }

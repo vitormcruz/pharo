@@ -46,6 +46,24 @@ ProtoObject >> become: otherObject [
 ]
 
 { #category : #'reflective operations' }
+ProtoObject >> becomeForward: otherObject [ 
+	"Primitive. All variables in the entire system that used to point
+	to the receiver now point to the argument.
+	Fails if either argument is a SmallInteger."
+
+	{self} elementsForwardIdentityTo: {otherObject}
+]
+
+{ #category : #'reflective operations' }
+ProtoObject >> becomeForward: otherObject copyHash: copyHash [
+	"Primitive. All variables in the entire system that used to point to the receiver now point to the argument.
+	If copyHash is true, the argument's identity hash bits will be set to those of the receiver.
+	Fails if either argument is a SmallInteger."
+
+	{self} elementsForwardIdentityTo: {otherObject} copyHash: copyHash
+]
+
+{ #category : #'reflective operations' }
 ProtoObject >> cannotInterpret: aMessage [ 
 	 "Handle the fact that there was an attempt to send the given message to the receiver but a null methodDictionary was encountered while looking up the message selector.  Hopefully this is the result of encountering a stub for a swapped out class which induces this exception on purpose."
 
@@ -192,6 +210,42 @@ ProtoObject >> modificationForbiddenFor: selector value: value [
 	^ self modificationForbiddenFor: selector index: nil value: value 
 	
 
+]
+
+{ #category : #'block support' }
+ProtoObject >> mustBeBoolean [
+	"Catches attempts to test truth of non-Booleans.  This message is sent from the VM.  The sending context is rewound to just before the jump causing this exception."
+	^ Boolean mustBeBooleanDeOptimize
+		ifTrue: [ self mustBeBooleanDeOptimizeIn: thisContext sender  ]
+		ifFalse: [ self mustBeBooleanIn: thisContext sender ]
+]
+
+{ #category : #'block support' }
+ProtoObject >> mustBeBooleanIn: context [
+	"context is the where the non-boolean error occurred. Rewind context to before jump then raise error."
+	
+	"Some constructs are optimized in the compiler :
+	#whileTrue:
+	#whileFalse:
+	#ifTrue:
+	#ifFalse:
+	#ifTrue:ifFalse:
+	#ifFalse:ifTrue:
+	So you cannot by default use them on non boolean objects."
+	
+	"If you really need to use optimized constructs, you can enable Opal compiler and do one of the following :
+		- recompile your method with the pragma : <compilerOptions: #(+ optIlineNone)>
+		- recompile your class with the method : MyClass class>>compiler 
+			^ super compiler options: #(+ optIlineNone)
+		- enable the option mustBeBooleanDeOptimize to call mustBeBooleanDeOptimizeIn: instead of this method "
+
+	| proceedValue |
+	
+	context skipBackBeforeJump.
+	proceedValue := NonBooleanReceiver new
+		object: self;
+		signal: 'proceed for truth.'.
+	^ proceedValue ~~ false
 ]
 
 { #category : #'memory scanning' }

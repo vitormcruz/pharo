@@ -25,9 +25,7 @@ CopyVisitorTest >> createFile: aString [
 CopyVisitorTest >> setUp [
 	super setUp.
 	source := FileSystem memory.
-	dest := FileSystem memory.
-	
-	
+	dest := FileSystem memory
 ]
 
 { #category : #tests }
@@ -37,5 +35,5 @@ CopyVisitorTest >> testAll [
 		copy: (source / 'alpha') 
 		to: (dest / 'alpha').
 	self assert: (dest isDirectory: '/alpha').
-	self assert: (dest isFile: '/alpha/beta/gamma').
+	self assert: (dest isFile: '/alpha/beta/gamma')
 ]

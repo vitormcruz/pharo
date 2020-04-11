@@ -19,12 +19,12 @@ Class {
 
 { #category : #utilities }
 RPackageMCSynchronisationTest >> addXCategory [
-	Smalltalk globals organization addCategory: 'XXXXX'.
+	testingEnvironment organization addCategory: 'XXXXX'.
 ]
 
 { #category : #utilities }
 RPackageMCSynchronisationTest >> addXMatchCategory [
-	Smalltalk globals organization addCategory: 'XXXXX-YYYY'.
+	testingEnvironment organization addCategory: 'XXXXX-YYYY'.
 ]
 
 { #category : #utilities }
@@ -47,14 +47,14 @@ RPackageMCSynchronisationTest >> addXYZCategory [
 { #category : #utilities }
 RPackageMCSynchronisationTest >> addYCategory [
 
-	Smalltalk globals organization addCategory: 'YYYYY'.
+	testingEnvironment organization addCategory: 'YYYYY'.
 			
 ]
 
 { #category : #utilities }
 RPackageMCSynchronisationTest >> addZCategory [
 
-	Smalltalk globals organization addCategory: 'ZZZZZ'.
+	testingEnvironment organization addCategory: 'ZZZZZ'.
 			
 ]
 
@@ -207,6 +207,20 @@ RPackageMCSynchronisationTest >> testCategoryMatching [
 	self deny: (self organizer category: 'XXXX' matches: 'Compression-Archives').
 ]
 
+{ #category : #tests }
+RPackageMCSynchronisationTest >> testIsDefinedAsPackageOrSubPackageInMC [
+	"test whether a given category is defined as a MC package or whether it is defined as top part of package"
+	
+	self assert: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Compression').
+	self deny: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Compression-Archives').
+	"Indeed compression-archives is a category but not a MC package"
+	
+	self assert: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Collections').
+	"#Collection is not defined as a package but as a package #'Collections-Unordered'"
+	self assert: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Collections-Unordered').
+	self deny: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Collections-Unordered-Test').
+]
+
 { #category : #'to move to a simple RPackage test case' }
 RPackageMCSynchronisationTest >> testNotRepackagedAnnouncementWhenModifyMethodByMovingInSameExtensionCategory [
 	
@@ -327,18 +341,4 @@ RPackageMCSynchronisationTest >> testRepackagedAnnouncementWhenModifyMethodByMov
 	self assert: ann methodRepackaged selector equals: #stubMethod.
 	self assert: ann oldPackage equals: secondPackage.
 	self assert: ann newPackage equals: firstPackage.
-]
-
-{ #category : #tests }
-RPackageMCSynchronisationTest >> testisDefinedAsPackageOrSubPackageInMC [
-	"test whether a given category is defined as a MC package or whether it is defined as top part of package"
-	
-	self assert: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Compression').
-	self deny: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Compression-Archives').
-	"Indeed compression-archives is a category but not a MC package"
-	
-	self assert: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Collections').
-	"#Collection is not defined as a package but as a package #'Collections-Unordered'"
-	self assert: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Collections-Unordered').
-	self deny: (self organizer isDefinedAsPackageOrSubPackageInMC: #'Collections-Unordered-Test').
 ]

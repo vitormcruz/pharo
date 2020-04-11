@@ -6,7 +6,7 @@ Specially, I'm intended to work as a replacement for environments when there is 
 Class {
 	#name : #PlatformIndependentEnvironment,
 	#superclass : #OSEnvironment,
-	#category : #'System-OSEnvironments'
+	#category : #'System-OSEnvironments-Platforms'
 }
 
 { #category : #testing }
@@ -19,9 +19,15 @@ PlatformIndependentEnvironment class >> isDefaultFor: aPlatform [
 	^ false
 ]
 
-{ #category : #private }
-PlatformIndependentEnvironment >> getEnv: aVariableName [
+{ #category : #accessing }
+PlatformIndependentEnvironment >> at: aKey ifAbsent: aBlock [
+
 	^ nil
+]
+
+{ #category : #accessing }
+PlatformIndependentEnvironment >> at: aKey put: aValue [
+	"Do nothing"
 ]
 
 { #category : #enumeration }
@@ -29,12 +35,7 @@ PlatformIndependentEnvironment >> keysAndValuesDo: aBlock [
 	"Do nothing"
 ]
 
-{ #category : #private }
-PlatformIndependentEnvironment >> setEnv: nameString value: valueString [
+{ #category : #accessing }
+PlatformIndependentEnvironment >> removeKey: key [
 	"Do nothing"
-]
-
-{ #category : #private }
-PlatformIndependentEnvironment >> unsetEnv: aString [
-	^ self setEnv: aString value: nil
 ]

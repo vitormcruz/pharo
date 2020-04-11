@@ -4,7 +4,7 @@ A type of PluggableListMorph that supports morphs for items. Useful for lists wi
 Class {
 	#name : #PluggableMorphListMorph,
 	#superclass : #PluggableListMorph,
-	#category : #'Morphic-Widgets-Pluggable'
+	#category : #'Morphic-Widgets-Pluggable-Lists'
 }
 
 { #category : #geometry }
@@ -19,12 +19,13 @@ PluggableMorphListMorph >> extent: newExtent [
 
 { #category : #'model access' }
 PluggableMorphListMorph >> getList [
+
 	"Answer the list to be displayed.  Caches the returned list in the 'list' ivar"
 
-	getListSelector isNil ifTrue: [^#()].
+	getListSelector ifNil: [ ^ #() ].
 	list := model perform: getListSelector.
-	list isNil ifTrue: [^ #()].
-	^list
+	list ifNil: [ ^ #() ].
+	^ list
 ]
 
 { #category : #scrolling }

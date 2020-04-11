@@ -7,6 +7,18 @@ Class {
 	#category : #'Kernel-Chronology-Extras'
 }
 
+{ #category : #'instance creation' }
+Year class >> currentYear [
+  "Return the current year"
+  ^ Date today asYear
+]
+
+{ #category : #'instance creation' }
+Year class >> currentYearNumber [
+    "Return the current year number"
+    ^ Date today year
+]
+
 { #category : #accessing }
 Year class >> daysInYear: yearInteger [
 
@@ -57,6 +69,13 @@ Year >> daysInMonth [
 ]
 
 { #category : #accessing }
+Year >> daysInMonth: aMonthNumber [ 
+    "Returns the days in month for a given month in the context of the receiver"
+
+    ^ (DateAndTime year: self year month: aMonthNumber day:1) asMonth daysInMonth
+]
+
+{ #category : #accessing }
 Year >> daysInYear [
 
 	^ self duration days.
@@ -64,9 +83,9 @@ Year >> daysInYear [
 
 { #category : #accessing }
 Year >> firstThursday [
-	"Return the years first Thursday.
-	According to the ISO 8601 definition, the first week starts with the years first Thursday (week day number 5)"
-	 ^ self start + (5 - self start dayOfWeek) days
+	"Return the year's first Thursday.
+	According to the ISO 8601 definition, the first week starts with the year's first Thursday (week day number 5)"
+	^ self start + ((5 - self start dayOfWeek + 7) rem: 7) days
 ]
 
 { #category : #changes }
@@ -83,4 +102,10 @@ Year >> printOn: aStream [
  	self start year printOn: aStream. 
 	aStream nextPutAll: ')'.
 
+]
+
+{ #category : #private }
+Year >> species [
+
+	^Timespan
 ]

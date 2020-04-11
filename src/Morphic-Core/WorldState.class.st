@@ -9,8 +9,6 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'hands',
-		'viewBox',
-		'canvas',
 		'damageRecorder',
 		'stepList',
 		'lastStepTime',
@@ -20,7 +18,9 @@ Class {
 		'lastAlarmTime',
 		'menuBuilder',
 		'activeHand',
-		'currentCursor'
+		'currentCursor',
+		'worldRenderer',
+		'realWindowExtent'
 	],
 	#classVars : [
 		'CanSurrenderToOS',
@@ -98,7 +98,7 @@ WorldState class >> desktopMenuPragmaKeyword [
 { #category : #settings }
 WorldState class >> desktopMenuPragmaKeyword: aString [
 	DesktopMenuPragmaKeyword := aString.
-	World resetWorldMenu.
+	self currentWorld resetWorldMenu.
 
 ]
 
@@ -168,36 +168,47 @@ WorldState class >> pharoItemsOn: aBuilder [
 	<worldMenu>
 	(aBuilder item: #Pharo)
 		label: 'Pharo';
-		icon: ((self iconNamed: #pharo) scaledToSize: 20 @ 20);
+		icon: ((self iconNamed: #pharo) scaledToSize: 16 @ 16);
 		order: 0;
 		with: [ (aBuilder item: #Save)
 				target: self;
 				selector: #saveSession;
 				help: 'Save the current version of the image on disk.';
+				order: 2;
 				keyText: 'S';
 				iconName: #smallSaveIcon.
 			(aBuilder item: #'Save as...')
 				target: self;
 				selector: #saveAs;
 				help: 'Save the current version of the image on disk under a new name.';
+				order: 3;
 				iconName: #smallSaveAsIcon.
 			(aBuilder item: #'Save and quit')
 				target: self;
 				selector: #saveAndQuit;
 				help: 'Save the current image on disk, and quit Pharo.';
-				iconName: #smallQuitIcon.
+				order: 4;
+				iconName: #smallQuitIcon;
+				withSeparatorAfter. 
 			(aBuilder item: #Quit)
 				target: self;
 				selector: #quitSession;
 				help: 'Quit Pharo without saving the image on disk.';
+				order: 5;
 				iconName: #smallQuitIcon ]
 ]
 
 { #category : #'world menu items' }
 WorldState class >> quitSession [
-	| save |
-	save := UIManager default confirm: 'Save changes before quitting?' translated orCancel: [ ^ self ].
-	save 
+	| response |
+	response := UIManager default 
+						confirm: 'Save changes before quitting?' 
+						trueChoice: 'Save' 
+						falseChoice: 'Discard' 
+						cancelChoice: 'Cancel'
+						default: nil. 
+	response ifNil: [ ^self ].
+	response 
 		ifTrue: [Smalltalk snapshot: true andQuit: true] 
 		ifFalse: [Smalltalk snapshot: false andQuit: true]
  
@@ -213,12 +224,11 @@ WorldState class >> saveAndQuit [
 { #category : #'world menu items' }
 WorldState class >> saveAs [
 	| reference |
-	reference := UIManager default 
-		fileSave: 'Save Image as?' 
-		initialAnswer: (Smalltalk imageFile nextVersion basename copyUpToLast: Path extensionDelimiter)
+	reference := UIManager default
+		chooseForSaveFileReference: 'Save Image as?'
 		extensions: #('image') 
-		path: Smalltalk imageDirectory.
-		
+		path: Smalltalk imageFile nextVersion.
+
 	reference ifNotNil: [ Smalltalk saveAs: reference parent / (reference basenameWithoutExtension: 'image') ]
 ]
 
@@ -235,8 +245,8 @@ WorldState class >> saveSession [
 WorldState class >> screenShotCommandOn: aBuilder [
 	<worldMenu>
 	(aBuilder item: #Screenshot)
-		parent: #Tools;
-		target: World;
+		parent: #System;
+		target: self currentWorld;
 		order: 501;
 		selector: #makeAScreenshot;
 		label: 'Screenshot';
@@ -277,6 +287,7 @@ WorldState class >> worldMenuSettingOn: aBuilder [
 		label: 'World menu pragma';
 		ghostHelp: 'worldMenu';
 		parent: #morphic;
+		default: 'worldMenu';
 		target: self;
 		description: 'Define whitch pragma should be used to build the world menu. To disable the world menu, leave this input empty.'
 ]
@@ -288,7 +299,6 @@ WorldState >> activeHand [
 
 { #category : #hands }
 WorldState >> activeHand: aHand [
-	ActiveHand := aHand.
 	activeHand := aHand
 ]
 
@@ -342,35 +352,13 @@ WorldState >> alarms [
 	^alarms ifNil: [alarms := Heap sortBlock: self alarmSortBlock]
 ]
 
-{ #category : #canvas }
-WorldState >> assuredCanvas [
-
-	(canvas isNil or: [(canvas extent ~= viewBox extent) or: [canvas form depth ~= Display depth]])
-		ifTrue:
-			["allocate a new offscreen canvas the size of the window"
-			self canvas: (Display defaultCanvasClass extent: viewBox extent)].
-	^ self canvas
-]
-
-{ #category : #canvas }
-WorldState >> canvas [
-
-	^ canvas
-]
-
-{ #category : #canvas }
-WorldState >> canvas: x [ 
-	canvas := x.
-	damageRecorder 
-		ifNil: [damageRecorder := DamageRecorder new]
-		ifNotNil: [damageRecorder doFullRepaint]
-]
-
 { #category : #'update cycle' }
 WorldState >> checkIfUpdateNeeded [
 
-	damageRecorder updateIsNeeded ifTrue: [^true].
-	hands do: [:h | (h hasChanged and: [h needsToBeDrawn]) ifTrue: [^true]].
+	damageRecorder updateIsNeeded ifTrue: [ ^true ].
+		
+	hands do: [:h | 
+		(h hasChanged and: [h needsToBeDrawn]) ifTrue: [^true]].
 	^false  "display is already up-to-date"
 
 ]
@@ -422,6 +410,12 @@ WorldState >> currentCursor: anObject [
 	currentCursor := anObject
 ]
 
+{ #category : #accessing }
+WorldState >> damageRecorder [
+
+	^ damageRecorder 
+]
+
 { #category : #'deferred message' }
 WorldState >> defer: aValuable [
 	"aValuable will be executed in the next UI rendering cycle"
@@ -445,47 +439,17 @@ WorldState >> discoveredMenuTitle [
 ]
 
 { #category : #'update cycle' }
-WorldState >> displayWorld: aWorld submorphs: submorphs [
+WorldState >> displayWorld: aWorld [
 	"Update this world's display."
 
-	| deferredUpdateMode handsToDraw allDamage |
-	submorphs do: [ :m | m fullBounds ].	"force re-layout if needed"
-	self checkIfUpdateNeeded
-		ifFalse: [ ^ self ].	"display is already up-to-date"
-	deferredUpdateMode := self doDeferredUpdatingFor: aWorld.
-	deferredUpdateMode
-		ifFalse: [ self assuredCanvas ].
-	canvas
-		ifNotNil: [ :c | 
-			c
-				roundCornersOf: aWorld
-				during: [ | worldDamageRects handDamageRects |
-					worldDamageRects := self drawWorld: aWorld submorphs: submorphs invalidAreasOn: canvas.	"repair world's damage on canvas"
-					"self handsDo:[:h| h noticeDamageRects: worldDamageRects]."
-					handsToDraw := self selectHandsToDrawForDamage: worldDamageRects.
-					handDamageRects := handsToDraw collect: [ :h | h savePatchFrom: canvas ].
-					allDamage := worldDamageRects , handDamageRects.
-					handsToDraw reverseDo: [ :h | "draw hands onto world canvas" canvas fullDrawMorph: h ] ] ].
-	"*make this true to flash damaged areas for testing*"
-	self class debugShowDamage
-		ifTrue: [ aWorld flashRects: allDamage color: Color black ].
-	"Check that the canvas is not already freed when we want to finish it"
-	canvas ifNotNil: [ :c | c finish ].
-	"quickly copy altered rects of canvas to Display:"
-	deferredUpdateMode
-		ifTrue: [ self forceDamageToScreen: allDamage ]
-		ifFalse: [ canvas showAt: aWorld viewBox origin invalidRects: allDamage ].
-	handsToDraw do: [ :h | h restoreSavedPatchOn: canvas ].	"restore world canvas under hands"
-	Display
-		deferUpdates: false;
-		forceDisplayUpdate
+	worldRenderer displayWorldState: self ofWorld: aWorld
 ]
 
 { #category : #'update cycle' }
 WorldState >> displayWorldSafely: aWorld [
 	"Update this world's display and keep track of errors during draw methods."
 
-	[aWorld displayWorld] ifError: [:err :rcvr |
+	[aWorld displayWorld] ifErrorDo: [:err |
 		"Handle a drawing error"
 		| errCtx errMorph |
 		errCtx := thisContext.
@@ -495,7 +459,7 @@ WorldState >> displayWorldSafely: aWorld [
 			[errCtx notNil and:[(errCtx receiver isMorph) not]] 
 				whileTrue:[errCtx := errCtx sender].
 			"If we're at the root of the context chain then we have a fatal drawing problem"
-			errCtx ifNil:[^self handleFatalDrawingError: err].
+			errCtx ifNil:[^self handleFatalDrawingError: err description].
 			errMorph := errCtx receiver.
 			"If the morph causing the problem has already the #drawError flag set,
 			then search for the next morph above in the caller chain."
@@ -503,20 +467,8 @@ WorldState >> displayWorldSafely: aWorld [
 		] whileTrue.
 		errMorph setProperty: #errorOnDraw toValue: true.
 		"Install the old error handler, so we can re-raise the error"
-		rcvr error: err.
+		err signal.
 	].
-]
-
-{ #category : #'update cycle' }
-WorldState >> doDeferredUpdatingFor: aWorld [
-        "If this platform supports deferred updates, then make my canvas be the Display (or a rectangular portion of it), set the Display to deferred update mode, and answer true. Otherwise, do nothing and answer false. One can set the class variable DisableDeferredUpdates to true to completely disable the deferred updating feature."
-
-	(Display deferUpdates: true) ifNil: [^ false].  "deferred updates not supported"
-	(canvas notNil and: [canvas form == Display]) ifFalse: [
-			aWorld viewBox: Display boundingBox.    "do first since it may clear canvas"
-			self canvas: (Display getCanvas copyClipRect: Display boundingBox)].
-	^ true
-
 ]
 
 { #category : #canvas }
@@ -539,7 +491,7 @@ WorldState >> doOneCycleNowFor: aWorld [
 	"Immediately do one cycle of the interaction loop.
 	This should not be called directly, but only via doOneCycleFor:"
 
-	DisplayScreen checkForNewScreenSize.
+	self worldRenderer checkForNewScreenSize.
 
 	"process user input events"
 	LastCycleTime := Time millisecondClockValue.
@@ -554,16 +506,6 @@ WorldState >> doOneCycleNowFor: aWorld [
 
 	aWorld runStepMethods.		"there are currently some variations here"
 	self displayWorldSafely: aWorld.
-]
-
-{ #category : #'update cycle' }
-WorldState >> doOneSubCycleFor: aWorld [
-	"Like doOneCycle, but preserves activeHand."
-
-	| currentHand |
-	currentHand := self activeHand.
-	self doOneCycleFor: aWorld.
-	self activeHand: currentHand.
 ]
 
 { #category : #'update cycle' }
@@ -643,16 +585,9 @@ WorldState >> fallbackMenuOn: menu [
 ]
 
 { #category : #'update cycle' }
-WorldState >> forceDamageToScreen: allDamage [
-
-	Display forceDamageToScreen: allDamage.
-	
-]
-
-{ #category : #'update cycle' }
 WorldState >> handleFatalDrawingError: errMsg [
 	"Handle a fatal drawing error."
-	Display deferUpdates: false. "Just in case"
+	self worldRenderer deferUpdates: false. "Just in case"
 	self primitiveError: errMsg.
 
 	"Hm... we should jump into a 'safe' worldState here, but how do we find it?!"
@@ -676,6 +611,12 @@ WorldState >> handsReverseDo: aBlock [
 	^ hands reverseDo: aBlock
 ]
 
+{ #category : #accessing }
+WorldState >> icon: aForm [ 
+
+	worldRenderer icon: aForm
+]
+
 { #category : #initialization }
 WorldState >> initialize [
 
@@ -685,7 +626,7 @@ WorldState >> initialize [
 	stepList := Heap sortBlock: self stepListSortBlock.
 	lastStepTime := 0.
 	lastAlarmTime := 0.
-	self viewBox: Display boundingBox
+
 ]
 
 { #category : #'update cycle' }
@@ -701,7 +642,7 @@ WorldState >> interCyclePause: milliSecs [
         		ifFalse: [ 0 ]
         		ifTrue: [ lastCycleTime + milliSecs - Time millisecondClockValue ].
  
-      		self flag: 'Issue 14754 - wait2>millisecs is only True for clock rollover. Remove it once DelayScheduler based on microsecondClock - Ben Coman 19.01.2015'.
+      		self flag: 'Issue 14754 - wait2>millisecs is only True for clock rollover. Remove it once delay scheduler is based on microsecondClock - Ben Coman 19.01.2015'.
       		wait2 > milliSecs 
         		ifTrue: [ 0 ]
         		ifFalse: [ wait2 ]. 
@@ -711,6 +652,14 @@ WorldState >> interCyclePause: milliSecs [
 
 	lastCycleTime := Time millisecondClockValue.
 	CanSurrenderToOS := true.
+]
+
+{ #category : #canvas }
+WorldState >> invalidate [
+	self worldRenderer invalidate.
+	damageRecorder 
+		ifNil: [damageRecorder := DamageRecorder new]
+		ifNotNil: [damageRecorder doFullRepaint]
 ]
 
 { #category : #hands }
@@ -749,6 +698,18 @@ WorldState >> listOfSteppingMorphs [
 
 ]
 
+{ #category : #hands }
+WorldState >> realWindowExtent [
+
+	^ realWindowExtent
+]
+
+{ #category : #hands }
+WorldState >> realWindowExtent: aValue [
+
+	realWindowExtent := aValue
+]
+
 { #category : #canvas }
 WorldState >> recordDamagedRect: damageRect [
 
@@ -772,8 +733,6 @@ WorldState >> removeHand: aHandMorph [
 	(hands includes: aHandMorph) ifFalse: [^self].
 	hands := hands copyWithout: aHandMorph.
 	activeHand == aHandMorph ifTrue: [activeHand := nil].
-	ActiveHand == aHandMorph ifTrue: [ActiveHand := nil].
-
 ]
 
 { #category : #canvas }
@@ -895,16 +854,23 @@ WorldState >> triggerAlarmsBefore: nowTime [
 { #category : #canvas }
 WorldState >> viewBox [
 
-	^ viewBox
-]
-
-{ #category : #canvas }
-WorldState >> viewBox: x [
-
-	viewBox := x
+	^ self worldRenderer viewBox
 ]
 
 { #category : #'worldmenu building' }
 WorldState >> worldMenu [
 	^self  menuBuilder menuEntitled: self discoveredMenuTitle.
+]
+
+{ #category : #hands }
+WorldState >> worldRenderer [
+
+    ^ worldRenderer ifNil: [ worldRenderer := NullWorldRenderer forWorld: self currentWorld ]
+]
+
+{ #category : #accessing }
+WorldState >> worldRenderer: anObject [
+
+	worldRenderer := anObject.
+	worldRenderer activate
 ]

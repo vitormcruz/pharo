@@ -13,17 +13,15 @@ Class {
 	#classTraits : 'TCairoLibrary classTrait',
 	#instVars : [
 		'font',
-		'surface',
 		'utfConverter',
 		'canvas',
 		'advance',
 		'originalFont',
-		'cache',
 		'fontExtents',
 		'glyphExtents'
 	],
 	#pools : [
-		'AthensCairoDefs'
+		'AthensCairoDefinitions'
 	],
 	#category : #'Athens-Cairo-Text'
 }
@@ -66,9 +64,7 @@ all of this for using
 http://www.cairographics.org/manual/cairo-User-Fonts.html#cairo-user-scaled-font-text-to-glyphs-func-t
 
 "
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	
-	^self nbCall: #(
+	^ self ffiCall: #(
 		cairo_status_t cairo_scaled_font_text_to_glyphs (CairoScaledFont aScaledFont,
 			double x,
 			double y,
@@ -76,9 +72,9 @@ http://www.cairographics.org/manual/cairo-User-Fonts.html#cairo-user-scaled-font
 			int strlen,
 			void ** glyphs,
 			int * numGlyphs,
-			0,
-			0,
-			0))
+			NULL,
+			NULL,
+			NULL))
 ]
 
 { #category : #accessing }
@@ -102,9 +98,7 @@ CairoFreetypeFontRenderer >> fontHeight [
 
 { #category : #private }
 CairoFreetypeFontRenderer >> freeGlyphs: glyphs [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	
-	^self nbCall: #( void cairo_glyph_free (void *glyphs))
+	^ self ffiCall: #( void cairo_glyph_free (void *glyphs))
 ]
 
 { #category : #'accessing - font metrics' }
@@ -156,11 +150,10 @@ CairoFreetypeFontRenderer >> glyphsOf: aString from: start to: end [
 	^ glyphs
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 CairoFreetypeFontRenderer >> initialize [ 
 	utfConverter := CairoUTF8Converter new.
 	advance := 0@0.
-	cache := CairoBackendCache soleInstance.
 	glyphExtents := CairoTextExtents new.
 ]
 

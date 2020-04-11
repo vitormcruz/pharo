@@ -32,11 +32,6 @@ GLMCompositePresentation >> accordionArrangement [
 ]
 
 { #category : #scripting }
-GLMCompositePresentation >> accumulator [ 
-	^ self custom: GLMAccumulator new
-]
-
-{ #category : #scripting }
 GLMCompositePresentation >> actionList [
 	^ self custom: GLMActionListPresentation new
 ]
@@ -195,12 +190,34 @@ GLMCompositePresentation >> open [
 	^self openWith: self defaultRenderer
 ]
 
+{ #category : #OSWindow }
+GLMCompositePresentation >> openInExternalWindow [
+    ^ self defaultRenderer openInExternalWindow: self
+]
+
+{ #category : #OSWindow }
+GLMCompositePresentation >> openInExternalWindowOn: anObject [ 
+    ^ self openOn: anObject inExternalWindowWith: self defaultRenderer
+]
+
+{ #category : #OSWindow }
+GLMCompositePresentation >> openInExternalWindowWith: aRenderer [ 
+    ^ aRenderer openInExternalWindow: self
+]
+
 { #category : #'scripting opening' }
 GLMCompositePresentation >> openOn: anObject [ 
 	 
 	^self 
 		openOn: anObject 
 		with: self defaultRenderer
+]
+
+{ #category : #OSWindow }
+GLMCompositePresentation >> openOn: anObject inExternalWindowWith: aRenderer [ 
+     
+    self startOn: anObject. 
+    ^ aRenderer openInExternalWindow: self
 ]
 
 { #category : #'scripting opening' }
@@ -355,9 +372,4 @@ GLMCompositePresentation >> verticallyStackedArrangement [
 GLMCompositePresentation >> withAllPanesAndPresentationsDo: aBlock [
 	super withAllPanesAndPresentationsDo: aBlock.
 	self do: [:each | each withAllPanesAndPresentationsDo: aBlock ]
-]
-
-{ #category : #scripting }
-GLMCompositePresentation >> wrapper [
-	^ self custom: GLMWrapper new
 ]

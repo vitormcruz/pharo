@@ -25,7 +25,7 @@ Class {
 		'LineEndStrings',
 		'LookAheadCount'
 	],
-	#category : #DeprecatedFileStream
+	#category : #'DeprecatedFileStream-Base'
 }
 
 { #category : #defaults }
@@ -139,7 +139,7 @@ MultiByteFileStream >> bareNext [
 
 ]
 
-{ #category : #'fileIn/Out' }
+{ #category : #'file in/out' }
 MultiByteFileStream >> basicChunk [
 	"If our buffer in collection contains an chunk with no embedded !'s, nor
 	any non-ascii characters, return that.
@@ -444,7 +444,7 @@ MultiByteFileStream >> next: n innerFor: aString [
 		].
 	].
  
-	^ aString withSqueakLineEndings.
+	^ aString withInternalLineEndings.
 
 ]
 
@@ -457,7 +457,7 @@ MultiByteFileStream >> next: anInteger putAll: aCollection startingAt: startInde
         ^self converter next: anInteger putAll: aCollection startingAt: startIndex toStream: self
 ]
 
-{ #category : #'fileIn/Out' }
+{ #category : #'file in/out' }
 MultiByteFileStream >> nextChunk [
 	"Answer the contents of the receiver, up to the next terminator
 	character. Doubled terminators indicate an embedded terminator
@@ -471,7 +471,7 @@ MultiByteFileStream >> nextChunk [
 							| character state |
 							[(character := self next) == nil
 								or: [character == $!
-										and: [state := converter saveStateOf: self..
+										and: [state := converter saveStateOf: self.
 											self next ~~ $!]]]
 								whileFalse: [stream nextPut: character].
 							character
@@ -519,7 +519,7 @@ MultiByteFileStream >> nextMatchAll: aColl [
 
 ]
 
-{ #category : #'fileIn/Out' }
+{ #category : #'file in/out' }
 MultiByteFileStream >> nextPreamble [
 	"Assuming that preamble part does not contain ]lang[ tag"
 	self skipSeparators.
@@ -530,7 +530,7 @@ MultiByteFileStream >> nextPreamble [
 							| character state |
 							[(character := self next) == nil
 								or: [character == $!
-										and: [state := converter saveStateOf: self..
+										and: [state := converter saveStateOf: self.
 											self next ~~ $!]]]
 								whileFalse: [stream nextPut: character].
 							character
@@ -561,6 +561,11 @@ MultiByteFileStream >> nextPutAll: aCollection [
 { #category : #'open/close' }
 MultiByteFileStream >> open: fileName forWrite: writeMode [ 
 	| result |
+
+	(writeMode and: [SessionManager default currentSession isReadOnlyAccessMode]) 
+		ifTrue: [ ((CannotDeleteFileException fileName: fileName)
+			messageText: 'Attempt to open file ' , fileName, ' as writable on read-only filesystem') signal. ].
+
 	result := super open: fileName forWrite: writeMode.
 	result ifNotNil: [
 			converter ifNil: [self converter: UTF8TextConverter new].
@@ -623,7 +628,7 @@ MultiByteFileStream >> requestDropStream: dropIndex [
 	^result
 ]
 
-{ #category : #positioning }
+{ #category : #initialization }
 MultiByteFileStream >> reset [
 
 	super reset.

@@ -5,12 +5,12 @@ Class {
 	#name : #AthensCairoGradientPaint,
 	#superclass : #AthensCairoPatternPaint,
 	#pools : [
-		'AthensCairoDefs'
+		'AthensCairoDefinitions'
 	],
 	#category : #'Athens-Cairo-Paints'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : #paints }
 AthensCairoGradientPaint class >> createLinearGradient: aColorRamp start: aStartPoint stop: aStopPoint [
 	| paint |
 	paint := self
@@ -27,9 +27,7 @@ AthensCairoGradientPaint class >> createLinearGradient: aColorRamp start: aStart
 
 { #category : #primitives }
 AthensCairoGradientPaint class >> primCreateLinearX0: x0 y0: y0 x1: x1 y1: y1 [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin>
-	
-	^self nbCall: #(AthensCairoGradientPaint cairo_pattern_create_linear (
+	^ self ffiCall: #(AthensCairoGradientPaint cairo_pattern_create_linear (
 		double x0,
 		double y0,
 		double x1,
@@ -39,9 +37,7 @@ AthensCairoGradientPaint class >> primCreateLinearX0: x0 y0: y0 x1: x1 y1: y1 [
 
 { #category : #primitives }
 AthensCairoGradientPaint class >> primCreateRadialXo: xo yo: yo radiuso: radiuso x1: x1 y1: y1 radius1: radius1 [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin>
-	
-	^self nbCall: #(AthensCairoGradientPaint cairo_pattern_create_radial (
+	^ self ffiCall: #(AthensCairoGradientPaint cairo_pattern_create_radial (
 		double xo,
 		double yo,
 		double radiuso,
@@ -51,7 +47,7 @@ AthensCairoGradientPaint class >> primCreateRadialXo: xo yo: yo radiuso: radiuso
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #private }
 AthensCairoGradientPaint class >> radialBetween: origin
 	extending: innerRadius
 	and: outerOrigin
@@ -83,14 +79,14 @@ AthensCairoGradientPaint >> addColorStopAt: anOffset colored: aColor [
 		
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 AthensCairoGradientPaint >> defaultExtend [
 "The default extend mode is CAIRO_EXTEND_NONE for surface patterns and CAIRO_EXTEND_PAD for gradient patterns.
 "
 	^  CAIRO_EXTEND_PAD
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 AthensCairoGradientPaint >> initializeRadialBetween: origin
 			extending: innerRadius
 			and: outerOrigin
@@ -116,9 +112,7 @@ AthensCairoGradientPaint >> populateRamp: aRamp [
 
 { #category : #primitives }
 AthensCairoGradientPaint >> primAddColorStopOffset: offset R: red G: green B: blue A: alpha [ 
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin>
-	
-	^ self nbCall:#( void cairo_pattern_add_color_stop_rgba ( cairo_pattern_t  self,
+	^ self ffiCall:#( void cairo_pattern_add_color_stop_rgba ( cairo_pattern_t  self,
 					double offset,
 					double red,
 					double green,

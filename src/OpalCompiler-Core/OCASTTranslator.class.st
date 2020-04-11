@@ -32,8 +32,6 @@ Class {
 OCASTTranslator class >> initialize [
 	"OCASTTranslator initialize"
 	
-	super initialize.
-	
 	OptimizedMessages := { 
 	#caseOf: -> #emitCaseOf: .
 	#caseOf:otherwise: -> #emitCaseOfOtherwise: .
@@ -297,28 +295,28 @@ OCASTTranslator >> emitTimesRepeat: aMessageNode [
 	limitEmit := [valueTranslator visitNode: limit].
 	limit isLiteral | limit isSelf | limit isSuper ifFalse: [
 		valueTranslator visitNode: limit.
-		methodBuilder addTemp: #limit.
-		methodBuilder storeTemp: #limit.
+		methodBuilder addTemp: #'0limit'.
+		methodBuilder storeTemp: #'0limit'.
 		methodBuilder popTop.
-		limitEmit := [methodBuilder pushTemp: #limit]].
+		limitEmit := [methodBuilder pushTemp: #'0limit']].
 
 	"push start. allocate and initialize iterator"
 	self isValueTranslator ifTrue: [ limitEmit value ].
 	methodBuilder pushLiteral: 1.
-	methodBuilder addTemp: #iterator.
-	methodBuilder storeTemp: #iterator.
+	methodBuilder addTemp: #'0iterator'.
+	methodBuilder storeTemp: #'0iterator'.
 	methodBuilder popTop. 
 	methodBuilder jumpBackTarget: #start.
-	methodBuilder pushTemp: #iterator.
+	methodBuilder pushTemp: #'0iterator'.
 	limitEmit value.
 	methodBuilder send: #<=.
 	methodBuilder jumpAheadTo: #done if: false.
 
 	effectTranslator visitInlinedBlockNode: block.
-	methodBuilder pushTemp: #iterator.
+	methodBuilder pushTemp: #'0iterator'.
 	methodBuilder pushLiteral: 1.
 	methodBuilder send: #+.
-	methodBuilder storeTemp: #iterator.
+	methodBuilder storeTemp: #'0iterator'.
 	methodBuilder popTop.
 	methodBuilder jumpBackTo: #start.
 	methodBuilder jumpAheadTarget: #done.
@@ -353,10 +351,10 @@ OCASTTranslator >> emitToDo: aMessageNode step: step [
 	limitEmit := [valueTranslator visitNode: limit].
 	limit isLiteralNode | limit isSelf | limit isSuper | limit isArgument ifFalse: [
 		valueTranslator visitNode: limit.
-		methodBuilder addTemp: (iterator name, #limit).
-		methodBuilder storeTemp: (iterator name, #limit).
+		methodBuilder addTemp: ('0limit_', iterator name).
+		methodBuilder storeTemp: ('0limit_', iterator name).
 		methodBuilder popTop.
-		limitEmit := [methodBuilder pushTemp: (iterator name, #limit)]].
+		limitEmit := [methodBuilder pushTemp: ('0limit_', iterator name)]].
 
 	"push start. allocate and initialize iterator"
 	valueTranslator visitNode: aMessageNode receiver.
@@ -453,6 +451,7 @@ OCASTTranslator >> translateFullBlock: aBlockNode [
 			withVars: (aBlockNode scope tempVector collect: [:each| each name]) asArray.
 	].
 	valueTranslator visitNode: aBlockNode body.
+	methodBuilder mapToNode: aBlockNode body.
 	methodBuilder addBlockReturnTopIfRequired.
 	aBlockNode ir: self ir.
 	^ aBlockNode ir compiledBlock: aBlockNode scope
@@ -636,7 +635,7 @@ OCASTTranslator >> visitNode: aNode [
 { #category : #'visitor-double dispatching' }
 OCASTTranslator >> visitParseErrorNode: anErrorNode [  
 	methodBuilder 
-		pushLiteralVariable: #error -> anErrorNode asSyntaxErrorNotification;
+		pushLiteralVariable: (AdditionalBinding key: #error value: anErrorNode asSyntaxErrorNotification);
 		send: #signal.
 
 

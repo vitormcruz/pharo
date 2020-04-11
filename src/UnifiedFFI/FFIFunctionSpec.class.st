@@ -12,7 +12,7 @@ Class {
 		'functionName',
 		'arguments'
 	],
-	#category : #UnifiedFFI
+	#category : #'UnifiedFFI-Base'
 }
 
 { #category : #accessing }
@@ -145,6 +145,13 @@ FFIFunctionSpec >> printType: typeAndArity on: stream [
 	stream nextPutAll: typeAndArity first.
 	typeAndArity second timesRepeat: [ stream nextPut: $* ].
 
+]
+
+{ #category : #resolution }
+FFIFunctionSpec >> resolveUsing: aResolver [
+	
+	returnType resolveUsing: aResolver.
+	arguments do: [ :e | e resolveUsing: aResolver ]
 ]
 
 { #category : #accessing }

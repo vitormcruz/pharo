@@ -19,7 +19,7 @@ Check #initializeCommandLineHandlerAndErrorHandling to see the steps performed.
 Class {
 	#name : #PharoBootstrapInitialization,
 	#superclass : #Object,
-	#category : #'PharoBootstrap-Initialization'
+	#category : #'PharoBootstrap-Initialization-Base'
 }
 
 { #category : #initialization }
@@ -53,7 +53,7 @@ PharoBootstrapInitialization class >> initializeCommandLineHandlerAndErrorHandli
 		put: (NonInteractiveTranscript stdout install).
 	Float initialize.
 
-	SetElement initialize.
+	CollectionElement initialize.
 	ExternalSemaphoreTable initialize.
 	Collection initialize.
 	CompiledMethod initialize.
@@ -66,12 +66,9 @@ PharoBootstrapInitialization class >> initializeCommandLineHandlerAndErrorHandli
 	UIManager default activate.
 
 	Smalltalk sourceFileVersionString: 'PharoV60'.
-	(Smalltalk class classVariableNamed: 'LastImagePath') value: Smalltalk primImagePath. "set the default value"
+	(Smalltalk class classVariableNamed: 'LastImagePath') value: Smalltalk imagePath. "set the default value"
 	SourceFiles := SourceFileArray new.
-	
-	"Create the ASTCache and add it to the startup list"
-	ASTCache initialize.
-	
+		
 	Color initialize.
 	InstructionStream initialize.
 	SmallInteger initialize.
@@ -92,15 +89,17 @@ PharoBootstrapInitialization class >> initializeCommandLineHandlerAndErrorHandli
 
 { #category : #'public api' }
 PharoBootstrapInitialization class >> initializeFileSystem [
-
-	(Smalltalk at: #FileLocator) initialize.
-	(Smalltalk at: #DiskStore) initialize.
-	(Smalltalk at: #FileHandle) initialize.
-	(Smalltalk at: #MultiByteFileStream) initialize
+	| env |
+	env := self environment.
+	(env at: #FileLocator) initialize.
+	(env at: #DiskStore) initialize.
+	(env at: #FileHandle) initialize.
+	(env at: #MultiByteFileStream) initialize.
+	(env at: #File) initialize
 ]
 
 { #category : #'public api' }
-PharoBootstrapInitialization class >> initializeImageOfType: typeName majorVersion: major minor: minor suffix: suffix buid: build commitHash: hash [
+PharoBootstrapInitialization class >> initializeImageOfType: typeName major: major minor: minor patch: patch suffix: suffix build: buildNumber commitHash: hash [
 
 	"The image main entry point called by an image builder. The arguments specify the image
 	version description.
@@ -112,8 +111,9 @@ PharoBootstrapInitialization class >> initializeImageOfType: typeName majorVersi
 					type: typeName;
 					major: major;
 					minor: minor;
+					patch: patch;
 					suffix: suffix;
-					build: build;
+					build: buildNumber;
 					commitHash: hash;
 					yourself).
 	

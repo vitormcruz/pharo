@@ -5,8 +5,14 @@ For setting/retrieving clipboard text, use clipboardText/clipboardText: accessor
 Class {
 	#name : #OSWindowClipboard,
 	#superclass : #Clipboard,
-	#category : #'OSWindow-Core'
+	#category : #'OSWindow-Core-Base'
 }
+
+{ #category : #accessing }
+OSWindowClipboard >> beDefault [
+
+	Default := self
+]
 
 { #category : #accessing }
 OSWindowClipboard >> chooseRecentClipping [
@@ -15,14 +21,21 @@ OSWindowClipboard >> chooseRecentClipping [
 
 { #category : #accessing }
 OSWindowClipboard >> clipboardText [
-	^ World osWindow clipboardText
+	^ self worldRenderer clipboardText
 ]
 
 { #category : #accessing }
 OSWindowClipboard >> clipboardText: aString [
-	World osWindow clipboardText: aString asString
+	self worldRenderer clipboardText: aString asString
 ]
 
 { #category : #private }
 OSWindowClipboard >> noteRecentClipping: text [
+]
+
+{ #category : #accessing }
+OSWindowClipboard >> worldRenderer [ 
+
+	^ self currentWorld worldState worldRenderer
+	
 ]

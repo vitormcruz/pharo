@@ -14,8 +14,9 @@ GLMTreeMorphicTest >> testChildrenBlock [
 			check := true.
 			#() ]].
 	window := browser openOn: ($a to: $d).
-	World doOneCycle.
-	self repeatAssert: [ check ] equals: true
+
+	self waitUntilUIRedrawed.
+	self assert: check equals: true
 ]
 
 { #category : #tests }
@@ -26,9 +27,10 @@ GLMTreeMorphicTest >> testChildrenBlockTakesEntity [
 	browser show: [:a | a tree
 		children: [:each :entity | receivedEntity := entity. #()]].
 	window := browser openOn: ($a to: $d).
-	World doOneCycle.
-	self repeatAssert: [receivedEntity] equals: ($a to: $d).
 
+	self waitUntilUIRedrawed.
+
+	self assert: receivedEntity equals: ($a to: $d).
 ]
 
 { #category : #tests }
@@ -124,15 +126,17 @@ GLMTreeMorphicTest >> testTreeSelectionCancellation [
 { #category : #tests }
 GLMTreeMorphicTest >> testTreeWithDisplay [
 	| browser treeCollection |
-	treeCollection := { #root1->{#child1->{} . #child2->{}} . #root2 ->{} }.
+	treeCollection := {(#root1 -> {(#child1 -> {}) . (#child2 -> {})}) . (#root2 -> {})}.
 	browser := GLMTabulator new.
 	browser column: #one.
-	browser transmit to: #one; andShow: [ :a |
-		a tree
-			display: [:each | each value ];
-			children: [:x | x value ] ].
+	browser transmit
+		to: #one;
+		andShow: [ :a | 
+			a tree
+				display: [ :each | each value ];
+				children: [ :x | x value ] ].
 	window := browser openOn: #something -> treeCollection.
-	self assert: browser panes first presentations first displayValue == treeCollection
+	self assert: browser panes first presentations first displayValue identicalTo: treeCollection
 ]
 
 { #category : #tests }
@@ -163,18 +167,24 @@ GLMTreeMorphicTest >> testTreeWithTags [
 												ifFalse: [ #('odd') ] ]
 										ifFalse: [ #() ] ] ].
 	window := browser openOn: model.
-	World doOneCycle.
+
+	self waitUntilUIRedrawed.
+
 	oddNode := self treeVisibleItems second.	
 	
 	oddNode toggleExpandedState. "Simulate a click on the node's arrow to expand the node and make sub nodes visible"
 
-	World doOneCycle.
+	self waitUntilUIRedrawed.
+
 	lineWithNumber3 := self treeVisibleItems third.
 	(self find: SimpleButtonMorph in: lineWithNumber3) doButtonAction. "Simulate a click on the 'odd' tag to make even numbers disappear"
-	World doOneCycle.
+	self waitUntilUIRedrawed.
+
 	someNode := self treeVisibleItems fifth.
 	someNode toggleExpandedState.
-	World doOneCycle.
+
+	self waitUntilUIRedrawed.
+
 	secondSome := self find: TextMorph in: self treeVisibleItems seventh.
 	self assert: secondSome text asString equals: '3'
 ]

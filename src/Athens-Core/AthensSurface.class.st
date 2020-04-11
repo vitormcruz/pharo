@@ -20,7 +20,7 @@ Class {
 	#instVars : [
 		'currentCanvas'
 	],
-	#category : #'Athens-Core'
+	#category : #'Athens-Core-Base'
 }
 
 { #category : #'instance creation' }
@@ -35,6 +35,12 @@ AthensSurface class >> extent: aPoint [
 AthensSurface >> asForm [
 	"Answer a Form , which contains a bits, converted from surface "
 	self subclassResponsibility
+]
+
+{ #category : #converting }
+AthensSurface >> asMorph [
+	"Answer a Morph, given this Athens surface"
+	^ self asForm asMorph
 ]
 
 { #category : #caching }

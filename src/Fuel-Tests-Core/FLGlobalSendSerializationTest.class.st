@@ -4,17 +4,16 @@ SUnit tests for fuel serialization of global sends
 Class {
 	#name : #FLGlobalSendSerializationTest,
 	#superclass : #FLSerializationTest,
-	#category : 'Fuel-Tests-Core-Base'
+	#category : #'Fuel-Tests-Core-Base'
 }
 
 { #category : #tests }
 FLGlobalSendSerializationTest >> testBasic [
-
 	| result |
-	self deny: FLGlobalSendMock newInstanceToSerialize = FLGlobalSendMock newInstanceToMaterialize.
+	self deny: FLGlobalSendMock newInstanceToSerialize equals: FLGlobalSendMock newInstanceToMaterialize.
 
 	result := self resultOfSerializeAndMaterialize: FLGlobalSendMock newInstanceToSerialize.
-	self assert: FLGlobalSendMock newInstanceToMaterialize = result.
+	self assert: FLGlobalSendMock newInstanceToMaterialize equals: result
 ]
 
 { #category : #tests }

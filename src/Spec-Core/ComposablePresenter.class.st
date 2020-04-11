@@ -101,7 +101,7 @@ Class {
 		'askOkToClose',
 		'titleHolder'
 	],
-	#category : #'Spec-Core'
+	#category : #'Spec-Core-Base'
 }
 
 { #category : #defaults }
@@ -129,9 +129,20 @@ ComposablePresenter class >> defaultSpec [
 ]
 
 { #category : #defaults }
+ComposablePresenter class >> iconNamed: aSymbol [
+	^ Smalltalk ui icons iconNamed: aSymbol
+]
+
+{ #category : #defaults }
 ComposablePresenter class >> inputTextHeight [
 
 	^ self defaultFont height + 12
+]
+
+{ #category : #defaults }
+ComposablePresenter class >> labelHeight [
+
+	^ self defaultFont height
 ]
 
 { #category : #'instance creation' }
@@ -170,13 +181,12 @@ ComposablePresenter class >> platform [
 
 { #category : #protocol }
 ComposablePresenter class >> specSelectors [
-	
-	^  self class withAllSuperclasses flatCollect: [ :class |
-		(((SpecPragmaCollector behavior: class)
-			filter: [ :pragma | pragma keyword = #spec])
-			reset;
-			collected)
-			collect: [ :pragmas | pragmas method selector ]]
+	^ self class withAllSuperclasses
+		flatCollect: [ :class | 
+			(((SpecPragmaCollector behavior: class)
+				filter: [ :pragma | pragma selector = #spec ])
+				reset;
+				collected) collect: [ :pragmas | pragmas method selector ] ]
 ]
 
 { #category : #specs }
@@ -351,22 +361,21 @@ ComposablePresenter >> defaultSpec [
 
 { #category : #private }
 ComposablePresenter >> defaultSpecSelector [
-
-	self class class withAllSuperclassesDo: [ :class |
-		(((SpecPragmaCollector behavior: class)
-			filter: [ :pragma | 
-				pragma keyword = 'spec:' and: [ pragma arguments includes: #default ]])
-			reset;
-			collected)
-				ifNotEmpty: [ :pragmas | ^ pragmas first method selector ]].
-
+	self class class
+		withAllSuperclassesDo: [ :class | 
+			(((SpecPragmaCollector behavior: class)
+				filter:
+					[ :pragma | pragma selector = 'spec:' and: [ pragma arguments includes: #default ] ])
+				reset;
+				collected)
+				ifNotEmpty: [ :pragmas | ^ pragmas first method selector ] ].
 	self specSelectors
-		ifNotEmpty: [:col | col size = 1 ifTrue: [ ^ col first ]].
-		
+		ifNotEmpty: [ :col | 
+			col size = 1
+				ifTrue: [ ^ col first ] ].
+
 	"should use pragmas"
 	^ #defaultSpec
-	
-
 ]
 
 { #category : #accessing }
@@ -517,11 +526,9 @@ ComposablePresenter >> hide [
 		(widget respondsTo: #hide) ifTrue: [ widget hide ]].
 ]
 
-{ #category : #icon }
-ComposablePresenter >> icon: aSymbol [
-	"Return the icon associated with the argument."
-	self flag: #remove.
-	^ self iconNamed: aSymbol
+{ #category : #accessing }
+ComposablePresenter >> iconNamed: aSymbol [
+	^ self class iconNamed: aSymbol
 ]
 
 { #category : #api }
@@ -715,6 +722,22 @@ ComposablePresenter >> newDropList [
 ]
 
 { #category : #widgets }
+ComposablePresenter >> newDynamicPresentersListIn: accessorSymbol usingBuilder: aDynamicPresentersListBuilder [
+	|mutatorSymbol newDynamicPresenter |
+	mutatorSymbol := (accessorSymbol , ':') asSymbol.
+	(self perform: accessorSymbol)
+		ifNotNil: [ :dynamicPresenter | dynamicPresenter owner: nil ].
+	newDynamicPresenter := aDynamicPresentersListBuilder build.
+	
+	self perform: mutatorSymbol with: newDynamicPresenter.
+	
+	newDynamicPresenter owner: self.
+	
+	self needRebuild: false.
+	self buildWithSpec
+]
+
+{ #category : #widgets }
 ComposablePresenter >> newIconList [
 	^ self instantiate: IconListPresenter
 ]
@@ -737,6 +760,11 @@ ComposablePresenter >> newList [
 { #category : #widgets }
 ComposablePresenter >> newMultiColumnList [
 	^ self instantiate: MultiColumnListPresenter
+]
+
+{ #category : #widgets }
+ComposablePresenter >> newNullPresenter [
+	^ self instantiate: NullPresenter
 ]
 
 { #category : #widgets }

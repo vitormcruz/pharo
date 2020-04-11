@@ -79,13 +79,11 @@ GLMBrowser >> initialExtent: aPoint [
 	initialExtent := aPoint
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 GLMBrowser >> initialize [
 	super initialize.
 	panes := OrderedCollection new.
-	transmissions := OrderedCollection new.
-	statusPane := nil.
-	watcherPane := nil
+	transmissions := OrderedCollection new
 ]
 
 { #category : #scripting }

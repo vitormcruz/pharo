@@ -39,13 +39,13 @@ ZipArchive class >> compressionStored [
 	^CompressionStored
 ]
 
-{ #category : #'fileIn/Out' }
-ZipArchive class >> extractAllIn: aFileName [
+{ #category : #'file in/out' }
+ZipArchive class >> extractAllIn: aFileReferenceOrFileName [
 	"Service method to extract all contents of a zip."
 	| directory |
-	directory := (UIManager default chooseDirectoryFrom: aFileName asFileReference) ifNil: [^ self].
+	directory := (UIManager default chooseDirectoryFrom: aFileReferenceOrFileName asFileReference) ifNil: [^ self].
 	^ (self new) 
-		readFrom: aFileName;
+		readFrom: aFileReferenceOrFileName;
 		extractAllTo: directory.
 ]
 
@@ -82,18 +82,21 @@ ZipArchive class >> findEndOfCentralDirectoryFrom: stream [
 ]
 
 { #category : #'file format' }
-ZipArchive class >> isZipArchive: aStreamOrFileName [
-	"Answer whether the given filename represents a valid zip file."
+ZipArchive class >> isZipArchive: file [
+	"Answer whether the given file represents a valid zip file. The argument file can be a String, FileReference or an open binary read stream.
+	
+	See ZipArchiveTest>>testisZipArchive for examples."
 
 	| stream eocdPosition |
-	stream := aStreamOrFileName isStream
-		ifTrue: [aStreamOrFileName]
-		ifFalse: [File openForReadFileNamed: aStreamOrFileName].
-	stream ifNil: [^ false].
-	"nil happens sometimes somehow"
-	stream size < 22 ifTrue: [^ false].
+	stream := file isStream
+		ifTrue: [ file ]
+		ifFalse: [ file asFileReference binaryReadStream ].
+		
+	stream size < 22 ifTrue: [ ^ false ].
+	
 	eocdPosition := self findEndOfCentralDirectoryFrom: stream.
-	stream ~= aStreamOrFileName ifTrue: [stream close].
+	stream ~= file ifTrue: [ stream close ].
+	
 	^ eocdPosition > 0
 ]
 
@@ -118,7 +121,7 @@ ZipArchive >> addDeflateString: aString as: aFileName [
 
 { #category : #initialization }
 ZipArchive >> close [
-	self members do:[:m| m close].
+	self members do: [:m | m close ]
 ]
 
 { #category : #'archive operations' }
@@ -126,7 +129,7 @@ ZipArchive >> extractAllTo: aDirectory [
 	"Extract all elements to the given directory; notifying user via UI on progress and if existing files exist"
 
 	UIManager default
-		informUserDuring: [ :bar | 
+		informUserDuring: [:bar | 
 			bar max: self numberOfMembers.
 			self extractAllTo: aDirectory informing: bar ]
 ]
@@ -200,7 +203,7 @@ ZipArchive >> hasMemberSuchThat: aBlock [
 ZipArchive >> initialize [
 	super initialize.
 	writeEOCDOffset := writeCentralDirectoryOffset := 0.
-	zipFileComment := ''.
+	zipFileComment := ''
 
 ]
 
@@ -233,18 +236,18 @@ ZipArchive >> readEndOfCentralDirectoryFrom: aStream [
 	centralDirectorySize := endianStream nextLittleEndianNumber: 4. "size of central directory"
 	centralDirectoryOffsetWRTStartingDiskNumber := endianStream nextLittleEndianNumber: 4. "offset of start of central directory"
 	zipFileCommentLength := endianStream nextLittleEndianNumber: 2. "zip file comment"
-	zipFileComment := aStream next: zipFileCommentLength.
+	zipFileComment := aStream next: zipFileCommentLength
 
 ]
 
 { #category : #reading }
-ZipArchive >> readFrom: aStreamOrFileName [
+ZipArchive >> readFrom: aStreamOrFile [
 	| stream name eocdPosition |
-	stream := aStreamOrFileName isStream
-		ifTrue: [name := aStreamOrFileName printString. aStreamOrFileName]
-		ifFalse: [ File openForReadFileNamed: (name := aStreamOrFileName asFileReference fullName) ].
+	stream := aStreamOrFile isStream
+		ifTrue: [ name := aStreamOrFile printString. aStreamOrFile ]
+		ifFalse: [ name := aStreamOrFile asFileReference fullName. aStreamOrFile asFileReference binaryReadStream ].
 	eocdPosition := self class findEndOfCentralDirectoryFrom: stream.
-	eocdPosition <= 0 ifTrue: [self error: 'can''t find EOCD position'].
+	eocdPosition <= 0 ifTrue: [ ZipArchiveError signal: 'can''t find EOCD position' ].
 	self readEndOfCentralDirectoryFrom: stream.
 	stream position: eocdPosition - centralDirectorySize.
 	self readMembersFrom: stream named: name
@@ -258,11 +261,11 @@ ZipArchive >> readMembersFrom: stream named: fileName [
 		signature := self readSignatureFrom: stream.
 		signature = EndOfCentralDirectorySignature ifTrue: [ ^self ].
 		signature = CentralDirectoryFileHeaderSignature
-			ifFalse: [ self error: 'bad CD signature at ', (stream position - 4) printStringHex ].
+			ifFalse: [ ZipArchiveError signal: 'bad CD signature at ', (stream position - 4) printStringHex ].
 		newMember readFrom: stream.
 		newMember looksLikeDirectory ifTrue: [ newMember := newMember asDirectory ].
 		self addMember: newMember.
-	] repeat.
+	] repeat
 ]
 
 { #category : #private }
@@ -274,7 +277,7 @@ ZipArchive >> readSignatureFrom: stream [
 	stream next: 4 into: signatureData.
 	({ CentralDirectoryFileHeaderSignature . LocalFileHeaderSignature . EndOfCentralDirectorySignature }
 		includes: signatureData)
-			ifFalse: [ ^self error: 'bad signature ', signatureData asString asHex, ' at position ', (stream position - 4) asString ].
+			ifFalse: [ ^ ZipArchiveError signal: 'bad signature ', signatureData asString asHex, ' at position ', (stream position - 4) asString ].
 	^signatureData
 
 ]
@@ -288,7 +291,7 @@ ZipArchive >> writeCentralDirectoryTo: aStream [
 		offset := offset + member centralDirectoryHeaderSize.
 	].
 	writeEOCDOffset := offset.
-	self writeEndOfCentralDirectoryTo: aStream.
+	self writeEndOfCentralDirectoryTo: aStream
 
 
 ]
@@ -308,7 +311,7 @@ ZipArchive >> writeEndOfCentralDirectoryTo: aStream [
 	endianStream nextLittleEndianNumber: 4 put: writeCentralDirectoryOffset. "offset of central dir"
 	endianStream nextLittleEndianNumber: 2 put: zipFileComment size. "zip file comment"
 	
-	zipFileComment isEmpty ifFalse: [ aStream nextPutAll: zipFileComment ].
+	zipFileComment isEmpty ifFalse: [ aStream nextPutAll: zipFileComment ]
 
 
 ]
@@ -320,60 +323,31 @@ ZipArchive >> writeTo: stream [
 		member endRead.
 	].
 	writeCentralDirectoryOffset := stream position.
-	self writeCentralDirectoryTo: stream.
+	self writeCentralDirectoryTo: stream
 	
 ]
 
 { #category : #writing }
 ZipArchive >> writeTo: stream prepending: aString [
 	stream nextPutAll: aString.
-	members do: [ :member |
-		member writeTo: stream.
-		member endRead.
-	].
-	writeCentralDirectoryOffset := stream position.
-	self writeCentralDirectoryTo: stream.
-	
+	self writeTo: stream
 ]
 
 { #category : #writing }
-ZipArchive >> writeTo: stream prependingFileNamed: aFileName [
-	| prepended buffer |
-	prepended := File openForReadFileNamed: aFileName.
+ZipArchive >> writeTo: stream prependingFile: aFileReferenceOrFileName [
+	
+	aFileReferenceOrFileName asFileReference binaryReadStreamDo: [ :prepended | | buffer |
 	buffer := ByteArray new: (prepended size min: 32768).
-	[ prepended atEnd ] whileFalse: [ | bytesRead |
-		bytesRead := prepended readInto: buffer startingAt: 1 count: buffer size.
-		stream next: bytesRead putAll: buffer startingAt: 1
-	].
-	members do: [ :member |
-		member writeTo: stream.
-		member endRead.
-	].
-	writeCentralDirectoryOffset := stream position.
-	self writeCentralDirectoryTo: stream.
+	[ prepended atEnd ]
+		whileFalse: [ | bytesRead |
+			bytesRead := prepended
+				readInto: buffer
+				startingAt: 1
+				count: buffer size.
+			stream next: bytesRead putAll: buffer startingAt: 1 ].
+		 ].
 	
-]
-
-{ #category : #writing }
-ZipArchive >> writeToFileNamed: aFileName prepending: aString [
-	
-	"Catch attempts to overwrite existing zip file"
-	(self canWriteToFileNamed: aFileName)
-		ifFalse: [ ^self error: (aFileName, ' is needed by one or more members in this archive') ].
-	
-	(File named: aFileName)
-		writeStreamDo: [ :stream | self writeTo: stream prepending: aString ]	
-]
-
-{ #category : #writing }
-ZipArchive >> writeToFileNamed: aFileName prependingFileNamed: anotherFileName [
-	
-	"Catch attempts to overwrite existing zip file"
-	(self canWriteToFileNamed: aFileName)
-		ifFalse: [ ^self error: (aFileName, ' is needed by one or more members in this archive') ].
-	
-	(File named: aFileName)
-		writeStreamDo: [ :stream | self writeTo: stream prependingFileNamed: anotherFileName ]	
+	self writeTo: stream
 ]
 
 { #category : #accessing }

@@ -42,8 +42,7 @@ Exception class >> , anotherException [
 
 { #category : #exceptionselector }
 Exception class >> - anotherException [
-	"Create an exception set containing the receiver 
-	and anotherException as exclusion."
+	"Create an exception set containing the receiver and anotherException as exclusion."
 
 	^ ExceptionSetWithExclusions new
 		add: self;
@@ -98,12 +97,21 @@ Exception class >> signalIn: context [
 	^ self new signalIn: context
 ]
 
+{ #category : #private }
+Exception >> completeProcess: aProcess with: aContext [
+	"I am a hook during process completion in case one of my subclass wants to plug a special behavior.
+	
+	By default I return my signaler context"
+
+	^ self signalerContext
+]
+
 { #category : #handling }
 Exception >> debug [
 	"open a debugger on myself"
+	
 	Processor activeProcess 
-		debug: self signalerContext
-		title: self description
+		debug: self signalerContext title: self description
 ]
 
 { #category : #accessing }
@@ -123,7 +131,8 @@ Exception >> defaultResumeValue [
 { #category : #private }
 Exception >> defaultReturnValue [
 	"Answer the value that by default should be returned if the exception is returned"
-	^nil
+	
+	^ nil
 ]
 
 { #category : #accessing }
@@ -138,14 +147,15 @@ Exception >> description [
 
 { #category : #handling }
 Exception >> freeze [
-	"freeze the context stack to keep the exception usable outside the catch blocks"
+	"Freeze the context stack to keep the exception usable outside the catch blocks"
 
 	self freezeUpTo: thisContext
 ]
 
 { #category : #handling }
 Exception >> freezeUpTo:  aContext [
-	"freeze the signal context up to the given context so the exception is usable outside the catch block"
+	"Freeze the signal context up to the given context so the exception is usable outside the catch block"
+	
 	signalContext := signalContext copyTo: aContext
 ]
 
@@ -180,21 +190,23 @@ Exception >> messageText: signalerText [
 { #category : #handling }
 Exception >> outer [
 	"Evaluate the enclosing exception action and return to here instead of signal if it resumes (see #resumeUnchecked:)."
-
-	| prevOuterContext |
+	| prevOuterContext currentHandler |
 	self isResumable 
 		ifTrue: [
-			prevOuterContext := outerContext.
+			prevOuterContext := outerContext. "required and accessed in resumeUnchecked:"
 			outerContext := thisContext contextTag ].
-	self pass.
-
+	currentHandler := handlerContext.
+	[self pass] ensure: [handlerContext := currentHandler].
 ]
 
 { #category : #handling }
 Exception >> pass [
 	"Yield control to the enclosing exception action for the receiver."
 
-	handlerContext nextHandlerContext handleSignal: self
+	| nextHandler |
+	nextHandler := handlerContext nextHandlerContext.
+	handlerContext := nil.
+	nextHandler handleSignal: self
 ]
 
 { #category : #printing }
@@ -223,7 +235,7 @@ Exception >> receiver [
 { #category : #handling }
 Exception >> resignalAs: replacementException [
 	"Signal an alternative exception in place of the receiver."
-	^ replacementException signalIn: signalContext
+	signalContext resumeEvaluating: [replacementException signal]
 ]
 
 { #category : #handling }
@@ -257,8 +269,22 @@ Exception >> resumeUnchecked: resumptionValue [
 ]
 
 { #category : #handling }
+Exception >> return [
+	"Return nil as the value of the block protected by the active exception handler."
+
+	self return: self defaultReturnValue
+]
+
+{ #category : #handling }
+Exception >> return: returnValue [
+	"Return the argument as the value of the block protected by the active exception handler."
+
+	handlerContext return: returnValue
+]
+
+{ #category : #handling }
 Exception >> searchFrom: aContext [
-	" Set the context where the handler search will start. "
+	"Set the context where the handler search will start. "
 
 	signalContext := aContext contextTag
 ]
@@ -266,7 +292,7 @@ Exception >> searchFrom: aContext [
 { #category : #signaling }
 Exception >> signal [
 	"Ask ContextHandlers in the sender chain to handle this signal.  The default is to execute and return my defaultAction."
-
+	<debuggerCompleteToSender>
 	signalContext := thisContext contextTag.
 	signaler ifNil: [ signaler := self receiver ].
 	^ signalContext nextHandlerContext handleSignal: self

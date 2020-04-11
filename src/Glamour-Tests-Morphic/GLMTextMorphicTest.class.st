@@ -4,11 +4,6 @@ Class {
 	#category : #'Glamour-Tests-Morphic'
 }
 
-{ #category : #tests }
-GLMTextMorphicTest >> expectedFailures [
-	^ #(testUpdatingTextPortUpdatesTheMorph)
-]
-
 { #category : #private }
 GLMTextMorphicTest >> simulateOnlyOneClickOn: aMorph [
 	(Delay forMilliseconds: HandMorph doubleClickTime + 1) wait.
@@ -21,18 +16,16 @@ GLMTextMorphicTest >> testExplicitAcceptDoesNotAffectTextPort [
 	composite := GLMCompositePresentation new with: [ :a | a text display: '123' ].
 	window := composite openOn: 4.
 
-	window position: 0@0.
-	window extent > Display extent ifTrue: [ 
-		"ignore test if the display size is too small and we can not simulate events properly"
-		^ self ].
+	window position: 0 @ 0.
+	window extent > Display extent ifTrue: [ "ignore test if the display size is too small and we can not simulate events properly" ^ self ].
 
 	textMorph := self find: RubScrolledTextMorph in: window.
 	self simulateOnlyOneClickOn: textMorph.
-	self simulateKeyStrokes: '4'.
-	self assert: (composite pane port: #text) value = '1234'.
-	self simulateKeyStroke: $s meta.
-	self simulateKeyStrokes: '56'.
-	self assert: (composite pane port: #text) value = '123456'
+	self simulateKeyStrokes: '4' inWorld: textMorph world.
+	self assert: (composite pane port: #text) value equals: '1234'.
+	self simulateKeyStroke: $s meta inWorld: textMorph world.
+	self simulateKeyStrokes: '56' inWorld: textMorph world.
+	self assert: (composite pane port: #text) value equals: '123456'
 ]
 
 { #category : #tests }
@@ -41,7 +34,7 @@ GLMTextMorphicTest >> testMultipleSelectionWithChange [
 	composite := GLMCompositePresentation new with: [ :a | a text display: '123456789' ].
 	window := composite openOn: 4.
 	textMorph := self find: RubScrolledTextMorph in: window.
-	self assert: textMorph selectionInterval isEmpty.
+	self assertEmpty: textMorph selectionInterval.
 	textPresentation := composite presentations first.
 	textPresentation selectionInterval: (2 to: 5).
 	self assert: textMorph textArea editor selection asString equals: '2345'.
@@ -56,7 +49,7 @@ GLMTextMorphicTest >> testPastingUpdatesTextPort [
 	textMorph := self find: RubScrolledTextMorph in: window.
 	Clipboard clipboardText: '42'.
 	textMorph textArea editor paste.
-	self assert: (composite pane port: #text) value = '42'
+	self assert: (composite pane port: #text) value equals: '42'
 ]
 
 { #category : #tests }
@@ -93,11 +86,12 @@ GLMTextMorphicTest >> testUnregisterFromAnnouncementsWhenUpdating [
 
 { #category : #tests }
 GLMTextMorphicTest >> testUpdatingTextPortUpdatesTheMorph [
+	<expectedFailure>
 	| composite textMorph |
 	composite := GLMCompositePresentation new with: [:a | a text ].
 	window := composite openOn: 'fourtytwo'.
 	composite first text: '42'.
 	self assert: (composite pane port: #text) value asString equals: '42'.
-	textMorph := self find: GLMPluggableTextMorph in: window.
+	textMorph := self find: RubPluggableTextMorph in: window.
 	self assert: textMorph text asString equals: '42'
 ]

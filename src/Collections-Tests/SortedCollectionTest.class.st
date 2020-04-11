@@ -16,7 +16,6 @@ Class {
 		'accessCollection',
 		'elementNoteIn',
 		'oldSubcollection',
-		'floatCollectionSameEndAndBegining',
 		'withoutEqualElements',
 		'collectionOfFloatWithDuplicate',
 		'collectionIncluded',
@@ -24,7 +23,9 @@ Class {
 		'collectionWithoutNil',
 		'duplicateFloat',
 		'nonEmpty5Elements',
-		'collectionWith4Elements'
+		'collectionWith4Elements',
+		'collectionOfString',
+		'stringCollectionSameEndAndBegining'
 	],
 	#category : #'Collections-Tests-Unordered'
 }
@@ -92,13 +93,6 @@ SortedCollectionTest >> collectionNotIncluded [
 ]
 
 { #category : #requirements }
-SortedCollectionTest >> collectionOfFloat [
- 	"Return a collection only includiing Float elements "
-	
-	^ collectionOfFloat 
-]
-
-{ #category : #requirements }
 SortedCollectionTest >> collectionOfSize5 [
 	"Return a collection of size 5"
 	
@@ -130,7 +124,7 @@ SortedCollectionTest >> collectionWith5Elements [
 SortedCollectionTest >> collectionWithCopyNonIdentical [
 	"Return a collection that include elements for which 'copy' return a different object (this is not the case of SmallInteger)"
 	
-	^ collectionOfFloat
+	^ collectionOfString
 ]
 
 { #category : #requirements }
@@ -159,21 +153,21 @@ SortedCollectionTest >> collectionWithNonIdentitySameAtEndAndBegining [
 	"Return a collection with elements at end and begining equals only with classic equality (they are not the same object).
 (others elements of the collection are not equal to those elements)"
 
-	^ floatCollectionSameEndAndBegining 
+	^ stringCollectionSameEndAndBegining 
 ]
 
 { #category : #requirements }
 SortedCollectionTest >> collectionWithSameAtEndAndBegining [
 	"Return a collection with elements at end and begining equals (others elements of the collection are not equal to those elements)"
 	
-	^ floatCollectionSameEndAndBegining 
+	^ stringCollectionSameEndAndBegining 
 ]
 
 { #category : #requirements }
 SortedCollectionTest >> collectionWithSortableElements [
 	"Return a collection elements that can be sorted ( understanding message ' < '  or ' > ')"
 	
-	^ collectionOfFloat 
+	^ collectionOfString 
 ]
 
 { #category : #requirements }
@@ -270,7 +264,7 @@ SortedCollectionTest >> elementTwiceInForOccurrences [
 SortedCollectionTest >> elementsCopyNonIdenticalWithoutEqualElements [
 	"Return a collection that does niot incllude equal elements ( classic equality )"
 	
-	^ collectionOfFloat
+	^ collectionOfString
 ]
 
 { #category : #requirements }
@@ -283,14 +277,6 @@ SortedCollectionTest >> empty [
 SortedCollectionTest >> expectedSizeAfterReject [
 
 	^ 1
-]
-
-{ #category : #requirements }
-SortedCollectionTest >> floatCollectionWithSameAtEndAndBegining [
-	"Return a collection with elements at end and begining equals only with classic equality (they are not the same object).
-(others elements of the collection are not equal to those elements)"
-
-	^ floatCollectionSameEndAndBegining 
 ]
 
 { #category : #requirements }
@@ -419,12 +405,13 @@ SortedCollectionTest >> setUp [
 	collectResult add: SmallInteger.
 	nonEmpty1Element := SortedCollection new add:5; yourself.
 	collectionOfFloat := SortedCollection new add:1.2 ; add: 5.6 ; add:4.4 ; add: 1.9 ; yourself.
+	collectionOfString := SortedCollection new add: 'a' ; add: 'b' ; add: 'c' ; add: 'd' ; yourself.
 	duplicateFloat := 1.2.
 	collectionOfFloatWithDuplicate := SortedCollection new add: duplicateFloat  ; add: 5.6 ; add:4.4 ; add: duplicateFloat  ; yourself.
 	accessCollection := SortedCollection new add:1 ; add: 5 ; add:4 ; add: 2 ; add:7 ; yourself.
 	elementNoteIn := 999.
 	oldSubcollection := SortedCollection new add: 2 ; add: 2 ; add: 2 ; yourself.
-	floatCollectionSameEndAndBegining := SortedCollection new add: 1.5 ; add: 1.5 copy ; yourself.
+	stringCollectionSameEndAndBegining := SortedCollection new add: 'a' ; add: 'a' copy ; yourself.
 	withoutEqualElements := SortedCollection new add: 1 ; add: 8 copy ; add: 4;yourself.
 	nonEmpty5Elements := SortedCollection new add: 1 ; add: 8 copy ; add: 4; add: 4; add: 4;yourself.
 ]
@@ -457,14 +444,12 @@ SortedCollectionTest >> test0FixtureTConvertAsSetForMultiplinessTest [
 	self withEqualElements do: [ :each | self assert: each isFloat ].
 	res := true.
 	self withEqualElements detect: [ :each | (self withEqualElements occurrencesOf: each) > 1 ] ifNone: [ res := false ].
-	self assert: res = true.	"a collection of Float without equal elements:"
-	self elementsCopyNonIdenticalWithoutEqualElements.
-	self elementsCopyNonIdenticalWithoutEqualElements do: [ :each | self assert: each isFloat ].
+	self assert: res.	"a collection of Float without equal elements:"
 	res := true.
 	self elementsCopyNonIdenticalWithoutEqualElements
 		detect: [ :each | (self elementsCopyNonIdenticalWithoutEqualElements occurrencesOf: each) > 1 ]
 		ifNone: [ res := false ].
-	self assert: res = false
+	self assert: res equals: false
 ]
 
 { #category : #'tests - basic' }
@@ -530,6 +515,17 @@ SortedCollectionTest >> testCollect [
 	
 ]
 
+{ #category : #tests }
+SortedCollectionTest >> testComma [
+	| sortBlock collOne collTwo combined |
+	sortBlock := [ :a :b | a > b ].
+	collOne := (1 to: 5) asSortedCollection: sortBlock.
+	collTwo := (6 to: 10) asSortedCollection: sortBlock.
+	combined := collOne , collTwo.
+	self assert: combined sortBlock equals: sortBlock.
+	self assert: combined asArray equals: (1 to: 10) asArray reverse
+]
+
 { #category : #'tests - basic' }
 SortedCollectionTest >> testCopy [
 		
@@ -583,6 +579,20 @@ SortedCollectionTest >> testEquals [
 SortedCollectionTest >> testFlatCollect [
 
 	self assert: (#(1 2) asSortedCollection flatCollect: [ :x | { x } ]) equals: #(1 2) asOrderedCollection
+]
+
+{ #category : #tests }
+SortedCollectionTest >> testGroupedBySortedCollection [
+	| collection grouped |
+	collection := Object methods asSortedCollection: #selector ascending.
+	
+	grouped := collection groupedBy: #methodClass.
+	
+	"do we retain the sortblock?"
+	self assert: grouped values first class equals: SortedCollection.
+	self assert: collection sortBlock equals: grouped values first sortBlock.
+	
+	
 ]
 
 { #category : #'tests - includes' }
@@ -734,11 +744,21 @@ SortedCollectionTest >> testLastIndexOfStartingAt [
 ]
 
 { #category : #'tests - basic' }
-SortedCollectionTest >> testMedian [
+SortedCollectionTest >> testMedianForEvenSizeCollection [
 	
 	|aSortedCollection|
-	aSortedCollection := (1 to: 10) asSortedCollection.
-	self assert: aSortedCollection median equals: 5.
+	aSortedCollection := {1 .2 . 3 . 4 . 5 . 6 } asSortedCollection.
+	self assert: aSortedCollection median equals: 3.5
+	
+	
+]
+
+{ #category : #'tests - basic' }
+SortedCollectionTest >> testMedianForOddSizeCollection [
+	
+	|aSortedCollection|
+	aSortedCollection := {1 .2 . 3 . 4 . 5 . 6 .7} asSortedCollection.
+	self assert: aSortedCollection median equals: 4.
 	
 	aSortedCollection := SortedCollection new.
 	aSortedCollection 
@@ -748,6 +768,14 @@ SortedCollectionTest >> testMedian [
 
 	self assert: aSortedCollection median equals: 'porcinet'
 	
+]
+
+{ #category : #'tests - basic' }
+SortedCollectionTest >> testMedianWithNumbers [
+
+	| aSortedCollection |
+	aSortedCollection := (1 to: 10) asSortedCollection.
+ 	self assert: aSortedCollection median equals: 5.5
 ]
 
 { #category : #'tests - basic' }
@@ -810,6 +838,15 @@ SortedCollectionTest >> testSortBlock [
 	
 	
 	
+]
+
+{ #category : #'tests - basic' }
+SortedCollectionTest >> testSortUsing [
+	| aSortedCollection |
+	aSortedCollection := (SortedCollection sortUsing: #yourself ascending)
+		addAll: #(2 6 3 8 4 3 7 6);
+		yourself.
+	self assert: aSortedCollection asArray equals: #(2 3 3 4 6 6 7 8)
 ]
 
 { #category : #'tests - basic' }

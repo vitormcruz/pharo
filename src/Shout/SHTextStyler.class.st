@@ -53,9 +53,8 @@ SHTextStyler >> initialize [
 
 { #category : #private }
 SHTextStyler >> monitor [
-	monitor isNil
-		ifTrue: [monitor := Monitor new].
-	^ monitor
+
+	^ monitor ifNil: [ monitor := Monitor new ]
 ]
 
 { #category : #private }
@@ -65,6 +64,7 @@ SHTextStyler >> privateStyle: aText [
 
 { #category : #styling }
 SHTextStyler >> style: aText [
+	aText ifEmpty: [ ^ self ].
 	self terminateBackgroundStylingProcess.
 	stylingEnabled
 		ifFalse: [ ^ self ].
@@ -75,6 +75,7 @@ SHTextStyler >> style: aText [
 
 { #category : #styling }
 SHTextStyler >> styleInBackgroundProcess: aText [
+	aText ifEmpty: [ ^ self ].
 	self terminateBackgroundStylingProcess.
 	stylingEnabled ifFalse: [ ^ self ].
 	text := aText copy.

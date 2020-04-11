@@ -5,9 +5,7 @@ Class {
 	#name : #AthensBalloonPath,
 	#superclass : #AthensPath,
 	#instVars : [
-		'bounds',
-		'contours',
-		'last'
+		'contours'
 	],
 	#category : #'Athens-Balloon-Path'
 }
@@ -37,7 +35,6 @@ AthensBalloonPath >> contoursForStroke [
 { #category : #converting }
 AthensBalloonPath >> convertFromBuilder: aBuilder [
 	| segment cContours |
-	bounds := aBuilder pathBounds.
 	segment := aBuilder pathStart.
 	
 

@@ -10,7 +10,7 @@ Class {
 	#classInstVars : [
 		'uniqueInstance'
 	],
-	#category : #'System-Support'
+	#category : #'System-Support-Authoring'
 }
 
 { #category : #settings }
@@ -83,7 +83,7 @@ Author class >> requestFullName [
 	^ Author uniqueInstance requestFullName
 ]
 
-{ #category : #'instance creation' }
+{ #category : #initialization }
 Author class >> reset [
 	<script>
 	^ self uniqueInstance reset.
@@ -165,7 +165,7 @@ Author >> requestFullName [
 	] "nil means that the dialog was cancelled "
 ]
 
-{ #category : #compatibility }
+{ #category : #initialization }
 Author >> reset [
 	fullName := ''
 ]

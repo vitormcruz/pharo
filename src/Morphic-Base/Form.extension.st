@@ -12,19 +12,26 @@ Form >> asMorph [
 ]
 
 { #category : #'*Morphic-Base' }
-Form class >> floodFillTolerance [
-	^ FloodFillTolerance ifNil: [FloodFillTolerance := 0.0]
+Form >> floodFillTolerance [
+	^ self class floodFillTolerance
 ]
 
 { #category : #'*Morphic-Base' }
-Form >> floodFillTolerance [
-	^ self class floodFillTolerance
+Form class >> floodFillTolerance [
+	^ FloodFillTolerance ifNil: [FloodFillTolerance := 0.0]
 ]
 
 { #category : #'*Morphic-Base' }
 Form >> iconOrThumbnailOfSize: aNumberOrPoint [ 
 	"Answer an appropiate form to represent the receiver"
 	^ self scaledIntoFormOfSize: aNumberOrPoint
+]
+
+{ #category : #'*Morphic-Base' }
+Form >> scaledByDisplayScaleFactor [
+	
+	^ self scaledToSize: self extent * self currentWorld displayScaleFactor.
+
 ]
 
 { #category : #'*Morphic-Base' }

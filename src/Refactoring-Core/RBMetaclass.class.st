@@ -18,6 +18,15 @@ RBMetaclass class >> existingNamed: aSymbol [
 ]
 
 { #category : #'instance creation' }
+RBMetaclass class >> existingNamed: aSymbol model: aRBNamespace [
+	^ (self named: aSymbol)
+		model: aRBNamespace;
+		realName: aSymbol;
+		yourself 
+	
+]
+
+{ #category : #'instance creation' }
 RBMetaclass class >> named: aSymbol [ 
 	^(self new)
 		name: aSymbol;
@@ -62,9 +71,9 @@ RBMetaclass >> printOn: aStream [
 	aStream nextPutAll: ' class'
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RBMetaclass >> realName: aSymbol [ 
-	self realClass: (Smalltalk globals at: aSymbol) classSide
+	self realClass: (self model environment at: aSymbol) classSide
 ]
 
 { #category : #printing }

@@ -1,9 +1,6 @@
 Class {
 	#name : #OCBytecodeGeneratorTest,
 	#superclass : #TestCase,
-	#instVars : [
-		'a'
-	],
 	#category : #'OpalCompiler-Tests-Bytecode'
 }
 
@@ -27,14 +24,16 @@ OCBytecodeGeneratorTest >> testBlockReturnTop [
 		blockReturnTop;
 		compiledMethod.
 
-	self testMethod: cm against: '13 <7D> blockReturn'.
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <7D> blockReturn' 
+		for64bit: '25 <7D> blockReturn' )
+	.
 	
 ]
 
 { #category : #'tests - execution' }
 OCBytecodeGeneratorTest >> testClosureExample [
-	| cm  |
-	
+	| cm |
 	cm := self newBytecodeGen
 		numArgs: 0;
 		numTemps: 0;
@@ -44,22 +43,20 @@ OCBytecodeGeneratorTest >> testClosureExample [
 		label: #end;
 		returnTop;
 		compiledMethod.
-	
-		
+
+
 	cm methodClass: self class.
 	cm selector: #test.
 
 	self assert: (cm isKindOf: CompiledMethod).
-	self assert: ((cm valueWithReceiver: 2@2 arguments: #()) isKindOf: BlockClosure).
-	self assert: ((cm valueWithReceiver: 2@2 arguments: #()) value = (2@2)).
-	^cm
-	
+	self assert: ((cm valueWithReceiver: 2 @ 2 arguments: #()) isKindOf: BlockClosure).
+	self assert: (cm valueWithReceiver: 2 @ 2 arguments: #()) value equals: 2 @ 2.
+	^ cm
 ]
 
 { #category : #'tests - execution' }
 OCBytecodeGeneratorTest >> testExample [
 	| cm |
-	
 	cm := self newBytecodeGen
 		numArgs: 1;
 		numTemps: 1;
@@ -68,7 +65,7 @@ OCBytecodeGeneratorTest >> testExample [
 		send: #>;
 		if: false goto: #else;
 		pushLiteral: 'yes';
-		returnTop ;
+		returnTop;
 		label: #else;
 		pushLiteral: 'no';
 		returnTop;
@@ -77,16 +74,14 @@ OCBytecodeGeneratorTest >> testExample [
 	cm selector: #test.
 
 	self assert: (cm isKindOf: CompiledMethod).
-	self assert: (cm valueWithReceiver: 2@2 arguments: #(1)) = 'no' .
-	self assert: (cm valueWithReceiver: 2@2  arguments: #(3)) = 'yes' .	
-	^cm
-	
+	self assert: (cm valueWithReceiver: 2 @ 2 arguments: #(1)) equals: 'no'.
+	self assert: (cm valueWithReceiver: 2 @ 2 arguments: #(3)) equals: 'yes'.
+	^ cm
 ]
 
 { #category : #'tests - execution' }
 OCBytecodeGeneratorTest >> testExample2 [
 	| cm |
-	
 	cm := self newBytecodeGen
 		numArgs: 1;
 		numTemps: 1;
@@ -95,17 +90,16 @@ OCBytecodeGeneratorTest >> testExample2 [
 		send: #<;
 		if: false goto: #else;
 		pushLiteral: 'yes';
-		returnTop ;
+		returnTop;
 		label: #else;
 		pushLiteral: 'no';
 		returnTop;
 		compiledMethod.
 
 	self assert: (cm isKindOf: CompiledMethod).
-	self assert: (cm valueWithReceiver: 2@2 arguments: #(1)) = 'no' .
-	self assert: (cm valueWithReceiver: 2@2  arguments: #(3)) = 'yes' .	
-	^cm
-	
+	self assert: (cm valueWithReceiver: 2 @ 2 arguments: #(1)) equals: 'no'.
+	self assert: (cm valueWithReceiver: 2 @ 2 arguments: #(3)) equals: 'yes'.
+	^ cm
 ]
 
 { #category : #'tests - instructions' }
@@ -122,10 +116,9 @@ OCBytecodeGeneratorTest >> testGoTo [
 		goto: #back;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <76> pushConstant: 1
-14 <76> pushConstant: 1
-15 <7C> returnTop
-16 <A3 FC> jumpTo: 14'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <76> pushConstant: 1\15 <7C> returnTop\16 <A3 FC> jumpTo: 14' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <76> pushConstant: 1\27 <7C> returnTop\28 <A3 FC> jumpTo: 26' withCRs)
 
 ]
 
@@ -144,11 +137,10 @@ OCBytecodeGeneratorTest >> testGoToIf [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:   '13 <10> pushTemp: 0
-14 <76> pushConstant: 1
-15 <A8 01> jumpTrue: 18
-17 <7C> returnTop
-18 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <10> pushTemp: 0\14 <76> pushConstant: 1\15 <A8 01> jumpTrue: 18\17 <7C> returnTop\18 <7C> returnTop' withCRs 
+		for64bit: '25 <10> pushTemp: 0\26 <76> pushConstant: 1\27 <A8 01> jumpTrue: 30\29 <7C> returnTop\30 <7C> returnTop' withCRs)
+	
 ]
 
 { #category : #'tests - instructions' }
@@ -166,11 +158,10 @@ OCBytecodeGeneratorTest >> testIfGoTo [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:   '13 <10> pushTemp: 0
-14 <76> pushConstant: 1
-15 <A8 01> jumpTrue: 18
-17 <7C> returnTop
-18 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <10> pushTemp: 0\14 <76> pushConstant: 1\15 <A8 01> jumpTrue: 18\17 <7C> returnTop\18 <7C> returnTop' withCRs 
+		for64bit: '25 <10> pushTemp: 0\26 <76> pushConstant: 1\27 <A8 01> jumpTrue: 30\29 <7C> returnTop\30 <7C> returnTop' withCRs)
+
 ]
 
 { #category : #'tests - instructions' }
@@ -189,11 +180,9 @@ OCBytecodeGeneratorTest >> testIfGoToOtherWise [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <10> pushTemp: 0
-14 <76> pushConstant: 1
-15 <A8 01> jumpTrue: 18
-17 <7C> returnTop
-18 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <10> pushTemp: 0\14 <76> pushConstant: 1\15 <A8 01> jumpTrue: 18\17 <7C> returnTop\18 <7C> returnTop' withCRs 
+		for64bit: '25 <10> pushTemp: 0\26 <76> pushConstant: 1\27 <A8 01> jumpTrue: 30\29 <7C> returnTop\30 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -210,20 +199,17 @@ OCBytecodeGeneratorTest >> testLabel [
 		goto: #back;
 		compiledMethod.
 
-	self testMethod: cm against:   '13 <76> pushConstant: 1
-14 <76> pushConstant: 1
-15 <7C> returnTop
-16 <A3 FC> jumpTo: 14'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <76> pushConstant: 1\15 <7C> returnTop\16 <A3 FC> jumpTo: 14' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <76> pushConstant: 1\27 <7C> returnTop\28 <A3 FC> jumpTo: 26' withCRs)
 ]
 
 { #category : #helper }
 OCBytecodeGeneratorTest >> testMethod: cm against: string [
-
 	| symbolic |
 	self assert: cm isCompiledMethod.
-	symbolic := String streamContents: [:str | cm longPrintOn: str ].
-	self assert: symbolic = string
-	
+	symbolic := String streamContents: [ :str | cm longPrintOn: str ].
+	self assert: symbolic equals: string
 ]
 
 { #category : #'tests - instructions' }
@@ -239,10 +225,9 @@ OCBytecodeGeneratorTest >> testPopTop [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <76> pushConstant: 1
-14 <76> pushConstant: 1
-15 <87> pop
-16 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <76> pushConstant: 1\15 <87> pop\16 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <76> pushConstant: 1\27 <87> pop\28 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -259,10 +244,9 @@ OCBytecodeGeneratorTest >> testPushClosureCopyNumCopiedValuesNumArgsTo [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:   '13 <8F 00 00 02> closureNumCopied: 0 numArgs: 0 bytes 17 to 18
-17 <70> self
-18 <7D> blockReturn
-19 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <8F 00 00 02> closureNumCopied: 0 numArgs: 0 bytes 17 to 18\17 <70> self\18 <7D> blockReturn\19 <7C> returnTop' withCRs 
+		for64bit: '25 <8F 00 00 02> closureNumCopied: 0 numArgs: 0 bytes 29 to 30\29 <70> self\30 <7D> blockReturn\31 <7C> returnTop' withCRs)  
 ]
 
 { #category : #'tests - instructions' }
@@ -277,9 +261,9 @@ OCBytecodeGeneratorTest >> testPushConsArray [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:   '13 <76> pushConstant: 1
-14 <8A 81> pop 1 into (Array new: 1)
-16 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <8A 81> pop 1 into (Array new: 1)\16 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <8A 81> pop 1 into (Array new: 1)\28 <7C> returnTop' withCRs) 
 	
 ]
 
@@ -294,9 +278,9 @@ OCBytecodeGeneratorTest >> testPushDup [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <88> dup
-14 <7C> returnTop'
-	
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <88> dup\14 <7C> returnTop' withCRs 
+		for64bit: '25 <88> dup\26 <7C> returnTop' withCRs) 	
 ]
 
 { #category : #'tests - instructions' }
@@ -310,8 +294,9 @@ OCBytecodeGeneratorTest >> testPushInstVar [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <00> pushRcvr: 0
-14 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <00> pushRcvr: 0\14 <7C> returnTop' withCRs 
+		for64bit: '25 <00> pushRcvr: 0\26 <7C> returnTop' withCRs) 
 	
 ]
 
@@ -326,9 +311,9 @@ OCBytecodeGeneratorTest >> testPushLiteral [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <76> pushConstant: 1
-14 <7C> returnTop'
-	
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <7C> returnTop' withCRs) 
 ]
 
 { #category : #'tests - instructions' }
@@ -338,13 +323,13 @@ OCBytecodeGeneratorTest >> testPushLiteralVariable [
 	cm := self newBytecodeGen
 		numArgs: 0;
 		numTemps: 0;
-		pushLiteralVariable: (LookupKey key: '1');
+		pushLiteralVariable: (AdditionalBinding key: '1');
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '17 <40> pushLit: 1
-18 <7C> returnTop'
-	
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '17 <40> pushLit: 1\18 <7C> returnTop' withCRs 
+		for64bit: '33 <40> pushLit: 1\34 <7C> returnTop' withCRs) 	
 ]
 
 { #category : #'tests - instructions' }
@@ -358,9 +343,9 @@ OCBytecodeGeneratorTest >> testPushNewArray [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <8A 01> push: (Array new: 1)
-15 <7C> returnTop'
-	
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <8A 01> push: (Array new: 1)\15 <7C> returnTop' withCRs 
+		for64bit: '25 <8A 01> push: (Array new: 1)\27 <7C> returnTop' withCRs) 
 ]
 
 { #category : #'tests - instructions' }
@@ -374,8 +359,9 @@ OCBytecodeGeneratorTest >> testPushReceiver [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <70> self
-14 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <70> self\14 <7C> returnTop' withCRs 
+		for64bit: '25 <70> self\26 <7C> returnTop' withCRs) 
 ]
 
 { #category : #'tests - instructions' }
@@ -389,8 +375,9 @@ OCBytecodeGeneratorTest >> testPushRemoteTempInVectorAt [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:   '13 <8C 00 00> pushTemp: 0 inVectorAt: 0
-16 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <8C 00 00> pushTemp: 0 inVectorAt: 0\16 <7C> returnTop' withCRs 
+		for64bit: '25 <8C 00 00> pushTemp: 0 inVectorAt: 0\28 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - errors' }
@@ -423,8 +410,9 @@ OCBytecodeGeneratorTest >> testPushTemp [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <10> pushTemp: 0
-14 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <10> pushTemp: 0\14 <7C> returnTop' withCRs 
+		for64bit: '25 <10> pushTemp: 0\26 <7C> returnTop' withCRs) 
 ]
 
 { #category : #'tests - instructions' }
@@ -438,8 +426,9 @@ OCBytecodeGeneratorTest >> testPushThisContext [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <89> pushThisContext
-14 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <89> pushThisContext\14 <7C> returnTop' withCRs 
+		for64bit: '25 <89> pushThisContext\26 <7C> returnTop' withCRs) 
 ]
 
 { #category : #'tests - instructions' }
@@ -495,8 +484,9 @@ OCBytecodeGeneratorTest >> testReturnTop [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:   '13 <76> pushConstant: 1
-14 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -511,9 +501,9 @@ OCBytecodeGeneratorTest >> testSend [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '17 <76> pushConstant: 1
-18 <D0> send: a
-19 <7C> returnTop'	
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '17 <76> pushConstant: 1\18 <D0> send: a\19 <7C> returnTop' withCRs 
+		for64bit: '33 <76> pushConstant: 1\34 <D0> send: a\35 <7C> returnTop' withCRs) 
 ]
 
 { #category : #'tests - instructions' }
@@ -528,15 +518,14 @@ OCBytecodeGeneratorTest >> testSendToSuperOf [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '17 <76> pushConstant: 1
-18 <85 00> superSend: a
-20 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '17 <76> pushConstant: 1\18 <85 00> superSend: a\20 <7C> returnTop' withCRs 
+		for64bit: '33 <76> pushConstant: 1\34 <85 00> superSend: a\36 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
 OCBytecodeGeneratorTest >> testStoreInstVar [
 	| gen cm symbolic |
-	
 	gen := self newBytecodeGen
 		numArgs: 0;
 		numTemps: 0;
@@ -544,13 +533,16 @@ OCBytecodeGeneratorTest >> testStoreInstVar [
 		storeInstVar: 1;
 		returnTop.
 	cm := gen compiledMethod.
-	symbolic := String streamContents: [:str | cm longPrintOn: str ].
+	symbolic := String streamContents: [ :str | cm longPrintOn: str ].
 
-	self assert: gen stackFrameSize = 1.
+	self assert: gen stackFrameSize equals: 1.
 	self assert: cm isCompiledMethod.
-	self assert: symbolic =  '13 <76> pushConstant: 1
-14 <81 00> storeIntoRcvr: 0
-16 <7C> returnTop'
+	self
+		assert: symbolic
+		equals:
+			(Smalltalk vm
+				for32bit: '13 <76> pushConstant: 1\14 <81 00> storeIntoRcvr: 0\16 <7C> returnTop' withCRs
+				for64bit: '25 <76> pushConstant: 1\26 <81 00> storeIntoRcvr: 0\28 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -565,9 +557,9 @@ OCBytecodeGeneratorTest >> testStoreIntoLiteralVariable [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:   '17 <76> pushConstant: 1
-18 <81 C0> storeIntoLit: 1
-20 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '17 <76> pushConstant: 1\18 <81 C0> storeIntoLit: 1\20 <7C> returnTop' withCRs 
+		for64bit: '33 <76> pushConstant: 1\34 <81 C0> storeIntoLit: 1\36 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -581,9 +573,9 @@ OCBytecodeGeneratorTest >> testStoreLiteralVariable [
 		storeIntoLiteralVariable: OCBytecodeGeneratorTest binding;
 		returnTop;
 		compiledMethod.
-	self testMethod: cm against:  '17 <76> pushConstant: 1
-18 <81 C0> storeIntoLit: OCBytecodeGeneratorTest
-20 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '17 <76> pushConstant: 1\18 <81 C0> storeIntoLit: OCBytecodeGeneratorTest\20 <7C> returnTop' withCRs 
+		for64bit: '33 <76> pushConstant: 1\34 <81 C0> storeIntoLit: OCBytecodeGeneratorTest\36 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -599,10 +591,9 @@ OCBytecodeGeneratorTest >> testStorePopInstVar [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:   '13 <76> pushConstant: 1
-14 <76> pushConstant: 1
-15 <60> popIntoRcvr: 0
-16 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <76> pushConstant: 1\15 <60> popIntoRcvr: 0\16 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <76> pushConstant: 1\27 <60> popIntoRcvr: 0\28 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -618,10 +609,9 @@ OCBytecodeGeneratorTest >> testStorePopIntoLiteralVariable [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '17 <76> pushConstant: 1
-18 <76> pushConstant: 1
-19 <82 C0> popIntoLit: test
-21 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '17 <76> pushConstant: 1\18 <76> pushConstant: 1\19 <82 C0> popIntoLit: test\21 <7C> returnTop' withCRs 
+		for64bit: '33 <76> pushConstant: 1\34 <76> pushConstant: 1\35 <82 C0> popIntoLit: test\37 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -637,10 +627,9 @@ OCBytecodeGeneratorTest >> testStorePopRemoteTempInVectorAt [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <76> pushConstant: 1
-14 <76> pushConstant: 1
-15 <8E 00 00> popIntoTemp: 0 inVectorAt: 0
-18 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <76> pushConstant: 1\15 <8E 00 00> popIntoTemp: 0 inVectorAt: 0\18 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <76> pushConstant: 1\27 <8E 00 00> popIntoTemp: 0 inVectorAt: 0\30 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -656,10 +645,9 @@ OCBytecodeGeneratorTest >> testStorePopTemp [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <76> pushConstant: 1
-14 <76> pushConstant: 1
-15 <68> popIntoTemp: 0
-16 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <76> pushConstant: 1\15 <68> popIntoTemp: 0\16 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <76> pushConstant: 1\27 <68> popIntoTemp: 0\28 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - instructions' }
@@ -674,9 +662,9 @@ OCBytecodeGeneratorTest >> testStoreRemoteTempInVectorAt [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <76> pushConstant: 1
-14 <8D 00 00> storeIntoTemp: 0 inVectorAt: 0
-17 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <8D 00 00> storeIntoTemp: 0 inVectorAt: 0\17 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <8D 00 00> storeIntoTemp: 0 inVectorAt: 0\29 <7C> returnTop' withCRs)
 ]
 
 { #category : #'tests - errors' }
@@ -709,7 +697,7 @@ OCBytecodeGeneratorTest >> testStoreTemp [
 		returnTop;
 		compiledMethod.
 
-	self testMethod: cm against:  '13 <76> pushConstant: 1
-14 <81 40> storeIntoTemp: 0
-16 <7C> returnTop'
+	self testMethod: cm against: (Smalltalk vm 
+		for32bit: '13 <76> pushConstant: 1\14 <81 40> storeIntoTemp: 0\16 <7C> returnTop' withCRs 
+		for64bit: '25 <76> pushConstant: 1\26 <81 40> storeIntoTemp: 0\28 <7C> returnTop' withCRs)
 ]

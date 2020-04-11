@@ -21,7 +21,7 @@ Subclasses must implement (at least) the following methods:
 Class {
 	#name : #Canvas,
 	#superclass : #Object,
-	#category : #'Graphics-Canvas'
+	#category : #'Graphics-Canvas-Canvases'
 }
 
 { #category : #converting }
@@ -182,12 +182,6 @@ Canvas >> drawString: s in: boundsRect font: fontOrNil color: c [
 { #category : #'drawing-text' }
 Canvas >> drawString: s in: boundsRect font: fontOrNil color: c underline: underline underlineColor: uc strikethrough: strikethrough strikethroughColor: sc [
 	^self drawString: s from: 1 to: s size in: boundsRect font: fontOrNil color: c underline: underline underlineColor: uc strikethrough: strikethrough strikethroughColor: sc
-]
-
-{ #category : #drawing }
-Canvas >> encryptedParagraph: para bounds: bounds color: c [
-	"Draw the given paragraph"
-	^self subclassResponsibility
 ]
 
 { #category : #accessing }

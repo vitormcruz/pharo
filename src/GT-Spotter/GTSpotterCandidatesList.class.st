@@ -79,7 +79,7 @@ GTSpotterCandidatesList >> announcer [
 { #category : #accessing }
 GTSpotterCandidatesList >> candidates [
 
-	^ candidates ifNil: [ candidates := GTSpotterDoubleLinkedList new ]
+	^ candidates ifNil: [ candidates := DoubleLinkedList new ]
 ]
 
 { #category : #candidates }
@@ -280,6 +280,14 @@ GTSpotterCandidatesList >> privateAddCandidate: aCandidateLink weightedInNotFull
 		ifTrue: [  ] ]
 ]
 
+{ #category : #notifying }
+GTSpotterCandidatesList >> processorEnded: aProcessor [
+
+	(self processors noneSatisfy: [ :e | e isRunning ])
+		ifTrue: [ self announcer announce: GTSpotterQueryEnded new ] 
+	
+]
+
 { #category : #accessing }
 GTSpotterCandidatesList >> processorLinksMap [
 
@@ -287,10 +295,16 @@ GTSpotterCandidatesList >> processorLinksMap [
 	
 ]
 
+{ #category : #notifying }
+GTSpotterCandidatesList >> processorStarted: aProcessor [
+	
+	self announcer announce: GTSpotterQueryStarted new.
+]
+
 { #category : #accessing }
 GTSpotterCandidatesList >> processors [
 
-	^ categories ifNil: [ categories := GTSpotterDoubleLinkedList new ].
+	^ categories ifNil: [ categories := DoubleLinkedList new ].
 ]
 
 { #category : #'adding/removing' }

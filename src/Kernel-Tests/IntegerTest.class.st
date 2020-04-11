@@ -1,5 +1,5 @@
 "
-SUnit tests for integers
+SUnit tests for integers.
 "
 Class {
 	#name : #IntegerTest,
@@ -9,8 +9,8 @@ Class {
 
 { #category : #private }
 IntegerTest >> assert: a classAndValueEquals: b [
-	self assert: a class = b class.
-	self assert: a = b
+	self assert: a class equals: b class.
+	self assert: a equals: b
 ]
 
 { #category : #'tests - basic' }
@@ -71,52 +71,6 @@ IntegerTest >> testBadBase [
 	self should: [2 printStringBase: 1] raise: Error.
 ]
 
-{ #category : #'tests - benchmarks' }
-IntegerTest >> testBenchFib [
-
-	self assert: (0 benchFib = 1).
-	self assert: (1 benchFib = 1).
-	self assert: (2 benchFib = 3).
-	
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testBigReceiverInexactNthRoot [
-	"
-	IntegerTest new testBigReceiverInexactNthRoot
-	"
-
-	"Inexact 3rd root (not a whole cube number), so a Float must be answered.
-	However, receiver is too big for Float arithmethic."
-	| bigNum result |
-	bigNum := (100 factorial raisedTo: 3) + 1.		"Add 1 so it is not a whole cube"
-	self assert: bigNum asFloat isInfinite.			"Otherwise, we chose a bad sample"
-	result := bigNum nthRoot: 3.
-	self assert: result isFloat.
-	self deny: result isInfinite.
-	self assert: result = 100 factorial asFloat.		"No other float is closer. See following line"
-	self assert: 100 factorial asFloat = (100 factorial+1) asFloat
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testBigReceiverInexactSqrt [
-	"
-	IntegerTest new testBigReceiverInexactSqrt
-	"
-
-	"Inexact 3rd root (not a whole cube number), so a Float must be answered.
-	However, receiver is too big for Float arithmethic."
-	| bigNum result |
-	bigNum := 100 factorial squared + 1.		"Add 1 so it is not a whole square"
-	self assert: bigNum asFloat isInfinite.			"Otherwise, we chose a bad sample"
-	result := bigNum sqrt.
-	self assert: result isFloat.
-	self deny: result isInfinite.
-	self assert: result = 100 factorial asFloat.		"No other float is closer. See following lines"
-	self assert: (result successor asFraction squared - bigNum) abs >= (result asFraction squared - bigNum) abs.
-	self assert: (result predecessor asFraction squared - bigNum) abs >= (result asFraction squared - bigNum) abs.
-]
-
 { #category : #'tests - bitLogic' }
 IntegerTest >> testBitAnd [
 
@@ -129,44 +83,28 @@ IntegerTest >> testBitAnd [
 { #category : #'tests - bitLogic' }
 IntegerTest >> testBitAt [
 	| trials bitSequence2 |
-
 	self assert: (2r10 bitAt: 1) equals: 0.
 	self assert: (2r10 bitAt: 2) equals: 1.
-	
-	self
-		assert: ((1 to: 100) allSatisfy: [:i | (0 bitAt: i) = 0])
-		description: 'all bits of zero are set to zero'.
-	
-	self
-		assert: ((1 to: 100) allSatisfy: [:i | (-1 bitAt: i) = 1])
-		description: 'In two complements, all bits of -1 are set to 1'.
-		
-	
-	trials := #(
-		'2r10010011'
-		'2r11100100'
-		'2r10000000'
-		'2r0000101011011001'
-		'2r1000101011011001'
-		'2r0101010101011000'
-		'2r0010011110110010'
-		'2r0010011000000000'
-		'2r00100111101100101000101011011001'
-		'2r01110010011110110010100110101101'
-		'2r10101011101011001010000010110110'
-		'2r10101000000000000000000000000000'
-		'2r0010101110101001110010100000101101100010011110110010100010101100'
-		'2r1010101110101100101000001011011000100111101100101000101011011001'
-		'2r1010101110101000000000000000000000000000000000000000000000000000').
-	trials do: [:bitSequence | | aNumber |
-		aNumber := Number readFrom: bitSequence.
-		bitSequence2 := (bitSequence size - 2 to: 1 by: -1) inject: '2r' into: [:string :i | string copyWith: (Character digitValue: (aNumber bitAt: i))].
-		self assert: bitSequence2 = bitSequence].
-	
-	trials do: [:bitSequence | | bitInvert |
-		bitInvert := -1 - (Number readFrom: bitSequence).
-		bitSequence2 := (bitSequence size - 2 to: 1 by: -1) inject: '2r' into: [:string :i | string copyWith: (Character digitValue: 1 - (bitInvert bitAt: i))].
-		self assert: bitSequence2 = bitSequence description: '-1-x is similar to a bitInvert operation in two complement']
+
+	self assert: ((1 to: 100) allSatisfy: [ :i | (0 bitAt: i) = 0 ]) description: 'all bits of zero are set to zero'.
+
+	self assert: ((1 to: 100) allSatisfy: [ :i | (-1 bitAt: i) = 1 ]) description: 'In two complements, all bits of -1 are set to 1'.
+
+
+	trials := #('2r10010011' '2r11100100' '2r10000000' '2r0000101011011001' '2r1000101011011001' '2r0101010101011000' '2r0010011110110010' '2r0010011000000000' '2r00100111101100101000101011011001' '2r01110010011110110010100110101101' '2r10101011101011001010000010110110' '2r10101000000000000000000000000000' '2r0010101110101001110010100000101101100010011110110010100010101100' '2r1010101110101100101000001011011000100111101100101000101011011001' '2r1010101110101000000000000000000000000000000000000000000000000000').
+	trials
+		do: [ :bitSequence | 
+			| aNumber |
+			aNumber := Number readFrom: bitSequence.
+			bitSequence2 := (bitSequence size - 2 to: 1 by: -1) inject: '2r' into: [ :string :i | string copyWith: (Character digitValue: (aNumber bitAt: i)) ].
+			self assert: bitSequence2 equals: bitSequence ].
+
+	trials
+		do: [ :bitSequence | 
+			| bitInvert |
+			bitInvert := -1 - (Number readFrom: bitSequence).
+			bitSequence2 := (bitSequence size - 2 to: 1 by: -1) inject: '2r' into: [ :string :i | string copyWith: (Character digitValue: 1 - (bitInvert bitAt: i)) ].
+			self assert: bitSequence2 = bitSequence description: '-1-x is similar to a bitInvert operation in two complement' ]
 ]
 
 { #category : #'tests - bitLogic' }
@@ -221,13 +159,6 @@ IntegerTest >> testBitMask [
 	self assert: (2r10 anyMask: 2r11).
 	self assert: (2r01 anyMask: 2r11).
 	self deny: (2r00 anyMask: 2r11).
-]
-
-{ #category : #'tests - bitLogic' }
-IntegerTest >> testBitOr [
-
-	self assert: (2r0101 | 2r1010) equals: 2r1111.
-	self assert: (2r0101 bitOr: 2r1010) equals: 2r1111.
 ]
 
 { #category : #'tests - bitLogic' }
@@ -289,6 +220,7 @@ IntegerTest >> testCreationFromBytes1 [
 IntegerTest >> testCreationFromBytes2 [
 	"It is illegal for a LargeInteger to be less than SmallInteger maxVal. Here we test that Integer>>byte!byte2:byte3:byte4: 
 	 reconstructs (SmallInteger maxVal + 1) as an instance of LargePositiveInteger."
+
 	| maxSmallInt hexString byte1 byte2 byte3 byte4 builtInteger |
 	Smalltalk vm wordSize = 4 ifFalse: [ ^ self skip ].
 	maxSmallInt := SmallInteger maxVal.
@@ -298,10 +230,13 @@ IntegerTest >> testCreationFromBytes2 [
 	byte3 := Number readFrom: (hexString copyFrom: 3 to: 4) base: 16.
 	byte2 := Number readFrom: (hexString copyFrom: 5 to: 6) base: 16.
 	byte1 := Number readFrom: (hexString copyFrom: 7 to: 8) base: 16.
-	builtInteger := Integer byte1: byte1 byte2: byte2 byte3: byte3 byte4: byte4.
+	builtInteger := Integer
+		byte1: byte1
+		byte2: byte2
+		byte3: byte3
+		byte4: byte4.
 	self assert: builtInteger equals: maxSmallInt + 1.
-	self deny: builtInteger class = SmallInteger
-
+	self deny: builtInteger class equals: SmallInteger
 ]
 
 { #category : #'tests - instance creation' }
@@ -334,36 +269,6 @@ IntegerTest >> testCrossSumBase [
 		  equals: #(2 3 2 2 1 4 3 3 2 3 2 2 1 3 2 2 1 2 1 1 0 1 1 2 1 2 2 3 1 2 2 3 2 3 3 4 1 2 2 3 2).
 
 	self should: [ 10 crossSumBase: 1 ] raise: AssertionFailure
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testDegreeCos [
-
-	45 degreeCos.	"Following tests use approximate equality, because cosine are generally evaluated using inexact Floating point arithmetic"
-	self assert: (45 degreeCos squared - (1 / 2)) abs <= Float epsilon.
-	self assert: (60 degreeCos - (1 / 2)) abs <= Float epsilon.
-	self assert: (120 degreeCos + (1 / 2)) abs <= Float epsilon.
-	-360 to: 360 do: [ :i | self assert: (i degreeCos closeTo: i degreesToRadians cos) ].	"Following tests use strict equality which is a requested property of degreeCos"
-	-10 to: 10 do: [ :k | 
-		self assert: (k * 360 + 90) degreeCos equals: 0.
-		self assert: (k * 360 - 90) degreeCos equals: 0.
-		self assert: (k * 360 + 180) degreeCos + 1 equals: 0.
-		self assert: (k * 360) degreeCos - 1 equals: 0 ]
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testDegreeSin [
-
-	45 degreeSin.	"Following tests use approximate equality, because sine are generally evaluated using inexact Floating point arithmetic"
-	self assert: (45 degreeSin squared - (1 / 2)) abs <= Float epsilon.
-	self assert: (30 degreeSin - (1 / 2)) abs <= Float epsilon.
-	self assert: (-30 degreeSin + (1 / 2)) abs <= Float epsilon.
-	-360 to: 360 do: [ :i | self assert: (i degreeSin closeTo: i degreesToRadians sin) ].	"Following tests use strict equality which is a requested property of degreeSin"
-	-10 to: 10 do: [ :k | 
-		self assert: (k * 360 + 90) degreeSin - 1 equals: 0.
-		self assert: (k * 360 - 90) degreeSin + 1 equals: 0.
-		self assert: (k * 360 + 180) degreeSin equals: 0.
-		self assert: (k * 360) degreeSin equals: 0 ]
 ]
 
 { #category : #'tests - instance creation' }
@@ -457,28 +362,16 @@ IntegerTest >> testDifferentBases [
 	self assert: -36rZYXWVUTSRQPONMLKJIHGFEDCBA9876543210 equals: -106300512100105327644605138221229898724869759421181854980.
 ]
 
-{ #category : #'tests - basic' }
-IntegerTest >> testDigitsAccess [
+{ #category : #'tests - other' }
+IntegerTest >> testDigitSum [
 
-	self assert: (42 digitAt: 2 base: 10) equals: 4.
-	self assert: (42 digitAt: 1 base: 10) equals: 2.
-	self assert: (1 digitAt: 2 base: 10) equals: 0.
-	self assert: (16rFF digitAt: 1 base: 16) equals: 15.
+	self assert: 1234 digitSum equals: 10
+]
 
-	self assert: (42 decimalDigitAt: 2) equals: 4.
-	self assert: (42 decimalDigitAt: 1) equals: 2.
-	
-	self assert: (42 decimalDigitLength) equals: 2.
-	self assert: (0 decimalDigitLength) equals: 1.
-	self assert: (100000000000 decimalDigitLength) equals: 12. "large integer"
+{ #category : #'tests - other' }
+IntegerTest >> testDigitSumOnNegative [
 
-	"last digit of the integer base 256"
-	self assert: (255 lastDigit) equals: 255.
-	self assert: (256 lastDigit) equals: 1.
-	self assert: ((256*256-1) lastDigit) equals: 255.
-	self assert: ((256*256) lastDigit) equals: 1.
-
-	
+	self assert: -1234 digitSum equals: 10
 ]
 
 { #category : #'tests - basic' }
@@ -489,129 +382,75 @@ IntegerTest >> testEven [
 	
 ]
 
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testExactRaisedTo [
-	"
-	IntegerTest new testExactRaisedTo
-	"
-	self assert: (4 raisedTo: 1/2) classAndValueEquals: 2.
-	self assert: (9 raisedTo: 1/2) classAndValueEquals: 3.
-	self assert: (9 raisedTo: -1/2) classAndValueEquals: 1/3.
-	self assert: (-1 raisedTo: 1/3) classAndValueEquals: -1.
-	#( 1 5 29 135 1234 567890 123123123 456456456456 98765432109876543210987654321 987123987123987123987123987123987123987123987123) do: [ :i |
-		self assert: (i squared raisedTo: 1/2) classAndValueEquals: i.
-		self assert: (i negated squared raisedTo: 1/2) classAndValueEquals: i ].
-
-	self assert: (8 raisedTo: 1/3) classAndValueEquals: 2.
-	self assert: (27 raisedTo: 1/3) classAndValueEquals: 3.
-	#( 1 5 29 135 1234 567890 123123123 456456456456 98765432109876543210987654321 987123987123987123987123987123987123987123987123) do: [ :i |
-		self assert: ((i raisedTo: 3) raisedTo: 1/3) classAndValueEquals: i.
-		self assert: ((i negated raisedTo: 3) raisedTo: 1/3) classAndValueEquals: i negated ].
-
-	self assert: (4 raisedTo: 3/2) classAndValueEquals: 8.
-	self assert: (8 raisedTo: 2/3) classAndValueEquals: 4.
-	self assert: (8 raisedTo: -2/3) classAndValueEquals: 1/4.
-	#( 1 5 29 135 1234 567890 123123123 456456456456 98765432109876543210987654321 987123987123987123987123987123987123987123987123) do: [ :i |
-		self assert: ((i raisedTo: 3) raisedTo: 2/3) classAndValueEquals: i*i.
-		self assert: ((i raisedTo: 2) raisedTo: 3/2) classAndValueEquals: i*i*i.
-		self assert: ((i negated raisedTo: 3) raisedTo: 2/3) classAndValueEquals: i*i.
-		self assert: ((i negated raisedTo: 2) raisedTo: 3/2) classAndValueEquals: i*i*i ].
-
-	self assert: (32 raisedTo: 3/5) classAndValueEquals: 8.
-	self assert: (8 raisedTo: 5/3) classAndValueEquals: 32.
-	#( 1 5 29 135 1234 567890 123123123 456456456456 98765432109876543210987654321 987123987123987123987123987123987123987123987123) do: [ :i |
-		self assert: ((i raisedTo: 5) raisedTo: 3/5) classAndValueEquals: i*i*i.
-		self assert: ((i raisedTo: 3) raisedTo: 5/3) classAndValueEquals: i*i*i*i*i.
-		self assert: ((i negated raisedTo: 5) raisedTo: 3/5) classAndValueEquals: (i*i*i) negated.
-		self assert: ((i negated raisedTo: 3) raisedTo: 5/3) classAndValueEquals: (i*i*i*i*i) negated.
-
-		self assert: ((i raisedTo: -5) raisedTo: 3/5) classAndValueEquals: 1/(i*i*i).
-		self assert: ((i raisedTo: -3) raisedTo: 5/3) classAndValueEquals: 1/(i*i*i*i*i).
-		self assert: ((i negated raisedTo: -5) raisedTo: 3/5) classAndValueEquals: -1/(i*i*i).
-		self assert: ((i negated raisedTo: -3) raisedTo: 5/3) classAndValueEquals: -1/(i*i*i*i*i).
-
-		self assert: ((i raisedTo: 5) raisedTo: -3/5) classAndValueEquals: 1/(i*i*i).
-		self assert: ((i raisedTo: 3) raisedTo: -5/3) classAndValueEquals: 1/(i*i*i*i*i).
-		self assert: ((i negated raisedTo: 5) raisedTo: -3/5) classAndValueEquals: -1/(i*i*i).
-		self assert: ((i negated raisedTo: 3) raisedTo: -5/3) classAndValueEquals: -1/(i*i*i*i*i).
-
-		"No exact result => Float result"
-		self assert: ((i raisedTo: 3) +1 raisedTo: 5/3) isFloat.
-		self assert: ((i negated raisedTo: 3) -1 raisedTo: 5/3) isFloat ].
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testExactSqrt [
-	"
-	IntegerTest new testExactSqrt
-	"
-	self assert: 4 sqrt classAndValueEquals: 2.
-	self assert: 9 sqrt classAndValueEquals: 3.
-	self assert: Float maxExactInteger squared sqrt classAndValueEquals: Float maxExactInteger.
-	self assert: (Float maxExactInteger+1) squared sqrt classAndValueEquals: Float maxExactInteger+1.
-	#( 1 5 29 135 1234 567890 123123123 456456456456 98765432109876543210987654321 987123987123987123987123987123987123987123987123) do: [ :i |
-		self assert: i squared sqrt classAndValueEquals: i ]
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testFloorLog [
-	self assert: (100 floorLog: 10) = 2.
-	self assert: (((2 raisedTo: Float emax + 3) floorLog: 10) = (2 log*(Float emax + 3)) floor) description: 'Integer>>floorLog: should not overflow'
+{ #category : #'tests - bitLogic' }
+IntegerTest >> testFactorial [	
+	"Check some know values"
+	self assert: 0 factorial equals: 1.
+	self assert: 1 factorial equals: 1.
+	self assert: 2 factorial equals: 2.
+	self assert: 3 factorial equals: 6.
+	self assert: 4 factorial equals: 24.
+	self assert: 5 factorial equals: 120.
+	self assert: 6 factorial equals: 720
 ]
 
 { #category : #'tests - printing' }
 IntegerTest >> testHex [
-	self assert: 0 hex =  '16r0'.
-	self assert: 12 hex =  '16rC'.
-	self assert: 1234 hex =  '16r4D2'.
+	self assert: 0 hex equals: '16r0'.
+	self assert: 12 hex equals: '16rC'.
+	self assert: 1234 hex equals: '16r4D2'
 ]
 
 { #category : #'tests - bitLogic' }
 IntegerTest >> testHighBit [
-
 	| suite |
-	self assert: (2r1110 highBit) equals: 4.
-	self assert: (2r0110 highBit) equals: 3.
-	self assert: (2r0000 highBit) equals: 0.
-	
-	suite := (0 to: 1024) asArray , #(16rFDFD 16rFFFF 16r1000 16r1000000 16r1000001 16r70000000 16r7AFAFAFA ) , {SmallInteger maxVal . SmallInteger maxVal+1}.
-	suite := suite , (suite collect: [:e | e raisedTo: 20]).
-	
-	suite do: [:anInteger |
-		| highBit shifted |
-		highBit := 0.
-		shifted := 1.
-		[shifted > anInteger] whileFalse: [highBit := highBit+1. shifted := shifted bitShift: 1].
-		self assert: anInteger highBit = highBit].
+	self assert: 2r1110 highBit equals: 4.
+	self assert: 2r0110 highBit equals: 3.
+	self assert: 2r0000 highBit equals: 0.
+
+	suite := (0 to: 1024) asArray , #(16rFDFD 16rFFFF 16r1000 16r1000000 16r1000001 16r70000000 16r7AFAFAFA) , {SmallInteger maxVal . (SmallInteger maxVal + 1)}.
+	suite := suite , (suite collect: [ :e | e raisedTo: 20 ]).
+
+	suite
+		do: [ :anInteger | 
+			| highBit shifted |
+			highBit := 0.
+			shifted := 1.
+			[ shifted > anInteger ]
+				whileFalse: [ highBit := highBit + 1.
+					shifted := shifted bitShift: 1 ].
+			self assert: anInteger highBit equals: highBit ]
 ]
 
 { #category : #'tests - bitLogic' }
 IntegerTest >> testHighBitOfMagnitude [
 	| suite |
+	suite := (0 to: 1024) asArray , #(16rFDFD 16rFFFF 16r1000 16r1000000 16r1000001 16r70000000 16r7AFAFAFA) , {SmallInteger maxVal . (SmallInteger maxVal + 1)}.
+	suite := suite , (suite collect: [ :e | e raisedTo: 20 ]).
 
-	suite := (0 to: 1024) asArray , #(16rFDFD 16rFFFF 16r1000 16r1000000 16r1000001 16r70000000 16r7AFAFAFA ) , {SmallInteger maxVal . SmallInteger maxVal+1}.
-	suite := suite , (suite collect: [:e | e raisedTo: 20]).
-	
-	suite do: [:anInteger |
-		| highBit shifted |
-		highBit := 0.
-		shifted := 1.
-		[shifted > anInteger] whileFalse: [highBit := highBit+1. shifted := shifted bitShift: 1].
-		self assert: anInteger highBitOfMagnitude = highBit.
-		self assert: anInteger negated highBitOfMagnitude = highBit].
+	suite
+		do: [ :anInteger | 
+			| highBit shifted |
+			highBit := 0.
+			shifted := 1.
+			[ shifted > anInteger ]
+				whileFalse: [ highBit := highBit + 1.
+					shifted := shifted bitShift: 1 ].
+			self assert: anInteger highBitOfMagnitude equals: highBit.
+			self assert: anInteger negated highBitOfMagnitude equals: highBit ]
 ]
 
 { #category : #'tests - printing' }
 IntegerTest >> testIntegerHex [
 	| result |
 	result := 15 asInteger hex.
-	self assert: result = '16rF'.
+	self assert: result equals: '16rF'.
 	result := 0 asInteger hex.
-	self assert: result = '16r0'.
+	self assert: result equals: '16r0'.
 	result := 255 asInteger hex.
-	self assert: result = '16rFF'.
+	self assert: result equals: '16rFF'.
 	result := 90 asInteger hex.
-	self assert: result = '16r5A'
+	self assert: result equals: '16r5A'
 ]
 
 { #category : #'tests - printing' }
@@ -708,20 +547,26 @@ IntegerTest >> testIntegerReadsNotOkFromString [
 
 { #category : #'tests - instance creation' }
 IntegerTest >> testIntegerReadsOkFromStream [
-	self assert: (Integer readFrom: '123' readStream) = 123.
-	self assert: (Integer readFrom: '-123' readStream) = -123.
-	self assert: (Integer readFrom: 'a3' readStream base: 16) = 163.
-	self assert: (Integer readFrom: '-a3' readStream base: 16) = -163.
-	
-	self assert: (Integer readFrom: '3a' readStream base: 10) = 3.
+	self assert: (Integer readFrom: '123' readStream) equals: 123.
+	self assert: (Integer readFrom: '-123' readStream) equals: -123.
+	self assert: (Integer readFrom: 'a3' readStream base: 16) equals: 163.
+	self assert: (Integer readFrom: '-a3' readStream base: 16) equals: -163.
+
+	self assert: (Integer readFrom: '3a' readStream base: 10) equals: 3
 ]
 
 { #category : #'tests - instance creation' }
 IntegerTest >> testIntegerReadsOkFromString [
-	self assert: (Integer readFrom: '123') = 123.
-	self assert: (Integer readFrom: '-123') = -123.
-	self assert: (Integer readFrom: 'a3' base: 16) = 163.
-	self assert: (Integer readFrom: '-a3' base: 16) = -163.
+	self assert: (Integer readFrom: '123') equals: 123.
+	self assert: (Integer readFrom: '-123') equals: -123.
+	self assert: (Integer readFrom: 'a3' base: 16) equals: 163.
+	self assert: (Integer readFrom: '-a3' base: 16) equals: -163
+]
+
+{ #category : #'tests - other' }
+IntegerTest >> testIsAbstract [ 
+
+	self assert: Integer isAbstract 
 ]
 
 { #category : #'tests - basic' }
@@ -759,102 +604,25 @@ IntegerTest >> testIsPowerOfTwoM6873 [
 		description: 'A negative integer cannot be a power of two'.
 ]
 
-{ #category : #'tests - basic' }
-IntegerTest >> testIsPrime [
-
-	"The following tests should return 'true'"
-	self assert: 17 isPrime.
-	self assert: 78901 isPrime.
-	self assert: 104729 isPrime.
-	self assert: 15485863 isPrime.
-	self assert: 2038074743 isPrime.
-	self assert: 29996224275833 isPrime.
-	
-	"The following tests should return 'false' (first 5 are Carmichael integers)"
-	self deny: 561 isPrime.
-	self deny: 2821 isPrime.
-	self deny: 6601 isPrime.
-	self deny: 10585 isPrime.
-	self deny: 15841 isPrime.
-	self deny: 256 isPrime.
-	self deny: 29996224275831 isPrime.
-]
-
-{ #category : #'tests - basic' }
-IntegerTest >> testIsPrime2 [
-
-	"Not primes:"
-	#(-100 -5 -3 -2 -1 0 1) do: [ :each |
-		self deny: each isPrime ].
-
-	"The following tests should return 'true'"
-	#(17 78901 104729 15485863 2038074743) do: [ :each |
-		self assert: each isPrime ].
-	
-	"The following tests should return 'false' (first 5 are Carmichael integers)"
-	#(561 2821 6601 10585 15841 256 29996224275831) do: [ :each |
-		self deny: each isPrime ].
-]
-
-{ #category : #'tests - basic' }
-IntegerTest >> testIsProbablyPrime [
-
-	"Not primes:"
-	#(-100 -5 -3 -2 -1 0 1) do: [ :each |
-		self deny: each isProbablyPrime ].
-
-	"The following tests should return 'true'"
-	#(17 78901 104729 15485863 2038074743 29996224275833) do: [ :each |
-		self assert: each isProbablyPrime ].
-	
-	"The following tests should return 'false' (first 5 are Carmichael integers)"
-	#(561 2821 6601 10585 15841 256 29996224275831) do: [ :each |
-		self deny: each isProbablyPrime ].
-]
-
-{ #category : #'tests - basic' }
-IntegerTest >> testLargePrimesUpTo [
-
-	| nn | 
-	nn := (2 raisedTo: 17) - 1. 
-	self deny: (Integer primesUpTo: nn) last = nn.
-	self assert: (Integer primesUpTo: nn + 1) last  = nn.
-	
-	
-
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testLn [
-	self assert: (100 ln closeTo: 10 ln*2).
-	self assert: ((2 raisedTo: Float emax + 3) ln closeTo: 2 ln*(Float emax + 3)) description: 'Integer>>ln should not overflow'
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testLog [
-	self assert: (100 log closeTo: 2).
-	self assert: ((2 raisedTo: Float emax + 3) log closeTo: 2 log*(Float emax + 3)) description: 'Integer>>log should not overflow'
-]
-
 { #category : #'tests - bitLogic' }
 IntegerTest >> testLowBit [
-
 	| suite |
 	"Simple examples"
-	self assert: (2r1011 lowBit) equals: 1.
-	self assert: (2r1010 lowBit) equals: 2.
-	self assert: (2r000000 lowBit) equals: 0.
-	
-	suite := (0 to: 1024) asArray , #(16rFDFD 16rFFFF 16r1000 16r1000000 16r1000001 16r70000000 16r7AFAFAFA ) , {SmallInteger maxVal . SmallInteger maxVal+1}.
-	suite := suite , (suite collect: [:e | e raisedTo: 20]).
-	
-	suite do: [:anInteger |
-		| lowBit |
-		lowBit := (anInteger respondsTo: #bitAt:)
-			ifTrue: [(1 to: anInteger highBit) detect: [:bitIndex | (anInteger bitAt: bitIndex) ~= 0] ifNone: [0]]
-			ifFalse: [(1 to: anInteger highBit) detect: [:bitIndex | (anInteger bitAnd: (1 bitShift: bitIndex-1)) ~= 0] ifNone: [0]].
-		self assert: anInteger lowBit = lowBit.
-		self assert: anInteger negated lowBit = lowBit].
+	self assert: 2r1011 lowBit equals: 1.
+	self assert: 2r1010 lowBit equals: 2.
+	self assert: 2r000000 lowBit equals: 0.
+
+	suite := (0 to: 1024) asArray , #(16rFDFD 16rFFFF 16r1000 16r1000000 16r1000001 16r70000000 16r7AFAFAFA) , {SmallInteger maxVal . (SmallInteger maxVal + 1)}.
+	suite := suite , (suite collect: [ :e | e raisedTo: 20 ]).
+
+	suite
+		do: [ :anInteger | 
+			| lowBit |
+			lowBit := (anInteger respondsTo: #bitAt:)
+				ifTrue: [ (1 to: anInteger highBit) detect: [ :bitIndex | (anInteger bitAt: bitIndex) ~= 0 ] ifNone: [ 0 ] ]
+				ifFalse: [ (1 to: anInteger highBit) detect: [ :bitIndex | (anInteger bitAnd: (1 bitShift: bitIndex - 1)) ~= 0 ] ifNone: [ 0 ] ].
+			self assert: anInteger lowBit equals: lowBit.
+			self assert: anInteger negated lowBit equals: lowBit ]
 ]
 
 { #category : #'tests - printing' }
@@ -1043,67 +811,25 @@ IntegerTest >> testNew [
 	self should: [Integer new] raise: self defaultTestError. 
 ]
 
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testNthRoot [
-	1 << 2000 nthRoot: 100.
-	self assert: (1 << 2000 nthRoot: 100) equals: 1 << 20
-]
+{ #category : #'tests - other' }
+IntegerTest >> testNotInstantiable [
 
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testNthRootErrorConditions [
-	"
-	IntegerTest new testExactRaisedToErrorConditions
-	"
-
-	self should: [ -2 nthRoot: 1/4 ] raise: ArithmeticError.
-	self should: [ -2 nthRoot: 1.24 ] raise: ArithmeticError.
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testNthRootExactness [
-	| inexactRoots largeExactPowersOf6 |
-	largeExactPowersOf6 := (2 to: 100) collect: [:k | k raisedTo: 66].
-	inexactRoots := largeExactPowersOf6 reject: [:e | (e nthRoot: 6) isInteger].
-	self assert: inexactRoots isEmpty description: 'Failed to find the exact 6th root of these numbers'
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testNthRootTruncated [
-	<timeout:  5 "seconds">
-	| tooBigToBeAFloat large |
-	tooBigToBeAFloat := 1 << 2000.
-	self assert: (tooBigToBeAFloat nthRootTruncated: 100) equals: 1 << 20.
-	self assert: (tooBigToBeAFloat + 1 nthRootTruncated: 100) equals: 1 << 20.
-	self assert: (tooBigToBeAFloat - 1 nthRootTruncated: 100) equals: 1 << 20 - 1.
-	
-	large := -3 raisedTo: 255.
-	self assert: (large nthRootTruncated: 17) equals: (-3 raisedTo: 15).
-	self assert: (large + 11 nthRootTruncated: 17) equals: (-3 raisedTo: 15) + 1.
-	self assert: (large - 11 nthRootTruncated: 17) equals: (-3 raisedTo: 15).
-	
-	2 to: 10 do: [:thePower |
-		1 to: 10000 do: [:n |
-			| theTruncatedRoot |
-			theTruncatedRoot := n nthRootTruncated: thePower.
-			self assert: (theTruncatedRoot raisedTo: thePower) <= n.
-			self assert: (theTruncatedRoot + 1 raisedTo: thePower) > n]]
+	self should: [ Integer new ] raise: Exception
 ]
 
 { #category : #'tests - printing' }
 IntegerTest >> testNumberOfDigits [
-	
-	2 to: 32 do: [:b |
-		1 to: 1000//b do: [:n |
+	2 to: 32 do: [ :b | 
+		1 to: 1000 // b do: [ :n | 
 			| bRaisedToN |
 			bRaisedToN := b raisedTo: n.
-			self assert: (bRaisedToN - 1 numberOfDigitsInBase: b) = n.
-			self assert: (bRaisedToN numberOfDigitsInBase: b) = (n+1).
-			self assert: (bRaisedToN + 1 numberOfDigitsInBase: b) = (n+1).
-			
-			self assert: (bRaisedToN negated + 1 numberOfDigitsInBase: b) = n.
-			self assert: (bRaisedToN negated numberOfDigitsInBase: b) = (n+1).
-			self assert: (bRaisedToN negated - 1 numberOfDigitsInBase: b) = (n+1).]].
+			self assert: (bRaisedToN - 1 numberOfDigitsInBase: b) equals: n.
+			self assert: (bRaisedToN numberOfDigitsInBase: b) equals: n + 1.
+			self assert: (bRaisedToN + 1 numberOfDigitsInBase: b) equals: n + 1.
 
+			self assert: (bRaisedToN negated + 1 numberOfDigitsInBase: b) equals: n.
+			self assert: (bRaisedToN negated numberOfDigitsInBase: b) equals: n + 1.
+			self assert: (bRaisedToN negated - 1 numberOfDigitsInBase: b) equals: n + 1 ] ]
 ]
 
 { #category : #'tests - printing' }
@@ -1290,23 +1016,6 @@ IntegerTest >> testPositiveIntegerPrinting [
 	self assert: 106300512100105327644605138221229898724869759421181854980 storeStringHex equals: '16r455D441E55A37239AB4C303189576071AF5578FFCA80504'.
 ]
 
-{ #category : #'tests - basic' }
-IntegerTest >> testPrimesUpTo [
-
-	| primes nn|
-	primes := Integer primesUpTo: 100.
-	self assert: primes = #(2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97).
-	
-	"upTo: semantics means 'non-inclusive'"
-	primes := Integer primesUpTo: 5.
-	self assert: primes = #(2 3).
-	
-	"this test is green for nn>25000, see #testLargePrimesUpTo"
-	nn := 5. 
-	self deny: (Integer primesUpTo: nn) last = nn.
-	self assert: (Integer primesUpTo: nn + 1) last  = nn.
-]
-
 { #category : #'tests - printing' }
 IntegerTest >> testPrintOnBaseShowRadix [
 	self assert: (String streamContents: [ :str | 123 printOn: str base: 10 showRadix: false ]) equals: '123'.
@@ -1333,17 +1042,15 @@ IntegerTest >> testPrintSeparatedByEverySignedOn [
 
 { #category : #'tests - printing' }
 IntegerTest >> testPrintStringBase [
-	
-	2 to: 32 do: [:b |
-		1 to: 1000//b do: [:n |
+	2 to: 32 do: [ :b | 
+		1 to: 1000 // b do: [ :n | 
 			| bRaisedToN |
 			bRaisedToN := b raisedTo: n.
-			self assert: (bRaisedToN - 1 printStringBase: b) = (String new: n withAll: (Character digitValue: b-1)).
-			self assert: (bRaisedToN printStringBase: b) = ('1' , (String new: n withAll: $0)).
-			
-			self assert: (bRaisedToN negated + 1 printStringBase: b) = ('-' , (String new: n withAll: (Character digitValue: b-1))).
-			self assert: (bRaisedToN negated printStringBase: b) = ('-1' , (String new: n withAll: $0))]].
+			self assert: (bRaisedToN - 1 printStringBase: b) equals: (String new: n withAll: (Character digitValue: b - 1)).
+			self assert: (bRaisedToN printStringBase: b) equals: '1' , (String new: n withAll: $0).
 
+			self assert: (bRaisedToN negated + 1 printStringBase: b) equals: '-' , (String new: n withAll: (Character digitValue: b - 1)).
+			self assert: (bRaisedToN negated printStringBase: b) equals: '-1' , (String new: n withAll: $0) ] ]
 ]
 
 { #category : #'tests - printing' }
@@ -1367,17 +1074,18 @@ IntegerTest >> testRaisedToErrorConditions [
 { #category : #'tests - instance creation' }
 IntegerTest >> testReadFrom [
 	"Ensure remaining characters in a stream are not lost when parsing an integer."
+
 	| rs i s |
 	rs := '123s could be confused with a ScaledDecimal' readStream.
 	i := Integer readFrom: rs.
-	self assert: i = 123.
+	self assert: i equals: 123.
 	s := rs upToEnd.
-	self assert: 's could be confused with a ScaledDecimal' = s.
+	self assert: 's could be confused with a ScaledDecimal' equals: s.
 	rs := '123.s could be confused with a ScaledDecimal' readStream.
 	i := Integer readFrom: rs.
-	self assert: i = 123.
+	self assert: i equals: 123.
 	s := rs upToEnd.
-	self assert: '.s could be confused with a ScaledDecimal' = s
+	self assert: '.s could be confused with a ScaledDecimal' equals: s
 ]
 
 { #category : #'tests - instance creation' }
@@ -1390,108 +1098,13 @@ IntegerTest >> testReadFromWithError [
 
 { #category : #'tests - arithmetic' }
 IntegerTest >> testReciprocalModulo [
-	1 to: 512 do: [:a |
-		a + 1 to: 512 do: [:b |
+	1 to: 512 do: [ :a | 
+		a + 1 to: 512 do: [ :b | 
 			| c |
 			(a gcd: b) = 1
-				ifTrue:
-					[c := a reciprocalModulo: b.
-					self assert: (a * c) \\ b = 1]
-				ifFalse: [self should: [ a reciprocalModulo: b ] raise: Error]]].
-]
-
-{ #category : #'tests - printing' }
-IntegerTest >> testRomanPrinting [
-	self assert: 0 printStringRoman = ''. "No symbol for zero"
-	self assert: 1 printStringRoman = 'I'.
-	self assert: 2 printStringRoman = 'II'.
-	self assert: 3 printStringRoman = 'III'.
-	self assert: 4 printStringRoman = 'IV'.
-	self assert: 5 printStringRoman = 'V'.
-	self assert: 6 printStringRoman = 'VI'.
-	self assert: 7 printStringRoman = 'VII'.
-	self assert: 8 printStringRoman = 'VIII'.
-	self assert: 9 printStringRoman = 'IX'.
-	self assert: 10 printStringRoman = 'X'.
-	self assert: 23 printStringRoman = 'XXIII'.
-	self assert: 36 printStringRoman = 'XXXVI'.
-	self assert: 49 printStringRoman = 'XLIX'.
-	self assert: 62 printStringRoman = 'LXII'.
-	self assert: 75 printStringRoman = 'LXXV'.
-	self assert: 88 printStringRoman = 'LXXXVIII'.
-	self assert: 99 printStringRoman = 'XCIX'.
-	self assert: 100 printStringRoman = 'C'.
-	self assert: 101 printStringRoman = 'CI'.
-	self assert: 196 printStringRoman = 'CXCVI'.
-	self assert: 197 printStringRoman = 'CXCVII'.
-	self assert: 198 printStringRoman = 'CXCVIII'.
-	self assert: 293 printStringRoman = 'CCXCIII'.
-	self assert: 294 printStringRoman = 'CCXCIV'.
-	self assert: 295 printStringRoman = 'CCXCV'.
-	self assert: 390 printStringRoman = 'CCCXC'.
-	self assert: 391 printStringRoman = 'CCCXCI'.
-	self assert: 392 printStringRoman = 'CCCXCII'.
-	self assert: 487 printStringRoman = 'CDLXXXVII'.
-	self assert: 488 printStringRoman = 'CDLXXXVIII'.
-	self assert: 489 printStringRoman = 'CDLXXXIX'.
-	self assert: 584 printStringRoman = 'DLXXXIV'.
-	self assert: 585 printStringRoman = 'DLXXXV'.
-	self assert: 586 printStringRoman = 'DLXXXVI'.
-	self assert: 681 printStringRoman = 'DCLXXXI'.
-	self assert: 682 printStringRoman = 'DCLXXXII'.
-	self assert: 683 printStringRoman = 'DCLXXXIII'.
-	self assert: 778 printStringRoman = 'DCCLXXVIII'.
-	self assert: 779 printStringRoman = 'DCCLXXIX'.
-	self assert: 780 printStringRoman = 'DCCLXXX'.
-	self assert: 875 printStringRoman = 'DCCCLXXV'.
-	self assert: 876 printStringRoman = 'DCCCLXXVI'.
-	self assert: 877 printStringRoman = 'DCCCLXXVII'.
-	self assert: 972 printStringRoman = 'CMLXXII'.
-	self assert: 973 printStringRoman = 'CMLXXIII'.
-	self assert: 974 printStringRoman = 'CMLXXIV'.
-	self assert: 1069 printStringRoman = 'MLXIX'.
-	self assert: 1070 printStringRoman = 'MLXX'.
-	self assert: 1071 printStringRoman = 'MLXXI'.
-	self assert: 1166 printStringRoman = 'MCLXVI'.
-	self assert: 1167 printStringRoman = 'MCLXVII'.
-	self assert: 1168 printStringRoman = 'MCLXVIII'.
-	self assert: 1263 printStringRoman = 'MCCLXIII'.
-	self assert: 1264 printStringRoman = 'MCCLXIV'.
-	self assert: 1265 printStringRoman = 'MCCLXV'.
-	self assert: 1360 printStringRoman = 'MCCCLX'.
-	self assert: 1361 printStringRoman = 'MCCCLXI'.
-	self assert: 1362 printStringRoman = 'MCCCLXII'.
-	self assert: 1457 printStringRoman = 'MCDLVII'.
-	self assert: 1458 printStringRoman = 'MCDLVIII'.
-	self assert: 1459 printStringRoman = 'MCDLIX'.
-	self assert: 1554 printStringRoman = 'MDLIV'.
-	self assert: 1555 printStringRoman = 'MDLV'.
-	self assert: 1556 printStringRoman = 'MDLVI'.
-	self assert: 1651 printStringRoman = 'MDCLI'.
-	self assert: 1652 printStringRoman = 'MDCLII'.
-	self assert: 1653 printStringRoman = 'MDCLIII'.
-	self assert: 1748 printStringRoman = 'MDCCXLVIII'.
-	self assert: 1749 printStringRoman = 'MDCCXLIX'.
-	self assert: 1750 printStringRoman = 'MDCCL'.
-	self assert: 1845 printStringRoman = 'MDCCCXLV'.
-	self assert: 1846 printStringRoman = 'MDCCCXLVI'.
-	self assert: 1847 printStringRoman = 'MDCCCXLVII'.
-	self assert: 1942 printStringRoman = 'MCMXLII'.
-	self assert: 1943 printStringRoman = 'MCMXLIII'.
-	self assert: 1944 printStringRoman = 'MCMXLIV'.
-	self assert: 2004 printStringRoman = 'MMIV'.
-
-	self assert: -1 printStringRoman = '-I'.
-	self assert: -2 printStringRoman = '-II'.
-	self assert: -3 printStringRoman = '-III'.
-	self assert: -4 printStringRoman = '-IV'.
-	self assert: -5 printStringRoman = '-V'.
-	self assert: -6 printStringRoman = '-VI'.
-	self assert: -7 printStringRoman = '-VII'.
-	self assert: -8 printStringRoman = '-VIII'.
-	self assert: -9 printStringRoman = '-IX'.
-	self assert: -10 printStringRoman = '-X'.
-
+				ifTrue: [ c := a reciprocalModulo: b.
+					self assert: a * c \\ b equals: 1 ]
+				ifFalse: [ self should: [ a reciprocalModulo: b ] raise: Error ] ] ]
 ]
 
 { #category : #'tests - rounding' }
@@ -1500,25 +1113,20 @@ IntegerTest >> testRounding [
 	self assert: (5 round: 2) equals: 5
 ]
 
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testSqrtErrorConditions [
-	"
-	IntegerTest new testSqrtErrorConditions
-	"
+{ #category : #'tests - bitLogic' }
+IntegerTest >> testSlowFactorial [
 
-	self should: [ -1 sqrt ] raise: ArithmeticError
-]
-
-{ #category : #'tests - mathematical functions' }
-IntegerTest >> testSqrtFloor [
-
-	#(-1234567890123 -10 -5 -1) do: [ :each |
-		self should: [ each sqrtFloor ] raise: Error ].
-	#(
-		0 1 2 3 4 5 10 16 30 160479924 386234481 501619156 524723498 580855366 766098594 834165249 1020363860 1042083924 1049218924
-		1459774772895569 3050005981408238 4856589481837079 5650488387708463 7831037396100244) do: [ :each |
-			self assert: each asFloat sqrt floor = each sqrtFloor ]
-		
+	"Check some know values"
+	self assert: 0 slowFactorial equals: 1.
+	self assert: 1 slowFactorial equals: 1.
+	self assert: 2 slowFactorial equals: 2.
+	self assert: 3 slowFactorial equals: 6.
+	self assert: 4 slowFactorial equals: 24.
+	self assert: 5 slowFactorial equals: 120.
+	self assert: 6 slowFactorial equals: 720.
+	
+   "Compare fast implementarion with existing one for the first 1000 positive integers plus zero"
+	0 to: 1000 do: [ :idx | self assert: idx slowFactorial equals: idx factorial]
 ]
 
 { #category : #'tests - printing' }
@@ -1538,14 +1146,13 @@ IntegerTest >> testStringAsNumber [
 	"This covers parsing in Number>>readFrom:
 	Trailing decimal points should be ignored."
 
-	self assert: ('123' asNumber = 123).
-	self assert: ('-123' asNumber = -123).
-	self assert: ('123.' asNumber = 123).
-	self assert: ('-123.' asNumber = -123).
-	self assert: ('123This is not to be read' asNumber = 123).
-	self assert: ('123s could be confused with a ScaledDecimal' asNumber = 123).
-	self assert: ('123e could be confused with a Float' asNumber = 123).
-
+	self assert: '123' asNumber equals: 123.
+	self assert: '-123' asNumber equals: -123.
+	self assert: '123.' asNumber equals: 123.
+	self assert: '-123.' asNumber equals: -123.
+	self assert: '123This is not to be read' asNumber equals: 123.
+	self assert: '123s could be confused with a ScaledDecimal' asNumber equals: 123.
+	self assert: '123e could be confused with a Float' asNumber equals: 123
 ]
 
 { #category : #'tests - bitLogic' }
@@ -1564,13 +1171,10 @@ IntegerTest >> testTwoComplementBitLogicWithCarry [
 
 { #category : #'tests - bitLogic' }
 IntegerTest >> testTwoComplementRightShift [
-
 	| large small |
 	small := 2 << 16.
-	large := 2 << 32.	
-	self assert: ((small negated bitShift: -1) ~= ((small + 1) negated bitShift: -1)
-		== ((large negated bitShift: -1) ~= ((large + 1) negated bitShift: -1))).
-		
-     self assert: ((small bitShift: -1) ~= (small + 1 bitShift: -1)
-		== ((large bitShift: -1) ~= (large + 1 bitShift: -1))).
+	large := 2 << 32.
+	self assert: (small negated bitShift: -1) ~= ((small + 1) negated bitShift: -1) identicalTo: (large negated bitShift: -1) ~= ((large + 1) negated bitShift: -1).
+
+	self assert: (small bitShift: -1) ~= (small + 1 bitShift: -1) identicalTo: (large bitShift: -1) ~= (large + 1 bitShift: -1)
 ]

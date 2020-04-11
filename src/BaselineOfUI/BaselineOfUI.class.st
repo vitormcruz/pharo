@@ -35,18 +35,26 @@ BaselineOfUI >> baseline: spec [
 	spec for: #common do: [
 		spec postLoadDoIt: #'postload:package:'.
 
-		spec baseline: 'Spec' with: [spec repository: repository].
-		spec baseline: 'Morphic' with: [spec repository: repository].
+		"Load morphic before Spec"
+		spec baseline: 'Morphic' with: [ spec repository: repository ].
+		spec baseline: 'ParametrizedTests' with: [ spec repository: repository ].
+		spec baseline: 'Spec2' with: [ spec repository: repository ].
+		spec baseline: 'Spec' with: [ spec repository: repository ].
+		
+		spec baseline: 'DrTests' with: [ spec repository: repository ].
 
 		spec package: 'StartupPreferences'.
-		
-		spec package: 'DebuggerActions'.
-		spec package: 'DebuggerFilters'.
-		spec package: 'DebuggerModel'.
+	
+		spec package: 'Debugger-Actions'.
+		spec package: 'Debugger-Filters'.
+		spec package: 'Debugger-Model'.
+		spec package: 'Debugging-Settings'.
+
+		spec baseline: 'Fuel' with: [
+			spec repository: repository; loads: 'Tools' ].
 
 		spec package: 'Fonts-Chooser'.
 
-		spec package: 'Tool-Base'.
 		spec package: 'Transcript-Tool'.
 		spec package: 'Tool-Workspace'.
 
@@ -59,7 +67,7 @@ BaselineOfUI >> baseline: spec [
 
 		spec package: 'HelpSystem-Core'.
 
-		spec package: 'Rubric'.
+		spec package: 'Spec2-Inspector'.
 	].
 ]
 
@@ -78,15 +86,4 @@ BaselineOfUI >> postload: loader package: packageSpec [
 	PharoCommonTools initialize.
 
 	Initialized := true
-]
-
-{ #category : #baseline }
-BaselineOfUI >> project [
-	
-	| aProject |
-	
-	aProject := super project.
-	aProject loadType: #atomic.
-	^ aProject.
-	
 ]

@@ -586,7 +586,7 @@ MetacelloToolBox class >> descriptionForValidationReasonCode: reasonCode [
 { #category : #help }
 MetacelloToolBox class >> helpTopicClass [
 
-	^Smalltalk at: #HelpTopic ifAbsent: []
+	^self environment at: #HelpTopic ifAbsent: []
 ]
 
 { #category : #help }
@@ -1118,7 +1118,7 @@ MetacelloToolBox class >> validatePlatformLoad: platformAttribute for: configura
 
 	<apiDocumentation>
 	| issues configurationClass toolbox cleanDevelopmentLoads cleanLoadAndTests stableVersion |
-	configurationClass := Smalltalk at: (self configurationNameFrom: configurationBasename) asSymbol.
+	configurationClass := self environment at: (self configurationNameFrom: configurationBasename) asSymbol.
 	cleanDevelopmentLoads := OrderedCollection new.
 	cleanLoadAndTests := OrderedCollection new.
 	issues := [ MetacelloMCVersionValidator validateConfigurationLoad: configurationClass ]
@@ -1174,7 +1174,7 @@ MetacelloToolBox class >> validatePlatformLoad: platformAttribute for: configura
 
 	<apiDocumentation>
 	| issues configurationClass toolbox cleanLoadAndTests stableVersion |
-	configurationClass := Smalltalk at: (self configurationNameFrom: configurationBasename) asSymbol.
+	configurationClass := self environment at: (self configurationNameFrom: configurationBasename) asSymbol.
 	cleanLoadAndTests := OrderedCollection new.
 	issues := [ MetacelloMCVersionValidator validateConfigurationLoad: configurationClass version: versionString ]
 		on: MetacelloCleanNotification
@@ -1619,6 +1619,7 @@ MetacelloToolBox >> commitBaselineOfMethod [
   skipValidation
     ifFalse: [ self validateVersion: self methodSpec versionString ].
   methodSpec := nil
+
 ]
 
 { #category : #'api-configuration' }
@@ -1640,6 +1641,7 @@ MetacelloToolBox >> commitMethod [
 	skipValidation
 		ifFalse: [ self validateVersion: self methodSpec versionString ].
 	methodSpec := nil
+
 ]
 
 { #category : #private }
@@ -2214,6 +2216,7 @@ MetacelloToolBox >> updateVersionMethodForVersion: inputVersionStringOrSymbol pr
                         ifTrue: [ self methodSpec methodSections add: methodSection ] ]
                 ifFalse: [ self methodSpec methodSections add: methodSection ] ].
     ^ updatedSpecs
+
 ]
 
 { #category : #'api-configuration' }

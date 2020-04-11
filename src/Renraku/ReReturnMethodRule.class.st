@@ -1,5 +1,7 @@
 "
-Somewhere in the override hierarchy there is a pragma that tells that this method should explicitly return a value
+Somewhere in the override hierarchy there is a pragma that tells that this method should explicitly return a value.
+
+Currently (2019-12-09) there is no methods in Pharo 8 which use #shouldReturn
 
 "
 Class {
@@ -14,14 +16,10 @@ ReReturnMethodRule class >> checksMethod [
 ]
 
 { #category : #running }
-ReReturnMethodRule >> check: aMethod forCritiquesDo: aCriticBlock [
-	(aMethod overriddenMethods anySatisfy: [ :method |
-		method hasPragmaNamed: #shouldReturn. ])
-			ifFalse: [ ^ self ].
-	
-	aMethod ast lastIsReturn ifTrue: [ ^ self ].
-	
-	aCriticBlock cull: (self critiqueFor: aMethod)
+ReReturnMethodRule >> basicCheck: aMethod [
+	(aMethod overriddenMethods anySatisfy: [ :method | method hasPragmaNamed: #shouldReturn ]) ifFalse: [ ^ false ].
+
+	^ aMethod ast lastIsReturn not
 ]
 
 { #category : #accessing }

@@ -3,7 +3,7 @@ Trait providing useful theme-related methods.
 "
 Trait {
 	#name : #TEasilyThemed,
-	#category : #'Polymorph-Widgets'
+	#category : #'Polymorph-Widgets-Traits'
 }
 
 { #category : #services }
@@ -134,10 +134,35 @@ TEasilyThemed >> chooseDropList: aStringOrText title: aString list: aList [
 ]
 
 { #category : #services }
-TEasilyThemed >> chooseFileName: title extensions: exts path: path preview: preview [
+TEasilyThemed >> chooseExistingFileReference: title extensions: exts path: path [
 	"Answer the result of a file name chooser dialog with the given title, extensions
 	to show, path and preview type."
 
+	^self
+		chooseExistingFileReference: title
+		extensions: exts
+		path: path
+		preview: nil
+]
+
+{ #category : #services }
+TEasilyThemed >> chooseExistingFileReference: title extensions: exts path: path preview: preview [
+	"Answer the result of a file name chooser dialog with the given title, extensions
+	to show, path and preview type."
+
+	^self theme
+		chooseExistingFileReferenceIn: self
+		title: title
+		extensions: exts
+		path: path
+		preview: preview
+]
+
+{ #category : #services }
+TEasilyThemed >> chooseFileName: title extensions: exts path: path preview: preview [
+	"Answer the result of a file name chooser dialog with the given title, extensions
+	to show, path and preview type."
+	self deprecated: 'Use UIManager default chooseFileReference:extensions:path:preview:. instead.' on: '26 October 2018' in: #Pharo7.
 	^self theme
 		chooseFileNameIn: self
 		title: title
@@ -164,6 +189,31 @@ TEasilyThemed >> chooseFont: aFont [
 ]
 
 { #category : #services }
+TEasilyThemed >> chooseForSaveFileReference: title extensions: exts path: path [
+	"Answer the result of a file name chooser dialog with the given title, extensions
+	to show, path and preview type."
+
+	^self
+		chooseForSaveFileReference: title
+		extensions: exts
+		path: path
+		preview: nil
+]
+
+{ #category : #services }
+TEasilyThemed >> chooseForSaveFileReference: title extensions: exts path: path preview: preview [
+	"Answer the result of a file name chooser dialog with the given title, extensions
+	to show, path and preview type."
+
+	^self theme
+		chooseForSaveFileReferenceIn: self
+		title: title
+		extensions: exts
+		path: path
+		preview: preview
+]
+
+{ #category : #services }
 TEasilyThemed >> deny: aStringOrText [
 	"Open a denial dialog."
 
@@ -178,100 +228,6 @@ TEasilyThemed >> deny: aStringOrText title: aString [
 		denyIn: self
 		text: aStringOrText
 		title: aString
-]
-
-{ #category : #services }
-TEasilyThemed >> fileOpen: title [
-	"Answer the result of a file open dialog with the given title."
-
-	^self
-		fileOpen: title
-		extensions: nil
-]
-
-{ #category : #services }
-TEasilyThemed >> fileOpen: title extensions: exts [
-	"Answer the result of a file open dialog with the given title and extensions to show."
-
-	^self
-		fileOpen: title
-		extensions: exts
-		path: nil
-]
-
-{ #category : #services }
-TEasilyThemed >> fileOpen: title extensions: exts path: path [
-	"Answer the result of a file open dialog with the given title, extensions to show and path."
-
-	^self 
-		fileOpen: title
-		extensions: exts
-		path: path
-		preview: nil
-]
-
-{ #category : #services }
-TEasilyThemed >> fileOpen: title extensions: exts path: path preview: preview [
-	"Answer the result of a file open dialog with the given title, extensions to show, path and preview type."
-
-	^self theme
-		fileOpenIn: self
-		title: title
-		extensions: exts
-		path: path
-		preview: preview
-]
-
-{ #category : #services }
-TEasilyThemed >> fileSave: title [
-	"Answer the result of a file save dialog with the given title."
-
-	^self
-		fileSave: title
-		extensions: nil
-		path: nil
-]
-
-{ #category : #services }
-TEasilyThemed >> fileSave: title extensions: exts [
-	"Answer the result of a file save dialog with the given title."
-
-	^self
-		fileSave: title
-		extensions: exts
-		path: nil
-]
-
-{ #category : #services }
-TEasilyThemed >> fileSave: title extensions: exts path: path [
-	"Answer the result of a file save dialog with the given title, extensions to show and path."
-
-	^self theme
-		fileSaveIn: self
-		title: title
-		extensions: exts
-		path: path
-]
-
-{ #category : #services }
-TEasilyThemed >> fileSave: title initialAnswer: aFileName extensions: exts path: path [
-
-	^self theme
-		fileSaveIn: self
-		title: title
-		initialAnswer: aFileName
-		extensions: exts
-		path: path
-]
-
-{ #category : #services }
-TEasilyThemed >> fileSave: title path: path [
-	"Answer the result of a file save open dialog with the given title."
-
-	^self
-		fileSave: title
-		extensions: nil
-		path: path
 ]
 
 { #category : #services }

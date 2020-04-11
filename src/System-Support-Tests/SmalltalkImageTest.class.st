@@ -8,19 +8,27 @@ Class {
 }
 
 { #category : #'tests-arguments' }
+SmalltalkImageTest >> testAtIfPresentIfAbsent [
+	| image |
+	image := SmalltalkImage current.
+	self assert: (image at: self class name asSymbol ifPresent: [ :c | true ] ifAbsent: [ false ]).
+	self deny: (image at: #ImprobableClassNameForTest124029 ifPresent: [ :c | true ] ifAbsent: [ false ])
+]
+
+{ #category : #'tests-arguments' }
 SmalltalkImageTest >> testExtractAllKinds [
 	| args extract keys |
 	args := #('ArgWithoutMinus1' '-ArgWithMinus1' 'ArgWithoutMinus2' 'ArgWithoutMinus3' '-ArgWithMinus2').
 	extract := SmalltalkImage current extractMinusParametersFrom: args.
 	keys := extract keys sort.
 	self assert: extract isDictionary.
-	self assert: extract size = 3.
-	self assert: (keys at: 1) = #*.
-	self assert: (keys at: 2) = #ArgWithMinus1.
-	self assert: (keys at: 3) = #ArgWithMinus2.
-	self assert: (extract at: #*) = (Array with: 'ArgWithoutMinus1').
-	self assert: (extract at: #ArgWithMinus1) = #('ArgWithoutMinus2' 'ArgWithoutMinus3').
-	self assert: (extract at: #ArgWithMinus2) isEmpty
+	self assert: extract size equals: 3.
+	self assert: (keys at: 1) equals: #*.
+	self assert: (keys at: 2) equals: #ArgWithMinus1.
+	self assert: (keys at: 3) equals: #ArgWithMinus2.
+	self assert: (extract at: #*) equals: (Array with: 'ArgWithoutMinus1').
+	self assert: (extract at: #ArgWithMinus1) equals: #('ArgWithoutMinus2' 'ArgWithoutMinus3').
+	self assertEmpty: (extract at: #ArgWithMinus2)
 ]
 
 { #category : #'tests-arguments' }
@@ -29,7 +37,7 @@ SmalltalkImageTest >> testExtractEmpty [
 	args := #().
 	extract := SmalltalkImage current extractMinusParametersFrom: args.
 	self assert: extract class equals: Dictionary.
-	self assert: extract isEmpty
+	self assertEmpty: extract
 ]
 
 { #category : #'tests-arguments' }
@@ -38,7 +46,7 @@ SmalltalkImageTest >> testExtractNil [
 	args := nil.
 	extract := SmalltalkImage current extractMinusParametersFrom: args.
 	self assert: extract class equals: Dictionary.
-	self assert: extract isEmpty
+	self assertEmpty: extract
 ]
 
 { #category : #'tests-arguments' }
@@ -60,7 +68,7 @@ SmalltalkImageTest >> testExtractOneArgWithMinus [
 	self assert: extract isDictionary.
 	self assert: extract size equals: 1.
 	self assert: (extract keys at: 1) equals: #ArgWithMinus.
-	self assert: (extract at: #ArgWithMinus) isEmpty
+	self assertEmpty: (extract at: #ArgWithMinus)
 ]
 
 { #category : #'tests-arguments' }
@@ -85,7 +93,7 @@ SmalltalkImageTest >> testExtractTwoArgsWithAndWithoutMinus [
 	self assert: (keys at: 1) equals: #*.
 	self assert: (keys at: 2) equals: #ArgWithMinus.
 	self assert: (extract at: #*) equals: (Array with: 'ArgWithoutMinus').
-	self assert: (extract at: #ArgWithMinus) isEmpty
+	self assertEmpty: (extract at: #ArgWithMinus)
 ]
 
 { #category : #testing }

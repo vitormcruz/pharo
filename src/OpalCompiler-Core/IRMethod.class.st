@@ -122,7 +122,7 @@ IRMethod >> compilationContext: aCompilationContext [
 	compilationContext := aCompilationContext
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #translating }
 IRMethod >> compiledBlock: scope [
 
 	^compiledMethod 
@@ -193,7 +193,7 @@ IRMethod >> generate: trailer [
 	^ compiledMethod
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #translating }
 IRMethod >> generateBlock: trailer withScope: scope [
 	| irTranslator |
       irTranslator := IRTranslatorV2 context: compilationContext trailer: trailer.
@@ -203,12 +203,6 @@ IRMethod >> generateBlock: trailer withScope: scope [
 		pragmas: pragmas.
 	compiledMethod := irTranslator compiledBlock.
 	^ compiledMethod
-]
-
-{ #category : #testing }
-IRMethod >> hasTempVector: aSymbol [
-	startSequence withAllSuccessorsDo: [ :seq | (seq hasTempVector: aSymbol) ifTrue: [ ^ true ]].
-	^ false
 ]
 
 { #category : #scoping }
@@ -310,7 +304,7 @@ IRMethod >> optimize [
 	
 	"This last two optimizations works but the problem 
 	when you absorb conditional jumps 
-	is that and: / or: chained generate explicitely 
+	is that and: / or: chained generate explicitly 
 	constant conditional jumps to tip the JIt and the 
 	decompiler that they are and: or: and not conditions/loops
 	
@@ -345,11 +339,6 @@ IRMethod >> removeEmptyStart [
 
 ]
 
-{ #category : #inlining }
-IRMethod >> removeReturn [
-	self allSequences last removeLast.
-]
-
 { #category : #accessing }
 IRMethod >> sourceInterval [
 	^self sourceNode sourceInterval
@@ -363,14 +352,6 @@ IRMethod >> sourceNode [
 { #category : #accessing }
 IRMethod >> sourceNode: aNode [
 	sourceNode := aNode
-]
-
-{ #category : #mapping }
-IRMethod >> sourceNodeExecuted [ 
-	"It should not be used directly. But it is needed for fallback call from RBMethodNode>>sourceNodeExecutedForPC:. 
-	Problem that IRMethod can returns itself from  instructionForPC:.
-	So it should only return sourceNode without any analyzis"
-	^sourceNode
 ]
 
 { #category : #accessing }
@@ -399,6 +380,5 @@ IRMethod >> tempMap [
 
 { #category : #enumerating }
 IRMethod >> tempVectorNamed: aName [
-	
-	^self firstInstructionMatching: [:ir | ir isTempVector and:  [ir name = aName ] ]
+	^startSequence tempVectorNamed: aName
 ]

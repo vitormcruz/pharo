@@ -1,11 +1,12 @@
 Class {
 	#name : #MCGitBasedNetworkRepository,
-	#superclass : #MCFileTreeRepository,
+	#superclass : #MCRepository,
 	#instVars : [
 		'projectPath',
 		'projectVersion',
 		'repoPath',
-		'projectVersionPattern'
+		'projectVersionPattern',
+		'localRepository'
 	],
 	#classInstVars : [
 		'repoCacheDirectory',
@@ -103,10 +104,11 @@ MCGitBasedNetworkRepository class >> initialize [
   "self initialize"
 
 	(Smalltalk classNamed: #SessionManager)
-		ifNotNil: [ :c | c default registerNetworkClassNamed: self name ]
+		ifNotNil: [ :c | c default perform: #registerNetworkClassNamed: with: self name ]
 		ifNil:[ Smalltalk addToStartUpList: self ].
   self flushDownloadCache.
   self resetCacheDirectoryIfInvalid
+
 ]
 
 { #category : #accessing }
@@ -246,7 +248,7 @@ MCGitBasedNetworkRepository class >> projectDirectoryFrom: projectPath version: 
 			directory := mcPlatform
 				directoryFromPath: (cachePath := archive members first fileName)
 				relativeTo: theCacheDirectory.
-			archive close.
+			mcPlatform closeZipArchive: archive.
 			directory exists
 				ifTrue: [ mcPlatform deleteFileNamed: zipFileName ]
 				ifFalse: [ mcPlatform
@@ -257,11 +259,6 @@ MCGitBasedNetworkRepository class >> projectDirectoryFrom: projectPath version: 
 				directoryFromPath: cachePath
 				relativeTo: theCacheDirectory ].
 	^ projectDirectory
-]
-
-{ #category : #private }
-MCGitBasedNetworkRepository class >> projectTagsUrlFor: aProjectPath [
-  self subclassResponsibility
 ]
 
 { #category : #'version patterns' }
@@ -330,6 +327,14 @@ MCGitBasedNetworkRepository class >> startUp: resuming [
 ]
 
 { #category : #accessing }
+MCGitBasedNetworkRepository >> allFileNames [
+	self flag: #review. "This will fail in non filtree(cypress) formats, but I need to 
+	 implement it to make the tests pass. A better approach maybe to look at those tests 
+	 and try to implement them better."
+	^ self localRepository allFileNames
+]
+
+{ #category : #accessing }
 MCGitBasedNetworkRepository >> asRepositorySpecFor: aMetacelloMCProject [
   ^ aMetacelloMCProject repositorySpec
     description: self description;
@@ -337,12 +342,34 @@ MCGitBasedNetworkRepository >> asRepositorySpecFor: aMetacelloMCProject [
     yourself
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #private }
+MCGitBasedNetworkRepository >> calculateRepositoryDirectory [
+	 | directory |
+	
+	directory := self class
+		projectDirectoryFrom: self projectPath
+		version: self projectVersion.
+	self repoPath isEmpty ifFalse: [
+		directory := MetacelloPlatform current
+			directoryFromPath: self repoPath
+ 			relativeTo: directory ].
+		
+	^ directory
+]
+
+{ #category : #initialization }
 MCGitBasedNetworkRepository >> canUpgradeTo: anMCGitBasedRepository [
   (anMCGitBasedRepository isKindOf: self class)
     ifFalse: [ ^ false ].
   ^ self projectPath = anMCGitBasedRepository projectPath
     and: [ self repoPath = anMCGitBasedRepository repoPath ]
+]
+
+{ #category : #accessing }
+MCGitBasedNetworkRepository >> closestAncestorVersionFor: anAncestry ifNone: errorBlock [
+	^ self localRepository 
+		closestAncestorVersionFor: anAncestry 
+		ifNone: errorBlock
 ]
 
 { #category : #descriptions }
@@ -357,27 +384,7 @@ MCGitBasedNetworkRepository >> description [
 
 { #category : #accessing }
 MCGitBasedNetworkRepository >> directory [
-  directory
-    ifNil: [ 
-      directory := self class
-        projectDirectoryFrom: self projectPath
-        version: self projectVersion.
-      self repoPath isEmpty
-        ifFalse: [ 
-          directory := MetacelloPlatform current
-            directoryFromPath: self repoPath
-            relativeTo: directory ] ]
-    ifNotNil: [ 
-      (MCFileTreeFileUtils current directoryExists: directory)
-        ifFalse: [ 
-          self flushCache.
-          ^ self directory ] ].
-  ^ directory
-]
-
-{ #category : #descriptions }
-MCGitBasedNetworkRepository >> directoryDescription [
-    ^ self directory pathName
+  ^ self localRepository directory
 ]
 
 { #category : #private }
@@ -391,26 +398,55 @@ MCGitBasedNetworkRepository >> downloadJSONTags [
   ^ self normalizeTagsData: jsonObject
 ]
 
-{ #category : #'initialize-release' }
-MCGitBasedNetworkRepository >> flushCache [
-  "the directory acts like a cache since we download the directory from a git-based repository (github, bitbucket, etc.)"
-
-  [ super flushCache ]
-    on: Error
-    do: [ :ex | 
-      Transcript
-        cr;
-        show:
-            'Error for: ' , self description printString , ' during flushCache: '
-                , ex description printString ].
-  self class flushDownloadCache.
-  directory := nil
+{ #category : #private }
+MCGitBasedNetworkRepository >> ensureLocalRepository [
+	localRepository ifNotNil: [ ^ self ].
+	self resolveLocalRespository
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
+MCGitBasedNetworkRepository >> flushCache [
+  "the directory acts like a cache since we download the directory from a git-based repository (github, bitbucket, etc.)"
+	| directory |
+
+	[ localRepository flushCache ]
+	on: Error
+	do: [ :ex | 
+		SystemNotification signal: 'Error for: ' , self description printString , ' during flushCache: ', ex description printString ].
+	self class flushDownloadCache.
+	
+	directory := self calculateRepositoryDirectory.
+	directory exists 
+		ifTrue: [ localRepository directory: directory ]
+		ifFalse: [ localRepository resetDirectory ]
+]
+
+{ #category : #initialization }
 MCGitBasedNetworkRepository >> flushForScriptGet [
-    self class flushProjectEntry: self projectPath version: self projectVersion.
-    directory := nil
+
+	self class 
+		flushProjectEntry: self projectPath 
+		version: self projectVersion.
+    self localRepository flushForScriptGet
+]
+
+{ #category : #accessing }
+MCGitBasedNetworkRepository >> goferReferences [
+	"delegate collection to local repository, but change them to be from *this* repository."
+
+	^ self localRepository goferReferences 
+		collect: [ :each | 
+			GoferResolvedReference 
+				name: each name 
+				repository: self ]
+]
+
+{ #category : #accessing }
+MCGitBasedNetworkRepository >> goferVersionFrom: aVersionReference [
+	self flag: #review. "This will fail in non filtree(cypress) formats, but I need to 
+	 implement it to make the tests pass. A better approach maybe to look at those tests 
+	 and try to implement them better."
+	^ self localRepository goferVersionFrom: aVersionReference
 ]
 
 { #category : #'initialize-release' }
@@ -428,16 +464,21 @@ MCGitBasedNetworkRepository >> hash [
     ^ self description hash
 ]
 
-{ #category : #'initialize-release' }
-MCGitBasedNetworkRepository >> initialize [
-    super initialize.
-    directory := nil.	"we'll lazily create the directory instance"
-    self readonly: true
+{ #category : #testing }
+MCGitBasedNetworkRepository >> includesVersionNamed: aString [
+	^ self localRepository includesVersionNamed: aString
 ]
 
 { #category : #testing }
 MCGitBasedNetworkRepository >> isValid [
     ^ true
+]
+
+{ #category : #private }
+MCGitBasedNetworkRepository >> localRepository [
+	self ensureLocalRepository.
+	self validateLocalRepository.
+	^ localRepository
 ]
 
 { #category : #accessing }
@@ -451,6 +492,11 @@ MCGitBasedNetworkRepository >> normalizeTagsData: jsonObject [
 ]
 
 { #category : #accessing }
+MCGitBasedNetworkRepository >> possiblyNewerVersionsOfAnyOf: someVersions [
+	^ self localRepository possiblyNewerVersionsOfAnyOf: someVersions
+]
+
+{ #category : #accessing }
 MCGitBasedNetworkRepository >> projectPath [
     ^ projectPath
 ]
@@ -460,7 +506,7 @@ MCGitBasedNetworkRepository >> projectPath: anObject [
     projectPath := anObject
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 MCGitBasedNetworkRepository >> projectPath: aProjectPath projectVersion: aProjectVersion repoPath: aRepoPath [
   self projectPath: aProjectPath.
   self projectVersion: aProjectVersion.	"Important that projectVersion be set AFTER projectPath"
@@ -469,7 +515,7 @@ MCGitBasedNetworkRepository >> projectPath: aProjectPath projectVersion: aProjec
 
 { #category : #private }
 MCGitBasedNetworkRepository >> projectTagsUrlFor: aProjectPath [
-  ^ self class projectTagsUrlFor: aProjectPath
+	self subclassResponsibility
 ]
 
 { #category : #accessing }
@@ -563,6 +609,18 @@ MCGitBasedNetworkRepository >> repositoryVersionString [
 ]
 
 { #category : #private }
+MCGitBasedNetworkRepository >> resolveLocalRespository [
+	| directory directoryPath |
+  
+	directory := self calculateRepositoryDirectory.
+	directoryPath := MCFileTreeFileUtils current directoryPathString: directory.
+	directory ifAbsent: [ self error: 'Local directory ', directoryPath, ' does not exist.' ].
+	localRepository := MetacelloPlatform current createRepository: (MetacelloRepositorySpec new 
+		description: 'filetree://', directoryPath;
+		yourself)
+]
+
+{ #category : #private }
 MCGitBasedNetworkRepository >> resolveProjectVersionPattern: aString [
   "aString must conform to the syntax for MetacelloVersionNumber with the exception that aString may have a leading $v which is stripped before conversion to a MetacelloVersionNumber patterm"
 
@@ -589,4 +647,33 @@ MCGitBasedNetworkRepository >> resolveProjectVersionPattern: aString [
   theTag := sortedMatchingTags last.
   projectVersionPattern := aString.
   projectVersion := theTag value
+]
+
+{ #category : #storing }
+MCGitBasedNetworkRepository >> storeVersion: aVersion [
+	^ self localRepository storeVersion: aVersion
+]
+
+{ #category : #private }
+MCGitBasedNetworkRepository >> validateLocalRepository [
+	| dir |
+
+	dir := self calculateRepositoryDirectory.
+	(dir = localRepository directory 
+		and: [ MCFileTreeFileUtils current directoryExists: dir ]) 
+		ifTrue: [ ^ self ].
+	self flushCache.
+ 	self resolveLocalRespository.
+]
+
+{ #category : #accessing }
+MCGitBasedNetworkRepository >> versionFrom: aVersionReferenceString [
+	^ self localRepository versionFrom: aVersionReferenceString
+]
+
+{ #category : #accessing }
+MCGitBasedNetworkRepository >> versionWithInfo: aVersionInfo ifAbsent: errorBlock [
+	^ self localRepository 
+		versionWithInfo: aVersionInfo 
+		ifAbsent: errorBlock
 ]

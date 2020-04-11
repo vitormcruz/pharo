@@ -1,7 +1,7 @@
 "
 The reduced graph of G is the graph G where each strongly connected components was merged into one vertice / node.
 
-circuitsNodes instance variabel will collect all nodes created by merging nodes in a circuit.
+circuitsNodes instance variable will collect all nodes created by merging nodes in a circuit.
 "
 Class {
 	#name : #MalGraphReducer,
@@ -30,7 +30,7 @@ MalGraphReducer >> findCircuits [
 			circuit collect: [ :each | self findNode: each model ] ]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 MalGraphReducer >> initialize [
 	super initialize.
 	circuitNodes := OrderedCollection new.
@@ -102,7 +102,7 @@ MalGraphReducer >> removeReferencesToMergedNodes [
 MalGraphReducer >> run [
 	self findCircuits.
 	self mergeNodesInCircuits.
-	^ nodes
+	^ self nodes
 ]
 
 { #category : #updating }

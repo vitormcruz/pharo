@@ -4,7 +4,7 @@ Cleanup working copies
 Class {
 	#name : #GoferCleanup,
 	#superclass : #GoferWorking,
-	#category : #'Gofer-Core'
+	#category : #'Gofer-Core-Operations'
 }
 
 { #category : #cleaning }
@@ -22,7 +22,7 @@ GoferCleanup >> cleanupCategories: aWorkingCopy [
 
 { #category : #cleaning }
 GoferCleanup >> cleanupProtocols: aWorkingCopy [
-	aWorkingCopy packageSet extensionClasses do: [ :class |
+	aWorkingCopy packageSet extendedClasses do: [ :class |
 		(aWorkingCopy packageSet extensionCategoriesForClass: class) do: [ :category |
 			(class organization listAtCategoryNamed: category) isEmpty
 				ifTrue: [ class organization removeCategory: category ] ] ].

@@ -9,15 +9,33 @@ Class {
 
 { #category : #'stream creation' }
 SequenceableCollection class >> << blockWithArg [
+	"An alias to #streamContents:"
+	
+	"Array << [ :stream | 0 to: 100 by: 25 do: [ :each | stream nextPut: each ] ] >>> #(0 25 50 75 100)"
+	
 	^ self streamContents: blockWithArg
+]
+
+{ #category : #testing }
+SequenceableCollection class >> isAbstract [
+
+	^self name = #SequenceableCollection
 ]
 
 { #category : #'stream creation' }
 SequenceableCollection class >> new: newSize streamContents: blockWithArg [
+	"A variant of #streamContents: where the initial or even final size is given to optimize memory consumption"
+	
+	"(Array new: 3 streamContents: [ :out | 3 timesRepeat: [ out nextPut: 42 ] ]) >>> #(42 42 42)"
+	
 	| stream |
 	stream := WriteStream on: (self streamSpecies new: newSize).
 	blockWithArg value: stream.
-	^ stream contents
+	"If the write position of stream is at the end of the internal buffer of stream (originalContents),
+	we can return it directly instead of making a copy as contents would do"
+	^ stream position = stream originalContents size
+		ifTrue: [ stream originalContents ]
+		ifFalse: [ stream contents ]
 ]
 
 { #category : #'instance creation' }
@@ -30,24 +48,30 @@ SequenceableCollection class >> ofSize: n [
 
 { #category : #'stream creation' }
 SequenceableCollection class >> streamContents: blockWithArg [
+	"Build an instance of the receiver by writing elements to a stream.
+	More specifically: blockWithArg will be given a WriteStream on an instance of the receiver.
+	Inside blockWithArg you write elements to the stream to build up the collection.
+	At the end, the contents of the stream up to that point will be returned.
+	Note that the underlying collection grows as needed."
+	
+	"(Array streamContents: [ :out | out nextPut: 1; nextPutAll: #(2 3 4); nextPut: 5 ]) >>> #(1 2 3 4 5)"
 
 	^ self new: 100 streamContents: blockWithArg
 ]
 
 { #category : #'stream creation' }
 SequenceableCollection class >> streamContents: blockWithArg limitedTo: sizeLimit [
+	"A variant of #streamContents: with a strict size limit"
+
+	"(String streamContents: [:s | 10 timesRepeat: [s nextPutAll: 'foo']] limitedTo: 9) >>> 'foofoofoo'"
+
 	| stream |
-	stream :=
-		LimitedWriteStream
-			on: (self streamSpecies new: (100 min: sizeLimit))
-			limit: sizeLimit
-			limitBlock: [^ stream contents].
+	stream := LimitedWriteStream
+		on: (self streamSpecies new: (100 min: sizeLimit))
+		limit: sizeLimit
+		limitBlock: [ ^ stream contents ].
 	blockWithArg value: stream.
 	^ stream contents
-"
-String streamContents: [:s | 1000 timesRepeat: [s nextPutAll: 'Junk']] limitedTo: 25
- 'JunkJunkJunkJunkJunkJunkJ'
-"
 ]
 
 { #category : #accessing }
@@ -59,14 +83,13 @@ SequenceableCollection class >> streamSpecies [
 { #category : #copying }
 SequenceableCollection >> , otherCollection [ 
 	"Concatenate two Strings or Collections."
+	"#(2 4 6 8) , #(who do we appreciate) >>> #(2 4 6 8 who do we appreciate)"
+	"((2989 storeStringBase: 16) copyFrom: 4 to: 6) , ' boy!' >>> 'BAD boys!'"
 	
 	^ self copyReplaceFrom: self size + 1
 		  to: self size
 		  with: otherCollection
-"
-#(2 4 6 8) , #(who do we appreciate)
-((2989 storeStringBase: 16) copyFrom: 4 to: 6) , ' boy!'
-"
+
 ]
 
 { #category : #comparing }
@@ -90,6 +113,7 @@ SequenceableCollection >> @ aCollection [
 SequenceableCollection >> after: target [
 	"Answer the element after target.  Raise an error if target is not
 	in the receiver, or if there are no elements after it."
+	"(#(a b c d) after: #b) >>> #c"
 
 	^ self after: target ifAbsent: [self errorNotFound: target]
 ]
@@ -99,6 +123,8 @@ SequenceableCollection >> after: target ifAbsent: exceptionBlock [
 	"Answer the element after target.  Answer the result of evaluation
 	the exceptionBlock if target is not in the receiver, or if there are 
 	no elements after it."
+	"(#(a b c d) after: #b ifAbsent: #z) >>> #c"
+	"(#(a b c d) after: #x ifAbsent: #z) >>> #z"
 
 	| index |
 	index := self indexOf: target.
@@ -110,7 +136,8 @@ SequenceableCollection >> after: target ifAbsent: exceptionBlock [
 { #category : #accessing }
 SequenceableCollection >> allButFirst [
 	"Answer a copy of the receiver containing all but the first
-	element. Raise an error if there are not enough elements."
+	element. Raise an error if there are not enough elements."	
+	"#(a b c) allButFirst >>> #(b c)"
 
 	^ self allButFirst: 1
 ]
@@ -119,21 +146,28 @@ SequenceableCollection >> allButFirst [
 SequenceableCollection >> allButFirst: n [
 	"Answer a copy of the receiver containing all but the first n
 	elements. Raise an error if there are not enough elements."
-
+	"(#(a b c d) allButFirst: 2) >>> #(c d)"
+	"(#(a b c d) allButFirst: 3) >>> #(d)"
+	
 	^ self copyFrom: n + 1 to: self size
 ]
 
 { #category : #enumerating }
-SequenceableCollection >> allButFirstDo: block [
+SequenceableCollection >> allButFirstDo: aBlock [
+
+	"Executes aBlock on each of the receiver's elements except for the first one"
+
+	"(Array streamContents: [:stream | #(1 2 3) allButFirstDo: [:each | stream nextPut: (each + 10)]]) >>> #(12 13)"
 
 	2 to: self size do:
-		[:index | block value: (self at: index)]
+		[:index | aBlock value: (self at: index)]
 ]
 
 { #category : #accessing }
 SequenceableCollection >> allButLast [
 	"Answer a copy of the receiver containing all but the last
 	element. Raise an error if there are not enough elements."
+	"#(a b c d) allButLast >>> #(a b c)"
 
 	^ self allButLast: 1
 ]
@@ -142,6 +176,8 @@ SequenceableCollection >> allButLast [
 SequenceableCollection >> allButLast: n [
 	"Answer a copy of the receiver containing all but the last n
 	elements. Raise an error if there are not enough elements."
+	"(#(a b c d) allButLast: 2) >>> #(a b)"
+	"(#(a b c d) allButLast: 3) >>> #(a)"
 
 	^ self copyFrom: 1 to: self size - n
 ]
@@ -149,24 +185,22 @@ SequenceableCollection >> allButLast: n [
 { #category : #enumerating }
 SequenceableCollection >> allButLastDo: block [
 
+	"Executes aBlock on each of the receiver's elements except for the last one"
+
+	"(Array streamContents: [:stream | #(1 2 3) allButLastDo: [:each | stream nextPut: (each + 10)]]) >>> #(11 12)"
+
 	1 to: self size - 1 do:
 		[:index | block value: (self at: index)]
 ]
 
 { #category : #enumerating }
 SequenceableCollection >> allPairsDo: aBinaryBlock [
-	"
-	Iterate over all the pairs of the receiver and apply the binaryBlock
-	to each pair. 
-	
-	| res | 
-	res := OrderedCollection new. 
-	#(0 1 2 3) allPairsDo: [:first :second | res add: {first . second} ].
-	res 
-	 an OrderedCollection(#(0 0) #(0 1) #(0 2) #(0 3) #(1 0) #(1 1) #(1 2) #(1 3) #(2 0) #(2 1) #(2 2) #(2 3) #(3 0) #(3 1) #(3 2) #(3 3))
-	"
-	
-	self do: [:first| self do: [:second| aBinaryBlock value: first value: second]]
+	"Iterate over all the pairs of the receiver and apply the binaryBlock
+	to each pair. "
+
+	"(Array streamContents: [ :stream | #(0 1 2 3) allPairsDo: [ :first :second | stream nextPut: { first . second } ] ]) >>> #(#(0 0) #(0 1) #(0 2) #(0 3) #(1 0) #(1 1) #(1 2) #(1 3) #(2 0) #(2 1) #(2 2) #(2 3) #(3 0) #(3 1) #(3 2) #(3 3))"
+
+	self do: [ :first | self do: [ :second | aBinaryBlock value: first value: second ] ]
 ]
 
 { #category : #accessing }
@@ -201,14 +235,12 @@ SequenceableCollection >> asByteArray [
 
 { #category : #private }
 SequenceableCollection >> asDigitsAt: anInteger in: aCollection do: aBlock [
-	"(0 to: 1) asDigitsToPower: 4 do: [:each | Transcript cr; show: each printString]"
-
-	self do: 
-		[:each | 
-		aCollection at: anInteger put: each.
-		anInteger = aCollection size 
-			ifTrue: [aBlock value: aCollection]
-			ifFalse: [self asDigitsAt: anInteger + 1 in: aCollection do: aBlock]].
+	self
+		do: [ :each | 
+			aCollection at: anInteger put: each.
+			anInteger = aCollection size
+				ifTrue: [ aBlock value: aCollection ]
+				ifFalse: [ self asDigitsAt: anInteger + 1 in: aCollection do: aBlock ] ]
 ]
 
 { #category : #enumerating }
@@ -216,7 +248,8 @@ SequenceableCollection >> asDigitsToPower: anInteger do: aBlock [
 	"Repeatedly value aBlock with a single Array.  Adjust the collection
 	so that aBlock is presented all (self size raisedTo: anInteger) possible 
 	combinations of the receiver's elements taken as digits of an anInteger long number."
-	"(0 to: 1) asDigitsToPower: 4 do: [:each | Transcript cr; show: each printString]"
+
+	"(Array streamContents: [:stream | (0 to: 1) asDigitsToPower: 4 do: [:each | stream nextPut: each copy]]) >>> #((0 0 0 0) (0 0 0 1) (0 0 1 0) (0 0 1 1) (0 1 0 0) (0 1 0 1) (0 1 1 0) (0 1 1 1) (1 0 0 0) (1 0 0 1) (1 0 1 0) (1 0 1 1) (1 1 1 0) (1 1 1 1))"
 
 	| aCollection |
 	aCollection := Array new: anInteger.
@@ -275,6 +308,8 @@ SequenceableCollection >> asWordArray [
 SequenceableCollection >> at: index ifAbsent: exceptionBlock [ 
 	"Answer the element at my position index. If I do not contain an element 
 	at index, answer the result of evaluating the argument, exceptionBlock."
+	"(#(a b c d) at: 3 ifAbsent: #z) >>> #c"
+	"(#(a b c d) at: 5 ifAbsent: #z) >>> #z"
 
 	(index between: 1 and: self size) ifTrue: [^ self at: index].
 	^ exceptionBlock value
@@ -282,6 +317,9 @@ SequenceableCollection >> at: index ifAbsent: exceptionBlock [
 
 { #category : #accessing }
 SequenceableCollection >> at: index incrementBy: value [
+	"(#(1 2 3 4) at: 3 incrementBy: 2) >>> 5"
+	"(#(1 2 3 4) at: 2 incrementBy: 2) >>> 4"
+	
 	^self at: index put: (self at: index) + value
 ]
 
@@ -289,7 +327,7 @@ SequenceableCollection >> at: index incrementBy: value [
 SequenceableCollection >> atAll: indexArray [
 	"Answer a new collection like the receiver which contains all elements
 	of the receiver at the indices of indexArray."
-	"#('one' 'two' 'three' 'four') atAll: #(3 2 4)"
+	"(#('one' 'two' 'three' 'four') atAll: #(3 2 4)) >>> #('three' 'two' 'four')"
 
 	| newCollection |
 	newCollection := self species ofSize: indexArray size.
@@ -302,6 +340,7 @@ SequenceableCollection >> atAll: indexArray [
 { #category : #accessing }
 SequenceableCollection >> atAll: aCollection put: anObject [ 
 	"Put anObject at every index specified by the elements of aCollection."
+	"(#(x y z) atAll: #(1 3) put: #e; yourself) >>> #(e y e)"
 
 	aCollection do: [:index | self at: index put: anObject].
 	^ anObject
@@ -311,6 +350,7 @@ SequenceableCollection >> atAll: aCollection put: anObject [
 SequenceableCollection >> atAll: indexArray putAll: valueArray [
 	"Store the elements of valueArray into the slots
 	of this collection selected by indexArray."
+	"(#(x y z) atAll: #(1 3) putAll: #(a e); yourself) >>> #(a y e)"
 
 	indexArray with: valueArray do: [:index :value | self at: index put: value].
 	^ valueArray
@@ -319,6 +359,7 @@ SequenceableCollection >> atAll: indexArray putAll: valueArray [
 { #category : #accessing }
 SequenceableCollection >> atAllPut: anObject [ 
 	"Put anObject at every one of the receiver's indices."
+	"(#(x y z) atAllPut: #a) >>> #(a a a)"
 
 	| size |
 	(size := self size) > 26 "first method faster from 27 accesses and on"
@@ -330,6 +371,8 @@ SequenceableCollection >> atAllPut: anObject [
 SequenceableCollection >> atLast: indexFromEnd [
 	"Return element at indexFromEnd from the last position.
 	 atLast: 1, returns the last element"
+	"(#(x y z) atLast: 1) >>> #z"
+	"(#(x y z) atLast: 2) >>> #y"
 
 	^ self atLast: indexFromEnd ifAbsent: [self error: 'index out of range']
 ]
@@ -338,6 +381,8 @@ SequenceableCollection >> atLast: indexFromEnd [
 SequenceableCollection >> atLast: indexFromEnd ifAbsent: block [
 	"Return element at indexFromEnd from the last position.
 	 atLast: 1 ifAbsent: [] returns the last element"
+	"(#(x y z) atLast: 1 ifAbsent: #a) >>> #z"
+	"(#(x y z) atLast: 4 ifAbsent: #a) >>> #a"
 
 	^ self at: self size + 1 - indexFromEnd ifAbsent: block
 ]
@@ -346,6 +391,7 @@ SequenceableCollection >> atLast: indexFromEnd ifAbsent: block [
 SequenceableCollection >> atLast: indexFromEnd put: obj [
 	"Set the element at indexFromEnd from the last position.
 	 atLast: 1 put: obj, sets the last element"
+	"(#(x y z) atLast: 2 put: #e; yourself) >>> #(x e z)"
 
 	^ self at: self size + 1 - indexFromEnd put: obj
 ]
@@ -354,6 +400,9 @@ SequenceableCollection >> atLast: indexFromEnd put: obj [
 SequenceableCollection >> atPin: index [ 
 	"Return the index'th element of me if possible.
 	Return the first or last element if index is out of bounds."
+	"(#(w x y z) atPin: 2) >>> #x"
+	"(#(w x y z) atPin: 4) >>> #z"
+	"(#(w x y z) atPin: 8) >>> #z"
 
 	index < 1 ifTrue: [^ self first].
 	index > self size ifTrue: [^ self last].
@@ -361,11 +410,15 @@ SequenceableCollection >> atPin: index [
 ]
 
 { #category : #accessing }
-SequenceableCollection >> atWrap: index [ 
-	"Answer the index'th element of the receiver.  If index is out of bounds,
-	let it wrap around from the end to the beginning until it is in bounds."
+SequenceableCollection >> atWrap: index [
 
-	^ self at: index - 1 \\ self size + 1
+    "Answer the index'th element of the receiver.  If index is out of bounds,
+    let it wrap around from the end to the beginning until it is in bounds."
+    "(#(11 22 33) asOrderedCollection atWrap: 2) >>> 22"
+    "(#(11 22 33) asOrderedCollection atWrap: 4) >>> 11"
+    "(#(11 22 33) asOrderedCollection atWrap: 5) >>> 22"
+    
+    ^ self at: index - 1 \\ self size + 1
 ]
 
 { #category : #accessing }
@@ -373,6 +426,9 @@ SequenceableCollection >> atWrap: index put: value [
 	"Store value into the index'th element of the receiver.  If index is out
 	of bounds, let it wrap around from the end to the beginning until it 
 	is in bounds. Answer value."
+	"(#(11 22 33) asOrderedCollection atWrap: 2 put: 0; yourself) >>> #(11 0 33)"
+   "(#(11 22 33) asOrderedCollection atWrap: 4 put: 0; yourself) >>> #(0 22 33)"
+   "(#(11 22 33) asOrderedCollection atWrap: 6 put: 0; yourself) >>> #(11 22 0)"
 
 	^ self at: index  - 1 \\ self size + 1 put: value
 ]
@@ -382,6 +438,8 @@ SequenceableCollection >> before: target [
 	"Answer the receiver's element immediately before target. Raise an
 	error if target is not an element of the receiver, or if there are no 
 	elements before it (i.e. it is the first element)."
+	"(#(11 22 33) before: 22) >>> 11"
+	"(#(11 22 33) before: 33) >>> 22"
 
 	^ self before: target ifAbsent: [self errorNotFound: target]
 ]
@@ -391,6 +449,8 @@ SequenceableCollection >> before: target ifAbsent: exceptionBlock [
 	"Answer the receiver's element immediately before target. Answer
 	the result of evaluating the exceptionBlock if target is not an element
 	of the receiver, or if there are no elements before it."
+	"(#(11 22 33) before: 22 ifAbsent: 55) >>> 11"
+	"(#(11 22 33) before: 44 ifAbsent: 55) >>> 55"
 
 	| index |
 	index := self indexOf: target.
@@ -414,10 +474,23 @@ SequenceableCollection >> beginsWithAnyOf: aCollection [
 ]
 
 { #category : #enumerating }
+SequenceableCollection >> bind: aBlock [ 
+
+	"Extract items from the receiver and use them as argumeents of aBlock. Signal an error
+	(ArgumentsCountMismatch) when the arguments count of aBlock does not match the receiver size." 
+	
+	"(#(1 2 3) bind: [ :first :second :third | first + second + third ]) >>> 6"
+
+	^ aBlock valueWithArguments: self
+]
+
+{ #category : #enumerating }
 SequenceableCollection >> collect: aBlock [ 
 	"Evaluate aBlock with each of the receiver's elements as the argument.  
 	Collect the resulting values into a collection like the receiver. Answer  
 	the new collection."
+	
+	"#(1 2 3) collect: [:each | each  + 10] >>> #(11 12 13) "
 
 	| newCollection |
 	newCollection := self species new: self size.
@@ -430,6 +503,8 @@ SequenceableCollection >> collect: aBlock [
 { #category : #enumerating }
 SequenceableCollection >> collect: aBlock from: firstIndex to: lastIndex [
 	"Refer to the comment in Collection|collect:."
+	
+	"(#(1 2 3 4) collect: [:each | each  + 10] from: 2 to: 3) >>> #(12 13) "
 
 	| size result j |
 	size := lastIndex - firstIndex + 1.
@@ -443,6 +518,8 @@ SequenceableCollection >> collect: aBlock from: firstIndex to: lastIndex [
 SequenceableCollection >> collect: collectBlock thenReject: rejectBlock [
 	"Optimized version of Collection>>#thenReject:"
 	
+	"(#(1 2 3) collect: [:each | each + 10 ] thenReject: [:each | each even]) >>> #(11 13)"
+	
 	| each |
 	
 	^  self class new: self size streamContents: [ :stream |
@@ -455,6 +532,8 @@ SequenceableCollection >> collect: collectBlock thenReject: rejectBlock [
 { #category : #enumerating }
 SequenceableCollection >> collect: collectBlock thenSelect: selectBlock [
 	"Optimized version of Collection>>#collect:thenSelect:"
+	
+	"(#(1 2 3) collect: [:each | each + 10 ] thenSelect: [:each | each even]) >>> #(12)"
 	
 	| each |
 	
@@ -475,23 +554,27 @@ SequenceableCollection >> collectWithIndex: elementAndIndexBlock [
 SequenceableCollection >> combinations [
 	"Return all the combinations of elements of the receiver. Note that comabinations does not include the empty element contrary to the mathematical definition of combinations."
 
-	"#(1 2 3 4) combinations 
-	returns #(#(1) #(2) #(3) #(4) #(1 2) #(1 3) #(1 4) #(2 3) #(2 4) #(3 4) #(1 2 3) #(1 2 4) #(1 3 4) #(2 3 4) #(1 2 3 4))"
+	"#(1 2 3 4) combinations >>> #(#(1) #(2) #(3) #(4) #(1 2) #(1 3) #(1 4) #(2 3) #(2 4) #(3 4) #(1 2 3) #(1 2 4) #(1 3 4) #(2 3 4) #(1 2 3 4))"
 
 	^ Array
 		streamContents: [ :stream | 
-			1 to: self size do: [ :take | 
-					self combinations: take atATimeDo: [ :combination | stream nextPut: combination copy ] ] ]
+			1 to: self size do:
+				[ :take | self combinations: take atATimeDo: [ :combination | stream nextPut: combination copy ] ] ]
 ]
 
 { #category : #enumerating }
 SequenceableCollection >> combinations: kk atATimeDo: aBlock [
 	"Take the items in the receiver, kk at a time, and evaluate the block for each combination.  Hand in an array of elements of self as the block argument.  Each combination only occurs once, and order of the elements does not matter.  There are (self size take: kk) combinations."
-	" 'abcde' combinations: 3 atATimeDo: [:each | Transcript cr; show: each printString]"
+
+	"(Array streamContents: [:stream | 'abcde' combinations: 3 atATimeDo: [:each | stream nextPut: each copy]]) >>> #(#($a $b $c) #($a $b $d) #($a $b $e) #($a $c $d) #($a $c $e) #($a $d $e) #($b $c $d) #($b $c $e) #($b $d $e) #($c $d $e))"
 
 	| aCollection |
 	aCollection := Array new: kk.
-	self combinationsAt: 1 in: aCollection after: 0 do: aBlock
+	self
+		combinationsAt: 1
+		in: aCollection
+		after: 0
+		do: aBlock
 ]
 
 { #category : #private }
@@ -508,16 +591,6 @@ SequenceableCollection >> combinationsAt: jj in: aCollection after: nn do: aBloc
 					in: aCollection
 					after: index
 					do: aBlock ] ]
-]
-
-{ #category : #converting }
-SequenceableCollection >> concatenation [
-	|result index|
-
-	result := Array new: (self inject: 0 into: [:sum :each | sum + each size]).
-	index := 0.
-	self do: [:each | each do: [:item | result at: (index := index+1) put: item]].
-	^result
 ]
 
 { #category : #copying }
@@ -688,12 +761,23 @@ SequenceableCollection >> copyWithoutIndex: index [
 { #category : #enumerating }
 SequenceableCollection >> detectIndex: aBlock [
 
+	"Return index of first element that satisfies aBlock.
+	If no matching element is found, raise an error."
+	
+	"(#(1 5 10) detectIndex: [ :each | each > 3 ]) >>> 2"
+
 	^ self detectIndex: aBlock ifNone: [ self errorNotFound: aBlock ] 
 ]
 
 { #category : #enumerating }
 SequenceableCollection >> detectIndex: aBlock ifNone: exceptionBlock [
 
+	"Return index of first element that satisfies aBlock.
+	If no matching element is found, evaluate exceptionBlock."
+	
+	"(#(1 5 10) detectIndex: [ :each | each > 3 ] ifNone: ['Not found']) >>> 2"
+	"(#(1 5 10) detectIndex: [ :each | each > 15 ] ifNone: ['Not found']) >>> 'Not found'"
+	
 	self doWithIndex: [:each :index | (aBlock value: each) ifTrue: [^ index]].
 	^ exceptionBlock value
 ]
@@ -709,6 +793,8 @@ SequenceableCollection >> do: aBlock [
 SequenceableCollection >> do: elementBlock separatedBy: separatorBlock [
 	"Evaluate the elementBlock for all elements in the receiver,
 	and evaluate the separatorBlock between."
+	
+	"(Array streamContents: ([:stream | #(1 2 3) do: [:each | stream nextPut: (each + 10)] separatedBy: [ stream nextPut: 0 ]])) >>> #(11 0 12 0 13)"
 
 	1 to: self size do:
 		[:index |
@@ -721,27 +807,18 @@ SequenceableCollection >> do: aBlock without: anItem [
 	"Enumerate all elements in the receiver.
 	Execute aBlock for those elements that are not equal to the given item"
 	"Refer to the comment in Collection|do:."
+	
+	"(Array streamContents: ([:stream | #(1 2 3) do: [:each | stream nextPut: (each + 10)] without: 2])) >>> #(11 13)"
+	
 	1 to: self size do:
 		[:index | anItem = (self at: index) ifFalse:[aBlock value: (self at: index)]]
-]
-
-{ #category : #enumerating }
-SequenceableCollection >> doWithIndex: elementAndIndexBlock [
-	"Just like with:do: except that the iteration index supplies the second argument to the block. 
-	#(11 22 13) doWithIndex: [ :each :i | Transcript show: (each * each + i) ;cr ].
-	prints: 
-		122
-		486
-		172
-
-	Use the new version with consistent naming"
-	^ self withIndexDo: elementAndIndexBlock
 ]
 
 { #category : #accessing }
 SequenceableCollection >> eighth [
 	"Answer the eighth element of the receiver.
 	Raise an error if there are not enough elements."
+	"#(a b c d e f g h ) eighth  >>> #h"
 
 	^ self at: 8
 ]
@@ -773,6 +850,7 @@ SequenceableCollection >> errorOutOfBounds [
 SequenceableCollection >> fifth [
 	"Answer the fifth element of the receiver.
 	Raise an error if there are not enough elements."
+	"#(a b c d e f g h ) fifth >>> #e"
 
 	^ self at: 5
 ]
@@ -784,14 +862,11 @@ SequenceableCollection >> findBinary: aBlock [
 		0 	- if the element is the one searched for
 		<0	- if the search should continue in the first half
 		>0	- if the search should continue in the second half
-	If no matching element is found, raise an error.
-	Examples:
-		#(1 3 5 7 11 15 23) findBinary: [ :arg | 11 - arg ]. "
-		
-	^ self 
-		findBinary: aBlock 
-		do: [ :found | found ] 
-		ifNone: [ self errorNotFound: aBlock ]
+	If no matching element is found, raise an error."
+
+	"(#(1 3 5 7 11 15 23) findBinary: [ :arg | 11 - arg ]) >>> 11 "
+
+	^ self findBinary: aBlock do: [ :found | found ] ifNone: [ self errorNotFound: aBlock ]
 ]
 
 { #category : #enumerating }
@@ -803,34 +878,27 @@ SequenceableCollection >> findBinary: aBlock do: actionBlock ifNone: exceptionBl
 		>0	- if the search should continue in the second half
 	If found, evaluate actionBlock with the found element as argument
 	If no matching element is found, evaluate exceptionBlock,
-	with the 'bounding' elements or nil as arguments.
-	Examples:
-		#(1 3 5 7 11 15 23)
-			findBinary: [ :arg | 11 - arg ]
-			do: [ :found | found ]
-			ifNone: [ :a :b | 'between: ', {a. b} printString ]
-		#(1 3 5 7 11 15 23)
-			findBinary: [ :arg | 12 - arg ]
-			do: [ :found | found ]
-			ifNone: [ :a :b | 'between: ', {a. b} printString ]
-		#(1 3 5 7 11 15 23)
-			findBinary: [ :arg | 0.5 - arg ]
-			do: [ :found | found ]
-			ifNone: [ :a :b | 'between: ', {a. b} printString ]
-		#(1 3 5 7 11 15 23)
-			findBinary: [ :arg | 25 - arg ]
-			do: [ :found | found ]
-			ifNone: [ :a :b | 'between: ',{a. b} printString ] "
-	
+	with the 'bounding' elements or nil as arguments."
+
+	"(#(1 3 5 7 11 15 23) findBinary: [ :arg | 11 - arg ] do: [ :found | found ] ifNone: [ :a :b | 'between: ', {a. b} printString ]) >>> 11"
+
+	"(#(1 3 5 7 11 15 23) findBinary: [ :arg | 12 - arg ] do: [ :found | found ] ifNone: [ :a :b | 'between: ', {a. b} printString ]) >>> 'between: #(11 15)'"
+
+	"(#(1 3 5 7 11 15 23) findBinary: [ :arg | 0.5 - arg ] do: [ :found | found ] ifNone: [ :a :b | 'between: ', {a. b} printString ]) >>> 'between: #(nil 1)'"
+
+	"(#(1 3 5 7 11 15 23) findBinary: [ :arg | 25 - arg ] do: [ :found | found ] ifNone: [ :a :b | 'between: ',{a. b} printString ]) >>> 'between: #(23 nil)'"
+
 	^ self
 		findBinaryIndex: aBlock
-		do: [ :foundIndex |
-			actionBlock value: (self at: foundIndex) ]
-		ifNone: [ :prevIndex :nextIndex |
+		do: [ :foundIndex | actionBlock value: (self at: foundIndex) ]
+		ifNone: [ :prevIndex :nextIndex | 
 			exceptionBlock
-				cull: (prevIndex > 0 ifTrue: [ self at: prevIndex ])
-				cull: (nextIndex <= self size ifTrue: [ self at: nextIndex ]) ]
-
+				cull:
+					(prevIndex > 0
+						ifTrue: [ self at: prevIndex ])
+				cull:
+					(nextIndex <= self size
+						ifTrue: [ self at: nextIndex ]) ]
 ]
 
 { #category : #enumerating }
@@ -842,6 +910,12 @@ SequenceableCollection >> findBinary: aBlock ifNone: exceptionBlock [
 		>0	- if the search should continue in the second half
 	If no matching element is found, evaluate exceptionBlock,
 	with the 'bounding' elements as optional arguments."
+	
+	"(#(1 3 5 7 11 15 23) findBinary: [ :arg | 24 - arg ] ifNone: ['Not found']) >>> 'Not found'"
+	
+	"(#(1 3 5 7 11 15 23) findBinary: [ :arg | 24 - arg ] ifNone: [:a :b | 'over ', a printString]) >>> 'over 23'"
+	
+	"(#(1 3 5 7 11 15 23) findBinary: [ :arg | 25 - arg ] ifNone: [ :a :b | 'between: ',{a. b} printString ]) >>> 'between: #(23 nil)'"
 	
 	^ self 
 		findBinary: aBlock 
@@ -856,13 +930,13 @@ SequenceableCollection >> findBinaryIndex: aBlock [
 		0 	- if the element is the one searched for
 		<0	- if the search should continue in the first half
 		>0	- if the search should continue in the second half
-	If no matching element is found, raise an error.
-	Examples:
-		#(1 3 5 7 11 15 23) findBinaryIndex: [ :arg | 11 - arg ]
-	"
-	^ self 
-		findBinaryIndex: aBlock 
-		do: [ :found | found ] 
+	If no matching element is found, raise an error."
+
+	"(#(1 3 5 7 11 15 23) findBinaryIndex: [ :arg | 11 - arg ]) >>> 5"
+
+	^ self
+		findBinaryIndex: aBlock
+		do: [ :found | found ]
 		ifNone: [ self errorNotFound: aBlock ]
 ]
 
@@ -876,24 +950,12 @@ SequenceableCollection >> findBinaryIndex: aBlock do: actionBlock ifNone: except
 	If found, evaluate actionBlock with the index as argument
 	If no matching element is found, evaluate exceptionBlock,
 	with the indexes of the 'bounding' elements as arguments.
-	Warning: Might give invalid indexes, see examples below
-	Examples:
-		#(1 3 5 7 11 15 23)
-			findBinaryIndex: [ :arg | 11 - arg ]
-			do: [ :found | found ]
-			ifNone: [ :a :b | 'between: ', {a. b} printString ]
-		#(1 3 5 7 11 15 23)
-			findBinaryIndex: [ :arg | 12 - arg ]
-			do: [ :found | found ]
-			ifNone: [ :a :b | 'between: ', {a. b} printString ]
-		#(1 3 5 7 11 15 23)
-			findBinaryIndex: [ :arg | 0.5 - arg ]
-			do: [ :found | found ]
-			ifNone: [ :a :b | 'between: ', {a. b} printString ]
-		#(1 3 5 7 11 15 23)
-			findBinaryIndex: [ :arg | 25 - arg ]
-			do: [ :found | found ]
-			ifNone: [ :a :b | 'between: ',{a. b} printString ] "
+	Warning: Might give invalid indexes, see examples below"
+
+	"(#(1 3 5 7 11 15 23) findBinaryIndex: [ :arg | 11 - arg ] do: [ :found | found ] ifNone: [ :a :b | 'between: ', {a. b} printString ]) >>> 5"
+	"(#(1 3 5 7 11 15 23) findBinaryIndex: [ :arg | 12 - arg ] do: [ :found | found ] ifNone: [ :a :b | 'between: ', {a. b} printString ]) >>> 'between: #(5 6)'"
+	"(#(1 3 5 7 11 15 23) findBinaryIndex: [ :arg | 0.5 - arg ] do: [ :found | found ] ifNone: [ :a :b | 'between: ', {a. b} printString ]) >>> 'between: #(0 1)'"
+	"(#(1 3 5 7 11 15 23) findBinaryIndex: [ :arg | 25 - arg ] do: [ :found | found ] ifNone: [ :a :b | 'between: ',{a. b} printString ]) >>> 'between: #(7 8)' "
 			
 	| index low high test |
 	low := 1.
@@ -918,6 +980,10 @@ SequenceableCollection >> findBinaryIndex: aBlock ifNone: exceptionBlock [
 		>0	- if the search should continue in the second half
 	If no matching element is found, evaluate exceptionBlock,
 	with the 'bounding' elements as optional arguments."
+	
+	"(#(1 3 5 7 11 15 23) findBinaryIndex: [ :arg | 25 - arg ] ifNone: [ :a :b | 'between: ',{a. b} printString ]) >>> 'between: #(7 8)' "
+	
+	"(#(1 3 5 7 11 15 23) findBinaryIndex: [ :arg | 25 - arg ] ifNone: [ :a :b | 'over index: ', a printString ]) >>> 'over index: 7' "
 
 	^ self 
 		findBinaryIndex: aBlock 
@@ -927,7 +993,11 @@ SequenceableCollection >> findBinaryIndex: aBlock ifNone: exceptionBlock [
 
 { #category : #enumerating }
 SequenceableCollection >> findFirst: aBlock [
-	"Return the index of my first element for which aBlock evaluates as true."
+	"Return the index of my first element for which aBlock evaluates as true.
+	If no matching element is found, return 0"
+	
+	"(#(1 5 10) findFirst: [ :each | each > 3 ]) >>> 2"
+	"(#(1 5 10) findFirst: [ :each | each > 15 ]) >>> 0"
 
 	| index |
 	index := 0.
@@ -938,8 +1008,12 @@ SequenceableCollection >> findFirst: aBlock [
 
 { #category : #enumerating }
 SequenceableCollection >> findLast: aBlock [
-	"Return the index of my last element for which aBlock evaluates as true."
-
+	"Return the index of my last element for which aBlock evaluates as true.
+	If no matching element is found, return 0"
+	
+	"(#(10 20 30 40 50) findLast: [ :each | each > 10 ]) >>> 5"
+	"(#(10 20 30 40 50) findLast: [ :each | each > 60 ]) >>> 0"
+	
 	| index |
 	index := self size + 1.
 	[(index := index - 1) >= 1] whileTrue:
@@ -950,6 +1024,7 @@ SequenceableCollection >> findLast: aBlock [
 { #category : #accessing }
 SequenceableCollection >> first [
 	"Answer the first element of the receiver"
+	"#(a b c d e f g h ) first >>> #a"
 
 	^ self at: 1
 ]
@@ -958,30 +1033,27 @@ SequenceableCollection >> first [
 SequenceableCollection >> first: n [
 	"Answer the first n elements of the receiver.
 	Raise an error if there are not enough elements."
+	"(#(a b c d e f g h ) first: 3) >>> #(a b c)"
 
 	^ self copyFrom: 1 to: n
 ]
 
 { #category : #enumerating }
-SequenceableCollection >> flatCollect: aBlock [ 
+SequenceableCollection >> flatCollect: aBlock [
 	"Evaluate aBlock for each of the receiver's elements and answer the
 	list of all resulting values flatten one level. Assumes that aBlock returns some kind
 	of collection for each element. optimized version for Sequencable Collection and subclasses
 	implementing #writeStream"
-	"
-	#( (2 -3) (4 -5) #(-6)) flatCollect: [ :e | e abs  ]  
-	>>> #(2 3 4 5 6)
-	"
-	"
-	#( (2 -3) #((4 -5)) #(-6)) flatCollect: [ :e | e abs  ]  
-	>>> #(2 3 #(4 5) 6)
-	"
-	
-	| stream |
-	self isEmpty ifTrue: [ ^ self copy ].
-	stream := (self species new: 0) writeStream.
-	self do: [ :each | stream nextPutAll: (aBlock value: each) ].
-	^ stream contents
+
+	"(#( (2 -3) (4 -5) #(-6)) flatCollect: [ :e | e abs  ]) >>> #(2 3 4 5 6)"
+
+	"(#( (2 -3) #((4 -5)) #(-6)) flatCollect: [ :e | e abs  ]) >>> #(2 3 #(4 5) 6)"
+
+	self isEmpty
+		ifTrue: [ ^ self copy ].
+	^self species 
+		new: 0
+		streamContents: [ :stream | self do: [ :each | stream nextPutAll: (aBlock value: each) ] ]
 ]
 
 { #category : #copying }
@@ -1019,6 +1091,7 @@ SequenceableCollection >> forceTo: length paddingWith: elem [
 SequenceableCollection >> fourth [
 	"Answer the fourth element of the receiver.
 	Raise an error if there are not enough elements."
+	"#(a b c d e f g h ) fourth >>> #d"
 
 	^ self at: 4
 ]
@@ -1026,6 +1099,8 @@ SequenceableCollection >> fourth [
 { #category : #enumerating }
 SequenceableCollection >> from: start to: stop do: aBlock [
 	"Evaluate aBlock for all elements between start and stop (inclusive)."
+	
+	"(Array streamContents: [:stream | #(10 20 30 40) from: 2 to: 3 do: [:each | stream nextPut: each]]) >>> #(20 30)"
 
 	start to: stop do: [:index | aBlock value: (self at: index)]
 ]
@@ -1035,6 +1110,7 @@ SequenceableCollection >> from: startIndex to: endIndex put: anObject [
 	"Put anObject in all indexes between startIndex 
 	and endIndex. Very fast. Faster than to:do: for
 	more than 26 positions. Answer anObject"
+	"(#(a b c d e) from: 3 to: 4 put: #x; yourself) >>> #(a b x x e)"
 
 	| written toWrite thisWrite |
 
@@ -1055,37 +1131,26 @@ SequenceableCollection >> from: startIndex to: endIndex put: anObject [
 ]
 
 { #category : #enumerating }
-SequenceableCollection >> groupsOf: n atATimeCollect: aBlock [ 
+SequenceableCollection >> groupsOf: n atATimeCollect: aBlock [
 	"Evaluate aBlock with my elements taken n at a time. Ignore any leftovers at the end. 
 	Allows use of a flattened array for things that naturally group into groups of n. 
 	If aBlock has a single argument, pass it an array of n items, otherwise, pass the items as separate arguments. See also pairsDo:"
-	
-	"
-	#(16 17 17 16 18 17 18   19 19 19 18 19 19 20   19 20 19 20 20 20 19   20) groupsOf: 7 atATimeCollect: [ :x | x ]
-	>>> #(#(16 17 17 16 18 17 18) #(19 19 19 18 19 19 20) #(19 20 19 20 20 20 19))
-	"
-	"
-	#(1 1 1 10 10 10 100  100 100) 
-		groupsOf: 3 atATimeCollect: [ :x :y :z | x + y + z] 
-	>>> #(3 30 300)
-	"
-	
-	"
-	#(1 1 1 10 10 10 100  100 100) 
-		groupsOf: 3 atATimeCollect: [ :x | x ]  
-	>>> #(#(1 1 1) #(10 10 10) #(100 100 100))
-	"
-	
+
+	"(#(16 17 17 16 18 17 18   19 19 19 18 19 19 20   19 20 19 20 20 20 19   20) groupsOf: 7 atATimeCollect: [ :x | x ]) >>> #(#(16 17 17 16 18 17 18) #(19 19 19 18 19 19 20) #(19 20 19 20 20 20 19))"
+
+	"(#(1 1 1 10 10 10 100  100 100) groupsOf: 3 atATimeCollect: [ :x :y :z | x + y + z]) >>> #(3 30 300)"
+
+	"(#(1 1 1 10 10 10 100  100 100) groupsOf: 3 atATimeCollect: [ :x | x ]) >>> #(#(1 1 1) #(10 10 10) #(100 100 100))"
+
 	| passArray |
-	passArray := aBlock numArgs = 1.
-	^(n
-		to: self size
-		by: n)
-		collect: [:index | | args | 
+	passArray := aBlock numArgs <= 1.
+	^ (n to: self size by: n)
+		collect: [ :index | 
+			| args |
 			args := (self copyFrom: index - n + 1 to: index) asArray.
 			passArray
-				ifTrue: [aBlock value: args]
-				ifFalse: [aBlock valueWithArguments: args]]
+				ifTrue: [ aBlock value: args ]
+				ifFalse: [ aBlock valueWithArguments: args ] ]
 ]
 
 { #category : #enumerating }
@@ -1096,6 +1161,9 @@ SequenceableCollection >> groupsOf: n atATimeDo: aBlock [
 	If aBlock has a single argument, pass it an array of n items,
 	otherwise, pass the items as separate arguments.
 	See also pairsDo:"
+	
+	"(Array streamContents: [:stream | #(10 20 30 40 50) groupsOf: 2 atATimeDo:  [:first :second | stream nextPut: (first + second)]]) >>> #(30 70)"
+	
 	| passArray |
 	passArray := (aBlock numArgs = 1).
 	n
@@ -1147,6 +1215,8 @@ SequenceableCollection >> hash [
 SequenceableCollection >> identityIndexOf: anElement [ 
 	"Answer the index of anElement within the receiver. If the receiver does 
 	not contain anElement, answer 0."
+	"(#(a b c d e) identityIndexOf: #c) >>> 3"
+	"(#(a b c d e) identityIndexOf: #x) >>> 0"
 
 	^self identityIndexOf: anElement ifAbsent: [0]
 ]
@@ -1156,6 +1226,9 @@ SequenceableCollection >> identityIndexOf: anElement ifAbsent: exceptionBlock [
 	"Answer the index of anElement within the receiver. If the receiver does 
 	not contain anElement, answer the result of evaluating the argument, 
 	exceptionBlock."
+	"(#(a b c d e) identityIndexOf: #c ifAbsent: 7) >>> 3"
+	"(#(a b c d e) identityIndexOf: #x ifAbsent: 7) >>> 7"
+	
 	1 to: self size do:
 		[:i | (self at: i) == anElement ifTrue: [^ i]].
 	^ exceptionBlock value
@@ -1172,6 +1245,8 @@ SequenceableCollection >> includes: anObject [
 SequenceableCollection >> indexOf: anElement [
 	"Answer the index of the first occurrence of anElement within the  
 	receiver. If the receiver does not contain anElement, answer 0."
+	"(#(a b c d e) indexOf: #c) >>> 3"
+	"(#(a b c d e) indexOf: #x) >>> 0"
 
 	^ self indexOf: anElement ifAbsent: 0
 ]
@@ -1181,6 +1256,8 @@ SequenceableCollection >> indexOf: anElement ifAbsent: exceptionBlock [
 	"Answer the index of the first occurence of anElement within the  
 	receiver. If the receiver does not contain anElement, answer the 
 	result of evaluating the argument, exceptionBlock."
+	"(#(a b c d e) indexOf: #c ifAbsent: 7) >>> 3"
+	"(#(a b c d e) indexOf: #x ifAbsent: 7) >>> 7"
 
 	^ self indexOf: anElement startingAt: 1 ifAbsent: exceptionBlock
 ]
@@ -1188,6 +1265,8 @@ SequenceableCollection >> indexOf: anElement ifAbsent: exceptionBlock [
 { #category : #accessing }
 SequenceableCollection >> indexOf: anElement startingAt: start [
        "Answer the index of the first occurence of anElement after start within the receiver. If the receiver does not contain anElement, answer 0."
+	"(#(a b c d e) indexOf: #c startingAt: 2) >>> 3" 
+	"(#(a b c d e) indexOf: #c startingAt: 4) >>> 0"
 
 	^self indexOf: anElement startingAt: start ifAbsent: 0
 ]
@@ -1197,6 +1276,8 @@ SequenceableCollection >> indexOf: anElement startingAt: start ifAbsent: excepti
 	"Answer the index of the first occurence of anElement after start
 	within the receiver. If the receiver does not contain anElement, 
 	answer the 	result of evaluating the argument, exceptionBlock."
+	"(#(a b c d e) indexOf: #c startingAt: 2 ifAbsent: 7) >>> 3" 
+	"(#(a b c d e) indexOf: #c startingAt: 4 ifAbsent: 7) >>> 7"
 
 	start to: self size do:
 		[:index |
@@ -1208,6 +1289,8 @@ SequenceableCollection >> indexOf: anElement startingAt: start ifAbsent: excepti
 SequenceableCollection >> indexOfAnyOf: aCollection [
 	"Answer the index of the first occurence of any element included in aCollection within the receiver.
 	If the receiver does not contain anElement, answer zero, which is an invalid index."
+	"(#(a b c d e) indexOfAnyOf: #(x y c)) >>> 3"
+	"(#(a b c d e) indexOfAnyOf: #(x y z)) >>> 0"
 
 	^self indexOfAnyOf: aCollection startingAt: 1 ifAbsent: [0]
 ]
@@ -1216,6 +1299,8 @@ SequenceableCollection >> indexOfAnyOf: aCollection [
 SequenceableCollection >> indexOfAnyOf: aCollection ifAbsent: exceptionBlock [
 	"Answer the index of the first occurence of any element included in aCollection within the receiver.
 	If the receiver does not contain anElement, answer the result of evaluating the argument, exceptionBlock."
+	"(#(a b c d e) indexOfAnyOf: #(x y c) ifAbsent: 7) >>> 3"
+	"(#(a b c d e) indexOfAnyOf: #(x y z) ifAbsent: 7) >>> 7"
 
 	^self indexOfAnyOf: aCollection startingAt: 1 ifAbsent: exceptionBlock
 ]
@@ -1224,6 +1309,8 @@ SequenceableCollection >> indexOfAnyOf: aCollection ifAbsent: exceptionBlock [
 SequenceableCollection >> indexOfAnyOf: aCollection startingAt: start [
 	"Answer the index of the first occurence of any element included in aCollection after start within the receiver.
 	If the receiver does not contain anElement, answer zero, which is an invalid index."
+	"(#(a b c d e) indexOfAnyOf: #(x y c) startingAt: 2) >>> 3"
+	"(#(a b c d e) indexOfAnyOf: #(x y c) startingAt: 4) >>> 0"
 
 	^self indexOfAnyOf: aCollection startingAt: start ifAbsent: [0]
 ]
@@ -1233,6 +1320,8 @@ SequenceableCollection >> indexOfAnyOf: aCollection startingAt: start ifAbsent: 
 	"Answer the index of the first occurence of any element included in aCollection after start within the receiver.
 	If the receiver does not contain anElement, answer the result of evaluating the argument, exceptionBlock.
 	Note: it is user responsibility to provide aCollection that behaves relatevily fast when asked for includes: (like a Set)"
+	"(#(a b c d e) indexOfAnyOf: #(x y c) startingAt: 2 ifAbsent: 7) >>> 3"
+	"(#(a b c d e) indexOfAnyOf: #(x y c) startingAt: 4 ifAbsent: 7) >>> 7"
 
 	start to: self size do:
 		[:index |
@@ -1246,6 +1335,8 @@ SequenceableCollection >> indexOfSubCollection: aSubCollection startingAt: anInd
 	equals the first element of aSubCollection, and the next elements equal 
 	the rest of the elements of aSubCollection. Begin the search at element 
 	anIndex of the receiver. If no such match is found, answer 0."
+	"(#(a b c d e) indexOfSubCollection: #(c d) startingAt: 2) >>> 3"
+	"(#(a b c d e) indexOfSubCollection: #(c d) startingAt: 4) >>> 0"
 
 	^self
 		indexOfSubCollection: aSubCollection
@@ -1260,6 +1351,9 @@ SequenceableCollection >> indexOfSubCollection: sub startingAt: start ifAbsent: 
 	the rest of the elements of sub. Begin the search at element 
 	start of the receiver. If no such match is found, answer the result of 
 	evaluating argument, exceptionBlock."
+	"(#(a b c d e) indexOfSubCollection: #(c d) startingAt: 2 ifAbsent: 7) >>> 3"
+	"(#(a b c d e) indexOfSubCollection: #(c d) startingAt: 4 ifAbsent: 7) >>> 7"
+	
 	| first index |
 	sub isEmpty ifTrue: [^ exceptionBlock value].
 	first := sub first.
@@ -1274,18 +1368,6 @@ SequenceableCollection >> indexOfSubCollection: sub startingAt: start ifAbsent: 
 	^ exceptionBlock value
 ]
 
-{ #category : #accessing }
-SequenceableCollection >> integerAt: index [
-	"Return the integer at the given index"
-	^self at: index
-]
-
-{ #category : #accessing }
-SequenceableCollection >> integerAt: index put: value [
-	"Return the integer at the given index"
-	^self at: index put: value
-]
-
 { #category : #converting }
 SequenceableCollection >> isSequenceable [
 	^ true
@@ -1295,6 +1377,8 @@ SequenceableCollection >> isSequenceable [
 SequenceableCollection >> isSorted [
 	"Return true if the receiver is sorted by the given criterion.
 	Optimization for isSortedBy: [:a :b | a <= b]."
+	"#(1 2 3) isSorted >>> true"
+	"#(1 2 3 0) isSorted >>> false"
 
 	| lastElm elm |
 	self isEmpty ifTrue: [^ true].
@@ -1310,6 +1394,10 @@ SequenceableCollection >> isSorted [
 { #category : #sorting }
 SequenceableCollection >> isSortedBy: aBlock [
 	"Return true if the receiver is sorted by the given criterion."
+	"(#(1 2 3) isSortedBy: [:a :b | a <= b ]) >>> true"
+	"(#(1 2 3) isSortedBy: [:a :b | a >= b ]) >>> false"
+	"(#(xa xc xz xb xy) isSortedBy: #last ascending) >>> false"
+	"(#(xa xb xc xy xz) isSortedBy: #last ascending) >>> true"
 
 	| lastElm elm |
 	self isEmpty ifTrue: [^ true].
@@ -1364,6 +1452,8 @@ SequenceableCollection >> joinUsing: joiner last: last [
 { #category : #enumerating }
 SequenceableCollection >> keysAndValuesDo: aBlock [ 
 	"Enumerate the receiver with all the keys (aka indices) and values."
+	
+	"(Array streamContents: [:stream | #(10 20 30) keysAndValuesDo:  [:key :value | stream nextPut: (key * 2 + value)]]) >>> #(12 24 36)"
 
 	1 to: self size do: [:index | aBlock value: index value: (self at: index)]
 ]
@@ -1371,6 +1461,7 @@ SequenceableCollection >> keysAndValuesDo: aBlock [
 { #category : #accessing }
 SequenceableCollection >> last [
 	"Answer the last element of the receiver"
+	"#(a b c d e) last >>> #e"
 
 	^ self at: self size
 ]
@@ -1379,6 +1470,8 @@ SequenceableCollection >> last [
 SequenceableCollection >> last: n [
 	"Answer the last n elements of the receiver.  
 	Raise an error if there are not enough elements."
+	"(#(a b c d e) last: 2) >>> #(d e)"
+	"(#(a b c d e) last: 3) >>> #(c d e)"
 
 	| size |
 	size := self size.
@@ -1389,6 +1482,8 @@ SequenceableCollection >> last: n [
 SequenceableCollection >> lastIndexOf: anElement [
 	"Answer the index of the last occurence of anElement within the 
 	receiver. If the receiver does not contain anElement, answer 0."
+	"(#(a b a d a) lastIndexOf: #a) >>> 5"
+	"(#(a b a d e) lastIndexOf: #a) >>> 3"
 
 	^ self lastIndexOf: anElement startingAt: self size ifAbsent: [0]
 ]
@@ -1398,6 +1493,9 @@ SequenceableCollection >> lastIndexOf: anElement ifAbsent: exceptionBlock [
 	"Answer the index of the last occurence of anElement within the  
 	receiver. If the receiver does not contain anElement, answer the
 	result of evaluating the argument, exceptionBlock."
+	"(#(a b a d a) lastIndexOf: #a ifAbsent: 7) >>> 5"
+	"(#(a b a d e) lastIndexOf: #c ifAbsent: 7) >>> 7"
+	
 	^self lastIndexOf: anElement startingAt: self size ifAbsent: exceptionBlock
 ]
 
@@ -1406,6 +1504,8 @@ SequenceableCollection >> lastIndexOf: anElement startingAt: lastIndex ifAbsent:
 	"Answer the index of the last occurence of anElement within the  
 	receiver. If the receiver does not contain anElement, answer the
 	result of evaluating the argument, exceptionBlock."
+	"(#(a b a d a) lastIndexOf: #a startingAt: 1 ifAbsent: 7) >>> 1"
+	"(#(e b a d e) lastIndexOf: #a startingAt: 4 ifAbsent: 7) >>> 3"
 
 	lastIndex to: 1 by: -1 do:
 		[:index |
@@ -1418,6 +1518,7 @@ SequenceableCollection >> lastIndexOfAnyOf: aCollection startingAt: lastIndex if
 	"Answer the index of the last occurence of anElement within the  
 	receiver. If the receiver does not contain anElement, answer the
 	result of evaluating the argument, exceptionBlock."
+	"(#(a b a d a) lastIndexOfAnyOf: #(a b) startingAt: 1 ifAbsent: 7) >>> 1"
 
 	lastIndex to: 1 by: -1 do:
 		[:index |
@@ -1464,6 +1565,7 @@ SequenceableCollection >> mergeSortFrom: startIndex to: stopIndex by: aBlock [
 	phases copy data back and forth between the receiver and this copy.
 	The recursion is set up so that the final merge is performed into the
 	receiver, resulting in the receiver being completely sorted."
+	"(#(a b z d i l) mergeSortFrom: 3 to: 5 by: [ :a :b | a<=b ]) >>> #(a b d i z l)"
 
 	self size <= 1 ifTrue: [^ self].  "nothing to do"
 	startIndex = stopIndex ifTrue: [^ self].
@@ -1493,11 +1595,15 @@ SequenceableCollection >> mergeSortFrom: first to: last src: src dst: dst by: aB
 { #category : #accessing }
 SequenceableCollection >> middle [
 	"Answer the middle element of the receiver."
+	"#(a b c d e) middle >>> #c"
+	"#(a b c d) middle >>> #c"
+	
 	^ self at: self size // 2 + 1
 ]
 
 { #category : #enumerating }
 SequenceableCollection >> nextToLast [
+	"(#(1 2 3 4) nextToLast) >>> 3"
 	^self at: self size - 1
 ]
 
@@ -1505,13 +1611,18 @@ SequenceableCollection >> nextToLast [
 SequenceableCollection >> ninth [
 	"Answer the ninth element of the receiver.
 	Raise an error if there are not enough elements."
+	"#(a b c d e f g h i) ninth >>> #i"
 
 	^ self at: 9
 ]
 
 { #category : #enumerating }
 SequenceableCollection >> overlappingPairsCollect: aBlock [ 
+
 	"Answer the result of evaluating aBlock with all of the overlapping pairs of my elements."
+	
+	"(#(1 2 3 4) overlappingPairsCollect: [:first :second| first + second]) >>> #(3 5 7)"
+	
 	| retval |
 	retval := self species ofSize: self size - 1.
 	1 to: self size - 1
@@ -1521,7 +1632,10 @@ SequenceableCollection >> overlappingPairsCollect: aBlock [
 
 { #category : #enumerating }
 SequenceableCollection >> overlappingPairsDo: aBlock [ 
+
 	"Emit overlapping pairs of my elements into aBlock"
+	
+	"(Array streamContents: [:stream | #(1 2 3 4) overlappingPairsDo: [:first :second| stream nextPut: (first + second)]]) >>> #(3 5 7)"
 
 	1 to: self size - 1
 		do: [:i | aBlock value: (self at: i) value: (self at: i + 1)]
@@ -1530,6 +1644,8 @@ SequenceableCollection >> overlappingPairsDo: aBlock [
 { #category : #enumerating }
 SequenceableCollection >> overlappingPairsWithIndexDo: aBlock [ 
 	"Emit overlapping pairs of my elements into aBlock, along with an index."
+	
+	"(Array streamContents: [:stream | #(10 20 30 40) overlappingPairsWithIndexDo: [:first :second :index| stream nextPut: (first + second + index)]]) >>> #(31 52 73)"
 
 	1 to: self size - 1
 		do: [:i | aBlock value: (self at: i) value: (self at: i + 1) value: i ]
@@ -1539,72 +1655,117 @@ SequenceableCollection >> overlappingPairsWithIndexDo: aBlock [
 SequenceableCollection >> paddedWith: otherCollection do: twoArgBlock [ 
 	"Evaluate twoArgBlock with corresponding elements from this collection and otherCollection.
 	Missing elements from either will be passed as nil."
+	
+	"(Array streamContents: [:stream | #(10 20 30) paddedWith: #(40 50 60) do: [:first :second | stream nextPut: (first + second)]]) >>> #(50 70 90) "
+	
+	"(Array streamContents: [:stream | #(10 20 30) paddedWith: #(40 50) do: [:a :b | stream nextPut: {a. b} ]]) >>> #(#(10 40) #(20 50) #(30 nil)) "
+
+	"(Array streamContents: [:stream | #(10 20) paddedWith: #(40 50 60) do: [:a :b | stream nextPut: {a. b} ]]) >>> #(#(10 40) #(20 50) #(nil 60))"
+		
 	1 to: (self size max: otherCollection size) do:
 		[:index | twoArgBlock value: (self at: index ifAbsent: [])
 				value: (otherCollection at: index ifAbsent: [])]
 ]
 
 { #category : #enumerating }
-SequenceableCollection >> pairsCollect: aBlock [ 
+SequenceableCollection >> pairsCollect: aBlock [
 	"Evaluate aBlock with my elements taken two at a time, and return an Array with the results"
 
-	^ (1 to: self size // 2) collect:
-		[:index | aBlock value: (self at: 2 * index - 1) value: (self at: 2 * index)]
-"
-#(1 'fred' 2 'charlie' 3 'elmer') pairsCollect:
-	[:a :b | b, ' is number ', a printString]
-"
+	"(#(1 'fred' 2 'charlie' 3 'elmer') pairsCollect: [:a :b | b, ' is number ', a printString]) >>> #('fred is number 1' 'charlie is number 2' 'elmer is number 3')"
+
+	^ (1 to: self size // 2)
+		collect: [ :index | aBlock value: (self at: 2 * index - 1) value: (self at: 2 * index) ]
 ]
 
 { #category : #enumerating }
-SequenceableCollection >> pairsDo: aBlock [ 
+SequenceableCollection >> pairsDo: aBlock [
 	"Evaluate aBlock with my elements taken two at a time.  If there's an odd number of items, ignore the last one.  Allows use of a flattened array for things that naturally group into pairs.  See also pairsCollect:"
 
-	1 to: self size // 2 do:
-		[:index | aBlock value: (self at: 2 * index - 1) value: (self at: 2 * index)]
-"
-#(1 'fred' 2 'charlie' 3 'elmer') pairsDo:
-	[:a :b | Transcript cr; show: b, ' is number ', a printString]
-"
+	"(#(1 'fred' 2 'charlie' 3 'elmer') pairsDo: [:a :b | Transcript cr; show: b, ' is number ', a printString]) >>> #(1 'fred' 2 'charlie' 3 'elmer')"
+
+	1 to: self size // 2 do: [ :index | aBlock value: (self at: 2 * index - 1) value: (self at: 2 * index) ]
 ]
 
 { #category : #enumerating }
 SequenceableCollection >> permutationsDo: aBlock [
 	"Repeatly value aBlock with a single copy of the receiver. Reorder the copy
 	so that aBlock is presented all (self size factorial) possible permutations."
-	"(1 to: 4) permutationsDo: [:each | Transcript cr; show: each printString]"
+
+	"(Array streamContents: [:stream | (1 to: 3) permutationsDo: [:each | stream nextPut: each copy]]) >>> #(#(1 2 3) #(1 3 2) #(2 1 3) #(2 3 1) #(3 2 1) #(3 1 2))"
 
 	self shallowCopy permutationsStartingAt: 1 do: aBlock
 ]
 
 { #category : #private }
 SequenceableCollection >> permutationsStartingAt: anInteger do: aBlock [
-	"#(1 2 3 4) permutationsDo: [:each | Transcript cr; show: each printString]"
-
-	anInteger > self size ifTrue: [^self].
-	anInteger = self size ifTrue: [^aBlock value: self].
-	anInteger to: self size do:
-		[:i | self swap: anInteger with: i.
+	anInteger > self size
+		ifTrue: [ ^ self ].
+	anInteger = self size
+		ifTrue: [ ^ aBlock value: self ].
+	anInteger to: self size do: [ :i | 
+		self swap: anInteger with: i.
 		self permutationsStartingAt: anInteger + 1 do: aBlock.
-		self swap: anInteger with: i]
+		self swap: anInteger with: i ]
+]
+
+{ #category : #enumerating }
+SequenceableCollection >> piecesCutWhere: binaryBlock [
+	"Answer substrings of the receiver derived from cutting the receiver at points where binaryBlock answers true for adjacent elements."
+	"( #(1 2 3 1 6 1 2 3 4) piecesCutWhere: [ :a :b | a = 1 and: [ b = 2]]) asArray >>> #(#(1) #(2 3 1 6 1) #(2 3 4))"
+	| pieces |
+	pieces := OrderedCollection new.
+	self 
+		piecesCutWhere: binaryBlock
+		do: [ :piece | pieces add: piece ].
+	^pieces
+
+   "'Now is the time for all good people to come to the aid of the cause of world peace.  It is just fine, even desirable, to love your country, if that means wanting it to play a beneficial role in the course of world events and be the best possible example of a good society.  But if it means wanting dominion over the rest of the world, it is not love but defensiveness or self-glorification, and will lead only to oblivion.'  piecesCutWhere: [:a :b| a = $. and: [b isSeparator]]"
+]
+
+{ #category : #enumerating }
+SequenceableCollection >> piecesCutWhere: binaryBlock do: pieceBlock [
+	"Evaluate pieceBlock with substrings of the receiver derived from cutting the receiver at points where binaryBlock answers true for adjacent elements."
+	
+	"(Array streamContents: [:stream |  #(1 2 3 1 6 1 2 3 4) piecesCutWhere: [ :a :b | a = 1 and: [ b = 2]] do: [:each | stream nextPut: each size]]) >>> #(1 5 3)"
+
+	| size lastCut this next |
+	(size := self size) <= 1 ifTrue:
+		 [size = 1 ifTrue: [pieceBlock value: self].
+		^self].
+	lastCut := 1.
+	this := self at: 1.
+	2 to: size do:
+		[:i|
+		next := self at: i.
+		(binaryBlock value: this value: next) ifTrue:
+			[pieceBlock value: (self copyFrom: lastCut to: i - 1).
+			lastCut := i].
+		this := next].
+	pieceBlock value: (self copyFrom: lastCut to: size)
 ]
 
 { #category : #enumerating }
 SequenceableCollection >> polynomialEval: thisX [
-	| sum valToPower |
-	"Treat myself as the coeficients of a polynomial in X.  Evaluate it with thisX.  First element is the constant and last is the coeficient for the highest power."
-	"  #(1 2 3) polynomialEval: 2   "   "is 3*X^2 + 2*X + 1 with X = 2"
+	"Treat myself as the coeficients of a polynomial in X.  Evaluate it with thisX.  First element is the constant and last is the coeficient for the highest power.
+	#(1 2 3) polynomialEval: 2  is 3*X^2 + 2*X + 1 with X = 2"
 
+	"(#(1 2 3) polynomialEval: 2) >>> 17"
+
+	| sum valToPower |
 	sum := self first.
 	valToPower := thisX.
-	2 to: self size do: [:ind | 
+	2 to: self size do: [ :ind | 
 		sum := sum + ((self at: ind) * valToPower).
-		valToPower := valToPower * thisX].
+		valToPower := valToPower * thisX ].
 	^ sum
 ]
 
 { #category : #streaming }
 SequenceableCollection >> putOn: aStream [
+	"Write the receiver onto aStream by iterating over its elements.
+	In general we assume aStream accepts the receiver's elements as element type.
+	Return self."
+
 	self do: [ :each | each putOn: aStream ]
 ]
 
@@ -1625,12 +1786,13 @@ SequenceableCollection >> readStreamDo: aBlock [
 { #category : #enumerating }
 SequenceableCollection >> reduce: aBlock [
 	"Fold the result of the receiver into aBlock. The argument aBlock must take two or more arguments. It applies the argument, binaryBlock cumulatively to the elements of the receiver. For sequenceable collections the elements will be used in order, for unordered collections the order is unspecified."
-	
-	"#(1 2 3) reduce: [ :a :b | a + b ]
-		--> 1 + 2 + 3 = 6
-	#(1 2 3 4 5) reduce: [ :a :b :c | a + b + c ]
-		--> 1 + 2 + 3 + 4 + 5 = 15"
-		
+
+	"(#(1 2 3) reduce: [ :a :b | a + b ]) >>> 6" "1 + 2 + 3"
+	"(#(1 2 3) reduce: [ :a :b | a + b ]) >>> (1 + 2 + 3)"
+
+	"(#(1 2 3 4 5) reduce: [ :a :b :c | a + b + c ]) >>> 15"
+	"(#(1 2 3 4 5) reduce: [ :a :b :c | a + b + c ]) >>> (1 + 2 + 3 + 4 + 5)"
+
 	^ self reduceLeft: aBlock
 ]
 
@@ -1638,10 +1800,10 @@ SequenceableCollection >> reduce: aBlock [
 SequenceableCollection >> reduceLeft: aBlock [
 	"Fold the result of the receiver from left to right into aBlock. The argument aBlock must take two or more arguments."
 
-	"#(1 2 3) reduceLeft: [ :a :b | a - b ].
-		--> ((1 - 2) - 3) = -4
-	#(1 + 3 - 5) reduceLeft: [ :a :op :b | a perform: op with: b ].
-		--> ((1 + 3) - 5) = -1"
+	"(#(1 2 3) reduceLeft: [ :a :b | a - b ])>>> ((1 - 2) - 3)"
+	"(#(1 2 3) reduceLeft: [ :a :b | a - b ]) >>> -4"
+	"(#(1 + 3 - 5) reduceLeft: [ :a :op :b | a perform: op with: b ]) >>> ((1 + 3) - 5)"
+	"(#(1 + 3 - 5) reduceLeft: [ :a :op :b | a perform: op with: b ]) >>> -1"
 
 	| arguments |
 	self emptyCheck.
@@ -1660,10 +1822,10 @@ SequenceableCollection >> reduceLeft: aBlock [
 SequenceableCollection >> reduceRight: aBlock [
 	"Fold the result of the receiver from right to left into aBlock. The argument aBlock must take two or more arguments."
 
-	"#(1 2 3) reduceRight: [ :a :b | a - b ].
-		--> (1 - (2 - 3)) = 2
-	#(1 + 3 - 5) reduceRight: [ :a :op :b | a perform: op with: b ].
-		--> (1 + (3 - 5)) = -1"
+	"(#(1 2 3) reduceRight: [ :a :b | a - b ]) >>> (1 - (2 - 3))"
+	"(#(1 2 3) reduceRight: [ :a :b | a - b ]) >>> 2"
+	"(#(1 + 3 - 5) reduceRight: [ :a :op :b | a perform: op with: b ]) >>> (1 + (3 - 5))"
+	"(#(1 + 3 - 5) reduceRight: [ :a :op :b | a perform: op with: b ]) >>> -1"
 
 	| arguments |
 	self emptyCheck.
@@ -1682,6 +1844,8 @@ SequenceableCollection >> reduceRight: aBlock [
 SequenceableCollection >> reject: rejectBlock [ 
 	"Optimized version of Collection>>#reject:"
 	
+	"#(1 2 3 4) reject: [:each | each = 3 ] >>> #(1 2 4)"
+	
 	| each |
 	
 	^ self class new: self size streamContents: [ :stream|
@@ -1694,6 +1858,8 @@ SequenceableCollection >> reject: rejectBlock [
 SequenceableCollection >> reject: rejectBlock thenCollect: collectBlock [
 	"Optimized version of Collection>>#reject:thenCollect:"
 	
+	"(#(1 2 3 4) reject: [:each | each = 3 ] thenCollect: [:each | each + 10 ]) >>> #(11 12 14)"
+	
 	| each |
 
 	^ self class new: self size streamContents: [ :stream|
@@ -1705,6 +1871,8 @@ SequenceableCollection >> reject: rejectBlock thenCollect: collectBlock [
 { #category : #enumerating }
 SequenceableCollection >> reject: rejectBlock thenDo: aBlock [
 	"Refer to the comment in Collection>>#reject:thenDo:"
+	
+	"(Array streamContents: [:stream | #(1 2 3 4) reject: [:each | each = 3 ] thenDo: [:each | stream nextPut: each + 10]]) >>> #(11 12 14)"
 	
 	|  each |
 	
@@ -1724,6 +1892,8 @@ SequenceableCollection >> remove: oldObject ifAbsent: anExceptionBlock [
 SequenceableCollection >> replace: aBlock [ 
 	"Evaluate aBlock with each of the receiver's elements as the argument.  
 	Collect the resulting values into self."
+	
+	"(#(1 2 3 4) replace: [:each | each + 1 ]) >>> #(2 3 4 5)"
 
 	1 to: self size do: [ :index |
 		self at: index put: (aBlock value: (self at: index)) ]
@@ -1732,6 +1902,8 @@ SequenceableCollection >> replace: aBlock [
 { #category : #accessing }
 SequenceableCollection >> replaceAll: oldObject with: newObject [ 
 	"Replace all occurences of oldObject with newObject"
+	"(#(a b a d a) replaceAll: #a with: #e) >>> #(e b e d e)"
+	
 	| index |
 	index := self
 				indexOf: oldObject
@@ -1751,6 +1923,7 @@ SequenceableCollection >> replaceFrom: start to: stop with: replacement [
 	"This destructively replaces elements from start to stop in the receiver. 
 	Answer the receiver itself. Use copyReplaceFrom:to:with: for 
 	insertion/deletion which may alter the size of the result."
+	"(#(a b c d e) replaceFrom: 3 to: 4 with: #(x y)) >>> #(a b x y e)"
 
 	replacement size = (stop - start + 1)
 		ifFalse: [self error: 'Size of replacement doesnt match'].
@@ -1784,6 +1957,8 @@ SequenceableCollection >> reverseDo: aBlock [
 	starting with the last element and taking each in sequence up to the 
 	first. For SequenceableCollections, this is the reverse of the enumeration 
 	for do:."
+	
+	"(Array streamContents: [:stream | #(1 2 3) reverseDo: [:each | stream nextPut: each + 10]]) >>> #(13 12 11)"
 
 	self size to: 1 by: -1 do: [:index | aBlock value: (self at: index)]
 ]
@@ -1793,6 +1968,8 @@ SequenceableCollection >> reverseWith: aSequenceableCollection do: aBlock [
 	"Evaluate aBlock with each of the receiver's elements, in reverse order, 
 	along with the  corresponding element, also in reverse order, from 
 	aSequencableCollection. "
+	
+	"(Array streamContents: [:stream | #(1 2 3) reverseWith: #(4 5 6) do: [:a :b | stream nextPut: (a + b)]]) >>> #(9 7 5)"
 
 	self size ~= aSequenceableCollection size ifTrue: [^ self errorSizeMismatch].
 	self size to: 1 by: -1 do: [:index | 
@@ -1804,6 +1981,9 @@ SequenceableCollection >> reverseWith: aSequenceableCollection do: aBlock [
 { #category : #enumerating }
 SequenceableCollection >> reverseWithIndexDo: elementAndIndexBlock [ 
 	"Just like reverseWith:do: except that the iteration index supplies the second argument to the block."
+	
+	"(Array streamContents: [:stream | #(10 20 30) reverseWithIndexDo: [:each :index | stream nextPut: each + index]]) >>> #(33 22 11)"
+	
 	self size to: 1 by: -1 do: [:index |
 		elementAndIndexBlock
 			value: (self at: index)
@@ -1828,6 +2008,7 @@ SequenceableCollection >> reversed [
 SequenceableCollection >> second [
 	"Answer the second element of the receiver.
 	Raise an error if there are not enough elements."
+	"#(a b c d e f g h i) second >>> #b"
 
 	^ self at: 2
 ]
@@ -1836,8 +2017,10 @@ SequenceableCollection >> second [
 SequenceableCollection >> select: aBlock [ 
 	"Optimized version of Collection>>#select:"
 	
+	"(#(1 2 3 4) select: [:each | each > 2 ]) >>> #(3 4)"
+	
 	| each |
-	^ self class new: self size streamContents: [ :stream|
+	^ self species new: self size streamContents: [ :stream|
 		1 to: self size do: [ :index |
 			(aBlock value: (each := self at: index))
 				ifTrue: [ stream nextPut: each ]]]
@@ -1846,6 +2029,8 @@ SequenceableCollection >> select: aBlock [
 { #category : #enumerating }
 SequenceableCollection >> select: selectBlock thenCollect: collectBlock [
 	"Optimized version of Collection>>#select:thenCollect:"
+	
+	"(#(1 2 3 4)  select: [:each | each > 2 ] thenCollect: [:each | each + 10 ]) >>> #(13 14)"
 	
 	| each |
 	^ self class new: self size streamContents: [ :stream|
@@ -1858,6 +2043,8 @@ SequenceableCollection >> select: selectBlock thenCollect: collectBlock [
 SequenceableCollection >> select: selectBock thenDo: aBlock [
 	"Refer to the comment in Collection>>#select:thenDo:"
 	
+	"(Array streamContents: [:stream | #(1 2 3 4) select: [:each | each > 2 ] thenDo: [:each | stream nextPut: each + 10]]) >>> #(13 14)"
+	
 	| each |
 	1 to: self size do: [ :index |
 		(selectBock value: (each := self at: index))
@@ -1868,18 +2055,23 @@ SequenceableCollection >> select: selectBock thenDo: aBlock [
 SequenceableCollection >> seventh [
 	"Answer the seventh element of the receiver.
 	Raise an error if there are not enough elements."
+	"#(a b c d e f g h i) seventh >>> #g"
 
 	^ self at: 7
 ]
 
 { #category : #shuffling }
 SequenceableCollection >> shuffle [
+	"Modify the receiver but with its elements in random positions.
+	This method use Random class as random generator"
+	
 	^ self shuffleBy: Random new
 ]
 
 { #category : #shuffling }
 SequenceableCollection >> shuffleBy: aRandom [
 	"Durstenfeld's version of the Fisher-Yates shuffle"
+	"#(1 2 3 4 5) shuffleBy: (Random seed: 42) >>> #(2 5 4 3 1)"
 
 	self size to: 2 by: -1 do: [ :i | 
 		self swap: i with: (aRandom nextInt: i) ]
@@ -1894,19 +2086,25 @@ SequenceableCollection >> shuffled [
 SequenceableCollection >> sixth [
 	"Answer the sixth element of the receiver.
 	Raise an error if there are not enough elements."
+	"#(a b c d e f g h i) sixth >>> #f"
 
 	^ self at: 6
 ]
 
 { #category : #accessing }
 SequenceableCollection >> size [
+	"#(a b c d e) size >>> 5"
+	"#(x y z) size >>> 3"
+	
 	^ self subclassResponsibility
 ]
 
 { #category : #sorting }
 SequenceableCollection >> sort [
 	"Sort this collection into ascending order using the '<=' operator."
-
+	"#(8 5 3 9) sort >>> #(3 5 8 9)"
+	"#(a b z d) sort >>> #(a b d z)"
+	
 	self sort: [:a :b | a <= b]
 ]
 
@@ -1914,6 +2112,9 @@ SequenceableCollection >> sort [
 SequenceableCollection >> sort: aSortBlock [ 
 	"Sort this array using aSortBlock. The block should take two arguments
 	and return true if the first element should preceed the second one."
+	"(#(3 9 1) sort: [:a :b | a <= b ]) >>> #(1 3 9)"
+	"(#(3 9 1) sort: [:a :b | a >= b ]) >>> #(9 3 1)"
+	"(#(xa xc xz xb xy) sort: #last ascending) >>> #(xa xb xc xy xz)"
 
 	self
 		mergeSortFrom: 1
@@ -1925,6 +2126,8 @@ SequenceableCollection >> sort: aSortBlock [
 SequenceableCollection >> sorted [
 	"Return a new sequenceable collection which contains the same elements as self but its 
 elements are sorted in ascending order using the #'<=' operator."
+	"#(8 5 3 9) sorted >>> #(3 5 8 9)"
+	"#(a b z d) sorted >>> #(a b d z)"
 	
 	^self sorted: [ :a :b| a <= b ]
 ]
@@ -1935,6 +2138,9 @@ SequenceableCollection >> sorted: aSortBlockOrNil [
 elements are sorted by aSortBlockOrNil. The block should take two arguments and return true if 
 the first element should preceed the second one. If aSortBlock is nil then <= is used for 
 comparison."
+	"(#(3 9 1) sorted: [:a :b | a <= b ]) >>> #(1 3 9)"
+	"(#(3 9 1) sorted: [:a :b | a >= b ]) >>> #(9 3 1)"
+	"(#(xa xc xz xb xy) sorted: #last ascending) >>> #(xa xb xc xy xz)"
 	
 	^self copy sort: aSortBlockOrNil
 ]
@@ -1963,12 +2169,13 @@ SequenceableCollection >> split: aSequenceableCollection indicesDo: aBlock [
 ]
 
 { #category : #splitjoin }
-SequenceableCollection >> splitOn: splitter [ 
+SequenceableCollection >> splitOn: splitter [
 	"Split a collection of objects based on a splitter. splitter - can be a subsequence, a Block or a Regex (String receiver only). Any other object used as a splitter is treated as an Array containing that object."
-	"(#(1 2 3 3 4 1 2 3 5 4 6) splitOn: 4 >>> #(#(1 2 3 3) #(1 2 3 5) #(6))asOrderedCollection"
+
+	"(#(1 2 3 3 4 1 2 3 5 4 6) splitOn: 4) >>> #(#(1 2 3 3) #(1 2 3 5) #(6))asOrderedCollection"
 	"(#(1 2 3 3 4 1 2 3 3 5 6) splitOn: #(3 3)) >>> #(#(1 2) #(4 1 2) #(5 6)) asOrderedCollection"
 	"(#(2 2 3 3 4 1 2 3 3 5) splitOn: [:each | each > 3])>>> #(#(2 2 3 3) #(1 2 3 3) #()) asOrderedCollection"
-	
+
 	^ splitter split: self
 ]
 
@@ -1992,6 +2199,7 @@ SequenceableCollection >> splitOn: splitter indicesDo: aBlock [
 { #category : #accessing }
 SequenceableCollection >> swap: oneIndex with: anotherIndex [ 
 	"Move the element at oneIndex to anotherIndex, and vice-versa."
+	"(#(a b c d e) swap: 5 with: 1) >>> #(e b c d a)"
 
 	| element |
 	element := self at: oneIndex.
@@ -2003,6 +2211,7 @@ SequenceableCollection >> swap: oneIndex with: anotherIndex [
 SequenceableCollection >> third [
 	"Answer the third element of the receiver.
 	Raise an error if there are not enough elements."
+	"#(a b c d e f g h i) third >>> #c"
 
 	^ self at: 3
 ]
@@ -2010,6 +2219,9 @@ SequenceableCollection >> third [
 { #category : #enumerating }
 SequenceableCollection >> with: otherCollection collect: twoArgBlock [ 
 	"Collect and return the result of evaluating twoArgBlock with corresponding elements from this collection and otherCollection."
+	
+	"(#(1 2 3) with: #(4 5 6) collect: [:a :b | a + b]) >>> #(5 7 9)"
+	
 	| result |
 	otherCollection size = self size ifFalse: [self errorSizeMismatch].
 	result := self species new: self size.
@@ -2024,6 +2236,9 @@ SequenceableCollection >> with: otherCollection collect: twoArgBlock [
 { #category : #enumerating }
 SequenceableCollection >> with: otherCollection do: twoArgBlock [ 
 	"Evaluate twoArgBlock with corresponding elements from this collection and otherCollection."
+	
+	"(Array streamContents: [:stream | #(1 2 3) with: #(4 5 6) do: [:a :b | stream nextPut: (a + b)]]) >>> #(5 7 9)"
+	
 	otherCollection size = self size ifFalse: [self errorSizeMismatch].
 	1 to: self size do:
 		[:index |
@@ -2034,6 +2249,9 @@ SequenceableCollection >> with: otherCollection do: twoArgBlock [
 { #category : #enumerating }
 SequenceableCollection >> withIndexCollect: elementAndIndexBlock [ 
 	"Just like with:collect: except that the iteration index supplies the second argument to the block."
+	
+	"(#(10 20 30) withIndexCollect: [:each :index | each + (index * 2)]) >>> #(12 24 36)"
+	
 	| result |
 	result := self species new: self size.
 	1 to: self size do:
@@ -2045,18 +2263,27 @@ SequenceableCollection >> withIndexCollect: elementAndIndexBlock [
 ]
 
 { #category : #enumerating }
-SequenceableCollection >> withIndexDo: elementAndIndexBlock [ 
-	"Just like with:do: except that the iteration index supplies the second argument to the block. "
-	"#(11 22 13) withIndexDo: [ :each :i | Transcript show: (each * each + i) ;cr ].
-		122
-		486
-		172"
-		
-	1 to: self size do:
-		[:index |
-		elementAndIndexBlock
-			value: (self at: index)
-			value: index]
+SequenceableCollection >> withIndexDo: elementAndIndexBlock [
+	"Just like do: except that the iteration index supplies the second argument to the block"
+
+	"(Array streamContents: [:stream| #(11 22 13) withIndexDo: [ :each :i | stream nextPut: (each * each + i)]]) >>> #(122 486 172)"
+
+	1 to: self size do: [ :index | elementAndIndexBlock value: (self at: index) value: index ]
+]
+
+{ #category : #enumerating }
+SequenceableCollection >> withIndexSelect: elementAndIndexBlock [
+	"select elements from the receiver that the block evaluates true with the element and its index."
+
+	"(#('We' 'love' 'pharo!') withIndexSelect: [:value :index | value size - 1 <= index]) >>> #('We')"
+
+	^ self class
+		new: self size
+		streamContents: [ :stream | 
+			1 to: self size do: [ :index | 
+				| each |
+				(elementAndIndexBlock value: (each := self at: index) value: index)
+					ifTrue: [ stream nextPut: each ] ] ]
 ]
 
 { #category : #converting }
@@ -2068,7 +2295,7 @@ SequenceableCollection >> writeStream [
 SequenceableCollection >> writeStreamDo: aBlock [
 	"Evaluates the argument with the write stream of the collection. Answers the result."
 	
-	"#() writeStreamDo: [ :stream | stream nextPut: '4'; space; nextPutAll: '34'. stream contents ] >>> {'4'. Character space. $3. $4}"
+	"(#() writeStreamDo: [ :stream | stream nextPut: '4'; space; nextPutAll: '34'. stream contents ]) >>> {'4'. Character space. $3. $4}"
 
 	^ aBlock value: self writeStream
 ]

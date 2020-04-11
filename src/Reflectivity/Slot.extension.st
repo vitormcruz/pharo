@@ -96,12 +96,22 @@ Slot >> link: aMetaLink [
 
 { #category : #'*Reflectivity' }
 Slot >> links [
-	^self propertyAt: #links ifAbsent: nil
+	^self propertyAt: #links ifAbsent: #()
+]
+
+{ #category : #'*Reflectivity' }
+Slot >> postambles [
+	^ self propertyAt: #postambles ifAbsent: #()
 ]
 
 { #category : #'*Reflectivity' }
 Slot >> preambles [
 	^ self propertyAt: #preambles ifAbsent: #()
+]
+
+{ #category : #'*Reflectivity' }
+Slot >> readNodes [
+	^ self astNodes select: [ :each | each isRead ]
 ]
 
 { #category : #'*Reflectivity' }

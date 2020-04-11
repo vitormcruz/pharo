@@ -14,7 +14,7 @@ Insertion, update, and inclusion testing have O(1) complexity while removing has
 Public API and Key Messages
 --------------------
 
-- #at: aKey put: aValue / #at: aKey ifAbsentPut: aValue 		allow to add an element.
+- #at: aKey put: aValue / #at: aKey ifAbsentPut: aValue / #at: aKey ifPresent: aBlock ifAbsent: aBlock		allow to add an element.
   
 - #at: aKey / #at: aKey ifAbsent: aBlock / #at: aKey ifPresent: aBlock ifAbsent: aBlock 		allow to access my values.
 
@@ -150,6 +150,11 @@ OrderedDictionary >> associationAt: aKey ifPresent: aBlock [
 ]
 
 { #category : #accessing }
+OrderedDictionary >> associationAt: key ifPresent: aPresentBlock ifAbsent: anAbsentBlock [
+	^ dictionary associationAt: key ifPresent: aPresentBlock ifAbsent: anAbsentBlock
+]
+
+{ #category : #accessing }
 OrderedDictionary >> associations [
 	| associations i |
 
@@ -181,13 +186,10 @@ OrderedDictionary >> at: firstKey at: secondKey [
 	"Return the object stored in the second dictionary at secondKey. The second dictionary is accessed via the key firstKey."
 
 	"
-	[
-	| d |
-	d := Dictionary new.
-	d at: #top at: #below1 put: 1.
-	d at: #top at: #below1 put: 2.
-	d at: #top at: #below1.
-	] value
+	(Dictionary new
+		at: #top at: #below1 put: 1;
+		at: #top at: #below1 put: 2;
+		at: #top at: #below1)
 	>>>
 	2"
 
@@ -250,7 +252,7 @@ OrderedDictionary >> at: aKey ifPresent: aPresentBlock ifAbsentPut: anAbsentBloc
 	^ dictionary
 		at: aKey
 		ifPresent: aPresentBlock
-		ifAbsentPut: anAbsentBlock
+		ifAbsent: [ self at: aKey put: anAbsentBlock value ]
 ]
 
 { #category : #accessing }
@@ -265,6 +267,25 @@ OrderedDictionary >> at: aKey put: aValue [
 				ifFalse: [self growOrderedKeys].
 			orderedKeys at: oldSize + 1 put: aKey].
 	^ aValue.
+]
+
+{ #category : #accessing }
+OrderedDictionary >> at: key update: updateBlock [ 
+	"I am used to update the value at a given key, or if the key does not exist, to throw an error"
+	self at: key update: updateBlock initial: [ KeyNotFound signalFor: key ].
+]
+
+{ #category : #accessing }
+OrderedDictionary >> at: key update: updateBlock initial: initBlocktOrValue [
+	"I am used to update the value at a given key. The updateBlock is passed 
+	the existing value, and the result of the block is stored back.
+	If the key does not exist, store the value of the initBlocktOrValue.
+	initBlocktOrValue can be a block in case the initial value is expencive to compute."
+	| val |
+	val := self at: key ifAbsent: [ nil ].
+	val 
+		ifNil: [ self at: key put: (initBlocktOrValue value) ] 
+		ifNotNil: [ self at: key put: (updateBlock value: val) ]
 ]
 
 { #category : #accessing }
@@ -589,11 +610,6 @@ OrderedDictionary >> removeKeys: aKeyCollection [
 						ifAbsent: [nil]]]
 ]
 
-{ #category : #removing }
-OrderedDictionary >> removeUnreferencedKeys [
-	^ self unreferencedKeys do: [:each | self removeKey: each]
-]
-
 { #category : #enumerating }
 OrderedDictionary >> select: aBlock [
 	^ self species newFrom:
@@ -618,11 +634,6 @@ OrderedDictionary >> storeOn: aStream [
 				separatedBy: [ aStream << ';' ].
 			aStream << '; yourself' ].
 	aStream << ')'
-]
-
-{ #category : #private }
-OrderedDictionary >> unreferencedKeys [
-	^ Dictionary unreferencedKeysIn: self
 ]
 
 { #category : #accessing }

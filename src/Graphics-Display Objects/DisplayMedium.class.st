@@ -7,7 +7,7 @@ Class {
 	#classVars : [
 		'HighLightBitmaps'
 	],
-	#category : #'Graphics-Display Objects'
+	#category : #'Graphics-Display Objects-Common'
 }
 
 { #category : #bordering }
@@ -18,19 +18,6 @@ DisplayMedium >> border: aRectangle margins: insets rule: combinationRule fillCo
 
 	(aRectangle areasOutside: (insets insetRectangle: aRectangle )) do:
 		[:edgeStrip | self fill: edgeStrip rule: combinationRule fillColor: aHalfTone]
-]
-
-{ #category : #bordering }
-DisplayMedium >> border: aRectangle width: borderWidth [ 
-	"Paint a border whose rectangular area is defined by aRectangle. The 
-	width of the border of each side is borderWidth. Uses theme borderColor for 
-	drawing the border."
-
-	self 
-		border: aRectangle 
-		width: borderWidth 
-		fillColor: Smalltalk ui theme borderColor.
-
 ]
 
 { #category : #bordering }

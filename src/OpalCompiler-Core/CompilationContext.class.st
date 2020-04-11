@@ -23,15 +23,14 @@ Class {
 		'interactive',
 		'options',
 		'environment',
+		'productionEnvironment',
 		'parserClass',
 		'semanticAnalyzerClass',
 		'astTranslatorClass',
 		'bytecodeGeneratorClass',
 		'compiledMethodTrailer',
-		'forSyntaxHighlighting',
 		'encoderClass',
 		'astTransformPlugins',
-		'usesFullBlockClosure',
 		'requestorScopeClass',
 		'bindings'
 	],
@@ -275,7 +274,19 @@ CompilationContext class >> optionReadOnlyLiterals [
 
 { #category : #'options - settings API' }
 CompilationContext class >> optionReadOnlyLiterals: aBoolean [
+	(aBoolean and: [ Smalltalk vm supportsWriteBarrier not]) ifTrue: [ ^ OCReadOnlyVMWarning signal ].
+	
 	^ self writeDefaultOption: #optionReadOnlyLiterals value: aBoolean
+]
+
+{ #category : #'options - settings API' }
+CompilationContext class >> optionSkipSemanticWarnings [
+	^ self readDefaultOption: #optionSkipSemanticWarnings
+]
+
+{ #category : #'options - settings API' }
+CompilationContext class >> optionSkipSemanticWarnings: aBoolean [
+	^ self writeDefaultOption: #optionSkipSemanticWarnings value: aBoolean
 ]
 
 { #category : #options }
@@ -303,6 +314,8 @@ CompilationContext class >> optionsDescription [
 	(- optionLongIvarAccessBytecodes 	'Specific inst var accesses to Maybe context objects')
 	(+ optionOptimizeIR 					'Rewrite jumps in bytecode in a slightly more efficient way')
 	(- optionParseErrors 					'Parse syntactically wrong code')
+	(- optionSkipSemanticWarnings 		'Do not warn about semantic problems (e.g. undeclared vars). Used for syntax highlight parsing')
+		
 	) 
 ]
 
@@ -320,7 +333,7 @@ CompilationContext class >> removeDefaultTransformationPlugin: aPlugin [
 CompilationContext class >> writeDefaultOption: option value: boolean [
 	boolean 
 		ifTrue: [ self defaultOptions add: option ]
-		ifFalse: [ self defaultOptions remove: option ]
+		ifFalse: [ self defaultOptions remove: option ifAbsent: []]
 ]
 
 { #category : #plugins }
@@ -407,7 +420,7 @@ CompilationContext >> encoderClass: anObject [
 
 { #category : #accessing }
 CompilationContext >> environment [
-	^ environment ifNil: [ environment := Smalltalk globals ]
+	^ environment ifNil: [ environment := self getClass environment ]
 ]
 
 { #category : #accessing }
@@ -423,16 +436,6 @@ CompilationContext >> failBlock [
 { #category : #accessing }
 CompilationContext >> failBlock: anObject [
 	failBlock := anObject
-]
-
-{ #category : #accessing }
-CompilationContext >> forSyntaxHighlighting [
-	^ forSyntaxHighlighting ifNil: [ ^false ]
-]
-
-{ #category : #accessing }
-CompilationContext >> forSyntaxHighlighting: aBoolean [
-	forSyntaxHighlighting := aBoolean
 ]
 
 { #category : #accessing }
@@ -566,6 +569,11 @@ CompilationContext >> optionReadOnlyLiterals [
 ]
 
 { #category : #options }
+CompilationContext >> optionSkipSemanticWarnings [
+	^ options includes: #optionSkipSemanticWarnings
+]
+
+{ #category : #options }
 CompilationContext >> parseOptions: optionsArray [
 	options parseOptions: optionsArray
 ]
@@ -578,6 +586,16 @@ CompilationContext >> parserClass [
 { #category : #accessing }
 CompilationContext >> parserClass: anObject [
 	parserClass := anObject
+]
+
+{ #category : #accessing }
+CompilationContext >> productionEnvironment [
+	^productionEnvironment ifNil: [ ^self environment ]
+]
+
+{ #category : #accessing }
+CompilationContext >> productionEnvironment: aDictionary [
+	productionEnvironment := aDictionary
 ]
 
 { #category : #accessing }

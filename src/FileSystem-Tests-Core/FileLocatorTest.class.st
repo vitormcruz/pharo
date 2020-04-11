@@ -13,13 +13,13 @@ Class {
 { #category : #'compatibility tests' }
 FileLocatorTest >> testAsAbsolute [
 	locator := FileLocator image.
-	self assert: locator asAbsolute = locator
+	self assert: locator asAbsolute equals: locator
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testBasename [
 	locator := FileLocator image / 'griffle'.
-	self assert: locator basename = 'griffle'
+	self assert: locator basename equals: 'griffle'
 ]
 
 { #category : #tests }
@@ -27,38 +27,42 @@ FileLocatorTest >> testCPath [
 	| ref |
 	ref := FileLocator C / 'WINDOWS'.
 	self assert: (ref fileSystem isKindOf: FileSystem).
-	self assert: ref path = (Path / 'C:' / 'WINDOWS')
+	self assert: ref path equals: (Path / 'C:' / 'WINDOWS')
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testCommaAddsExtension [
+
 	locator := FileLocator image / 'griffle'.
-	self assert: (locator , 'plonk') basename = 'griffle.plonk'
+	self assert: (locator , 'plonk') basename equals: 'griffle.plonk'
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testCommaAddsExtensionAgain [
+
 	locator := FileLocator image / 'griffle.plonk'.
-	self assert: (locator , 'nurp') basename = 'griffle.plonk.nurp'
+	self assert: (locator , 'nurp') basename equals: 'griffle.plonk.nurp'
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testContainsLocator [
+
 	locator := FileLocator image.
-	self assert: (locator contains: locator / 'griffle').
+	self assert: (locator contains: locator / 'griffle')
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testContainsPath [
 	
 	locator := FileLocator image.
-	self assert: (locator contains: (locator resolve / 'griffle') path).
+	self assert: (locator contains: (locator resolve / 'griffle') path)
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testContainsReference [
+
 	locator := FileLocator image.
-	self assert: (locator contains: (locator resolve / 'griffle')).
+	self assert: (locator contains: (locator resolve / 'griffle'))
 ]
 
 { #category : #'compatibility tests' }
@@ -66,8 +70,8 @@ FileLocatorTest >> testEqual [
 	| a b |
 	a := FileLocator image.
 	b := FileLocator image.
-	self deny: a == b.
-	self assert: a = b.
+	self deny: a identicalTo: b.
+	self assert: a equals: b
 ]
 
 { #category : #'compatibility tests' }
@@ -80,6 +84,39 @@ FileLocatorTest >> testExtension [
 FileLocatorTest >> testFileSystem [
 	locator := FileLocator image.
 	self assert: (locator fileSystem isKindOf: FileSystem)
+]
+
+{ #category : #tests }
+FileLocatorTest >> testIfAbsent [
+	| reference |
+	reference := FileLocator temp / 'plonk'.
+	reference ensureCreateFile.
+	[ reference ifAbsent: [ :file | self fail ].
+	reference delete.
+	self assert: (reference ifAbsent: [ 'plonk' ]) equals: 'plonk' ]
+		ensure: [ reference ensureDelete ]
+]
+
+{ #category : #tests }
+FileLocatorTest >> testIfExists [
+	| reference |
+	reference := FileLocator temp / 'plonk'.
+	reference ensureCreateFile.
+	[ self assert: (reference ifExists: [ :file | file basename ]) equals: 'plonk'.
+	reference delete.
+	reference ifExists: [ :file | self fail ] ]
+		ensure: [ reference ensureDelete ]
+]
+
+{ #category : #tests }
+FileLocatorTest >> testIfExistsIfAbsent [
+	| reference |
+	reference := FileLocator temp / 'plonk'.
+	reference ensureCreateFile.
+	[ self assert: (reference ifExists: [ true ] ifAbsent: [ false ]).
+	reference delete.
+	self assert: (reference ifExists: [ false ] ifAbsent: [ true ]) ]
+		ensure: [ reference ensureDelete ]
 ]
 
 { #category : #'resolution tests' }
@@ -109,7 +146,7 @@ FileLocatorTest >> testIsRelative [
 { #category : #'compatibility tests' }
 FileLocatorTest >> testIsRoot [
 	locator := FileLocator image.
-	(locator resolve path size) timesRepeat: [locator := locator / '..'].
+	(locator resolve path size) timesRepeat: [ locator := locator / '..' ].
 	self assert: locator canonicalize isRoot
 ]
 
@@ -140,13 +177,13 @@ FileLocatorTest >> testMoveTo [
 { #category : #'compatibility tests' }
 FileLocatorTest >> testOriginBasename [
 	locator := FileLocator image.
-	self assert: locator basename = FileLocator image resolve basename
+	self assert: locator basename equals: FileLocator image resolve basename
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testParent [
 	locator := FileLocator image.
-	self assert: locator parent resolve = FileLocator imageDirectory resolve
+	self assert: locator parent resolve equals: FileLocator imageDirectory resolve
 ]
 
 { #category : #'resolution tests' }
@@ -154,8 +191,8 @@ FileLocatorTest >> testResolveAbsoluteReference [
 	| result reference |
 	locator := FileLocator image / 'plonk'.
 	reference := FileSystem memory / 'griffle'.
-	result := locator resolve: reference..
-	self assert: result == reference
+	result := locator resolve: reference.
+	self assert: result identicalTo: reference
 ]
 
 { #category : #'resolution tests' }
@@ -164,9 +201,9 @@ FileLocatorTest >> testResolveCompoundString [
 	locator := FileLocator image / 'plonk'.
 	compound := 'griffle', locator fileSystem delimiter asString, 'nurp'.
 	result := locator resolve: compound.
-	self assert: result class = locator class.
-	self assert: result origin = locator origin.
-	self assert: result path = ((Path * 'plonk') / 'griffle' / 'nurp')
+	self assert: result class equals: locator class.
+	self assert: result origin equals: locator origin.
+	self assert: result path equals: ((Path * 'plonk') / 'griffle' / 'nurp')
 ]
 
 { #category : #'resolution tests' }
@@ -175,9 +212,9 @@ FileLocatorTest >> testResolvePath [
 	locator := FileLocator image / 'plonk'.
 	result := locator resolve: (Path * 'griffle').
 	path := (Path * 'plonk') / 'griffle'.
-	self assert: result class = locator class.
-	self assert: result origin = locator origin.
-	self assert: result path = path.
+	self assert: result class equals: locator class.
+	self assert: result origin equals: locator origin.
+	self assert: result path equals: path
 ]
 
 { #category : #'resolution tests' }
@@ -186,10 +223,10 @@ FileLocatorTest >> testResolveRelativeReference [
 	locator := FileLocator image / 'plonk'.
 	self flag: 'this is a bit weird...'.
 	reference := FileSystem memory * 'griffle'.
-	result := locator resolve: reference..
-	self assert: result class= locator class.
-	self assert: result origin = locator origin.
-	self assert: result path = reference path.
+	result := locator resolve: reference.
+	self assert: result class equals: locator class.
+	self assert: result origin equals: locator origin.
+	self assert: result path equals: reference path
 ]
 
 { #category : #'resolution tests' }
@@ -198,25 +235,25 @@ FileLocatorTest >> testResolveString [
 	locator := FileLocator image / 'plonk'.
 	result := locator resolve: 'griffle'.
 	path := (Path * 'plonk') / 'griffle'.
-	self assert: result class = locator class.
-	self assert: result origin = locator origin.
-	self assert: result path = path.
+	self assert: result class equals: locator class.
+	self assert: result origin equals: locator origin.
+	self assert: result path equals: path
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testSlash [
 	locator := FileLocator image / 'griffle'.
-	self assert: locator = (FileLocator image / 'griffle')
+	self assert: locator equals: (FileLocator image / 'griffle')
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testWithExtensionAddsExtension [
 	locator := FileLocator image / 'griffle'.
-	self assert: (locator withExtension: 'plonk') basename = 'griffle.plonk'
+	self assert: (locator withExtension: 'plonk') basename equals: 'griffle.plonk'
 ]
 
 { #category : #'compatibility tests' }
 FileLocatorTest >> testWithExtensionReplacesExtension [
 	locator := FileLocator image / 'griffle.nurp'.
-	self assert: (locator withExtension: 'plonk') basename = 'griffle.plonk'
+	self assert: (locator withExtension: 'plonk') basename equals: 'griffle.plonk'
 ]

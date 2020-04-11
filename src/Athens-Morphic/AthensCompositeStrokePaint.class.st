@@ -61,13 +61,10 @@ AthensCompositeStrokePaint >> fromDashedBorderStyle: border on: anAthensCanvas [
 	self withInset: false
 ]
 
-{ #category : #drawing }
+{ #category : #initialization }
 AthensCompositeStrokePaint >> initialize [
-
 	super initialize.
-
-	strokePaints := nil.
-	withInset := true.
+	withInset := true
 ]
 
 { #category : #accessing }

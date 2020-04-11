@@ -12,7 +12,7 @@ Class {
 
 { #category : #testing }
 FileSystemResolverTest class >> isAbstract [
-	^ self name = #FileSystemResolverTest
+	^ self = FileSystemResolverTest
 ]
 
 { #category : #asserting }
@@ -33,5 +33,5 @@ FileSystemResolverTest >> createResolver [
 { #category : #running }
 FileSystemResolverTest >> setUp [
 	super setUp.
-	resolver := self createResolver.
+	resolver := self createResolver
 ]

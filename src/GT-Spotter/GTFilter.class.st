@@ -65,7 +65,8 @@ GTFilter >> applyFilterInContext: aSpotterContext [
 
 { #category : #private }
 GTFilter >> applyFilterInContext: aSpotterContext error: anException [
-	('[Spotter] Exception in filter <', self class name, '>: ', anException asString) logCr.
+	('[Spotter] Exception in filter <' , self class name , '>: '
+		, anException asString) traceCr.
 	^ self defaultFilteredItems
 ]
 
@@ -87,12 +88,6 @@ GTFilter >> defaultFilteredItems [
 { #category : #'accessing-defaults' }
 GTFilter >> defaultStreamed [
 	^ true
-]
-
-{ #category : #'private-model' }
-GTFilter >> exceptionHandler [
-	self flag: 'Bloc -> overrides doesNotUnderstand discarding the current exception context'.
-	^ GTCurrentSpotterExceptionHandler value ifNil: [ self context exceptionHandler ]
 ]
 
 { #category : #accessing }
@@ -120,7 +115,7 @@ GTFilter >> hasFilteredItems [
 	^ self filteredItems isEmptyOrNil not
 ]
 
-{ #category : #initializing }
+{ #category : #initialization }
 GTFilter >> initialize [
 	super initialize.
 	
@@ -172,11 +167,6 @@ GTFilter >> value: aSpotterContext [
 	polymorphic with BlockClosure>>value:. I return the list of
 	filtered items."
 	
-	^ [ [ self applyFilterInContext: aSpotterContext ]
-		on: Error
-		do: [ :exception | 
-			self exceptionHandler 
-				handleException: exception 
-				do: [ self applyFilterInContext: aSpotterContext error: exception ] ] ] 
+	^ [ self applyFilterInContext: aSpotterContext ]
 		ensure: [ context := nil " release the context after search is completed " ] 
 ]

@@ -716,6 +716,7 @@ Context >> evaluateSignal: exception [
 	See MethodContext>>#isHandlerOrSignalingContext. "
 
 	<primitive: 199>
+	<debuggerCompleteToSender>
 	| value |
 	exception privHandlerContext: self contextTag.
 	value := self exceptionHandlerBlock cull: exception.	
@@ -769,18 +770,17 @@ Context >> findContextSuchThat: testBlock [
 
 { #category : #'private-exceptions' }
 Context >> findNextHandlerContext [
-	"Return the next handler marked context, returning nil if there is none.  Search starts with self and proceeds up to nil."
-
-	| context |
+	"Return the next handler marked context, returning nil if there is none.  
+	Search starts with self and proceeds up to nil."
+	| context searchStartContext |
 	context := self findNextHandlerOrSignalingContext.
-	context isNil
-		ifTrue: [ ^ nil ].
-	context isHandlerContext
-		ifTrue: [ ^ context ].	"If it isn't a handler context, it must be a signaling context.
+	context ifNil: [ ^ nil ].
+	context isHandlerContext ifTrue: [ ^ context ].	
+	"If it isn't a handler context, it must be a signaling context.
 	When we reach a signaling context we must skip over any handlers
-	that might be on the stack between the signaling context and the handler
-	context for that signal."
-	^ context exception privHandlerContext nextHandlerContext
+	that might be on the stack between the signaling context and the handler context for that signal"
+	searchStartContext := context exception privHandlerContext ifNil: [ context ].
+	^searchStartContext nextHandlerContext
 ]
 
 { #category : #'private-exceptions' }
@@ -842,7 +842,7 @@ Context >> findSimilarSender [
 { #category : #'private-exceptions' }
 Context >> handleSignal: exception [
 	"Sent to handler (on:do:) contexts only.  If my exception class (first arg) handles exception then execute my handle block (second arg), otherwise forward this message to the next handler context.  If none left, execute exception's defaultAction (see nil>>handleSignal:)."
-
+	<debuggerCompleteToSender>
 	(self exceptionClass handles: exception)
 		ifFalse: [ ^ self nextHandlerContext handleSignal: exception ].
 	self evaluateSignal: exception
@@ -885,7 +885,7 @@ Context >> hasSender: context [
 
 { #category : #accessing }
 Context >> home [ 
-	"Answer the context in which the receiver was defined."
+	"Answer the context in which the receiver was defined, i.e. the context from which an ^-return should return from."
 
 	closureOrNil == nil ifTrue:
 		[^self].
@@ -1049,11 +1049,8 @@ Context >> methodNode [
 
 { #category : #accessing }
 Context >> methodReturnContext [
-	"Answer the context from which an ^-return should return from."
 
-	closureOrNil == nil ifTrue:
-		[^self].
-	^closureOrNil outerContext methodReturnContext
+	^ self home.
 ]
 
 { #category : #'instruction decoding' }
@@ -1189,15 +1186,14 @@ Context >> object: anObject perform: selector withArguments: argArray inClass: l
 	 Primitive. Essential for the debugger."
 
 	<primitive: 100 error: error>
-	(selector isSymbol) ifFalse:
-		[^self error: 'selector argument must be a Symbol'].
-	(argArray isMemberOf: Array) ifFalse:
-		[^self error: 'argArray must be an Array'].
-	(selector numArgs = argArray size)
-		ifFalse: [^self error: 'incorrect number of arguments'].
-	((self objectClass: anObject) == lookupClass
-	 or: [(self objectClass: anObject) inheritsFrom: lookupClass]) ifFalse:
-		[^self error: 'lookupClass is not in anObject''s inheritance chain'].
+	selector isSymbol
+		ifFalse: [ ^ self error: 'selector argument must be a Symbol' ].
+	(argArray isMemberOf: Array)
+		ifFalse: [ ^ self error: 'argArray must be an Array' ].
+	selector numArgs = argArray size
+		ifFalse: [ ^ self error: 'incorrect number of arguments' ].
+	((self objectClass: anObject) includesBehavior: lookupClass)
+		ifFalse: [ ^ self error: 'lookupClass is not in anObject''s inheritance chain' ].
 	self primitiveFailed
 ]
 
@@ -1318,18 +1314,18 @@ Context >> printDetails: stream [
 	stream cr.
 	stream tab; nextPutAll: 'Receiver: '.
 	errorMessage := '<<error during printing>>'.
-	stream nextPutAll: ([receiver printStringLimitedTo: 90] ifError: [errorMessage]).
+	stream nextPutAll: ([receiver printStringLimitedTo: 90] ifErrorDo: [errorMessage]).
 
 	stream cr; tab; nextPutAll: 'Arguments and temporary variables: '; cr.
 	string := [(self tempsAndValuesLimitedTo: 80 indent: 2) 
-				padRightTo:1 with: $x] ifError: [errorMessage].
+				padRightTo:1 with: $x] ifErrorDo: [errorMessage].
 	stream nextPutAll: (string allButLast).
 
 	stream cr; tab; nextPutAll: 'Receiver''s instance variables: '; cr.
 	receiver class allInstVarNames isEmpty ifTrue: [ 
-		stream nextPutAll: ([receiver printStringLimitedTo: 90] ifError: [ errorMessage ]).
+		stream nextPutAll: ([receiver printStringLimitedTo: 90] ifErrorDo: [ errorMessage ]).
 	] ifFalse: [
-		[receiver longPrintOn: stream limitedTo: 80 indent: 2] ifError: [ stream nextPutAll: errorMessage ].
+		[receiver longPrintOn: stream limitedTo: 80 indent: 2] ifErrorDo: [ stream nextPutAll: errorMessage ].
 	].
 	stream cr
 ]
@@ -1362,7 +1358,7 @@ Context >> printOn: aStream [
 			outerContext printOn: aStream ]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 Context >> privRefresh [
 	"Reinitialize the receiver so that it is in the state it was at its creation."
 	 closureOrNil
@@ -1378,7 +1374,7 @@ Context >> privRefresh [
 				[:i | self tempAt: i put: nil]]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 Context >> privRefreshWith: aCompiledMethod [ 
 	"Reinitialize the receiver as though it had been for a different method. 
 	 Used by a Debugger when one of the methods to which it refers is 
@@ -1622,6 +1618,29 @@ Context >> resume: value through: firstUnwindContext [
 ]
 
 { #category : #controlling }
+Context >> resumeEvaluating: aBlock [
+	"Unwind thisContext to self and resume with aBlock value as result of last send.  
+	Execute unwind blocks when unwinding.  
+	ASSUMES self is a sender of thisContext"
+	| context unwindBlock |
+	self isDead ifTrue: [self cannotReturn: aBlock value to: self].
+	context := thisContext.
+	[
+		context := context findNextUnwindContextUpTo: self.
+		context isNil
+	] whileFalse: [	
+		context unwindComplete ifNil:[
+			context unwindComplete: true.
+			unwindBlock := context unwindBlock.
+			thisContext terminateTo: context.
+			unwindBlock value]
+	].
+	thisContext terminateTo: self.
+	^aBlock value
+
+]
+
+{ #category : #controlling }
 Context >> return [
 	"Unwind until my sender is on top"
 
@@ -1674,10 +1693,9 @@ Context >> runUntilErrorOrReturnFrom: aSender [
 	"Insert ensure and exception handler contexts under aSender"
 	error := nil.
 	context := aSender insertSender: (Context
-		contextOn: UnhandledError, Halt do: [:ex |
+		contextOn: Error, Halt do: [:ex |
 			error ifNil: [
-				"this is ugly but it fixes the side-effects of not sending an Unhandled error on Halt"
-				error := (ex isKindOf: Halt) ifTrue: [ ex ] ifFalse: [ ex exception ].
+				error := ex.
 				topContext := thisContext.
 				ex resumeUnchecked: here jump ]
 			ifNotNil: [ ex pass ]]).
@@ -1795,9 +1813,9 @@ Context >> sender [
 
 { #category : #private }
 Context >> setNamedPrimitiveInformationFrom: fromMethod toMethod: toMethod [
-	"For named primitives, the first literal contains a special object that has information of the primitive. Example:
-(StandardFileStream >> #primOpen:writable:) literalAt: 1 ----->>>>   #(#FilePlugin #primitiveFileOpen 0 147).
-In this method we cope such information from one to another one."
+	"For named primitives, the first literal contains a special object that has information of the primitive. In this method we cope such information from one to another one."
+	"((StandardFileStream >> #primOpen:writable:) literalAt: 1) >>> #(#FilePlugin #primitiveFileOpen 0 0)"
+
 	| spec |	
 	spec := toMethod literalAt: 1.	
 	spec replaceFrom: 1 to: spec size with: (fromMethod literalAt: 1) startingAt: 1.
@@ -2147,19 +2165,19 @@ Context >> unwindTo: aContext [
 
 { #category : #private }
 Context >> withoutPrimitiveTryNamedPrimitiveIn: aCompiledMethod for: aReceiver withArgs: arguments [
-"When using the debugger we want to run a method step by step. What what happens when we do a step into a CompiledMethod which has a primitive? If such a method is executed form outside the Debugger (normal scenario) the VM knows that such CompiledMethod has a primitive declaration and hence executes it. If it fails then it continues executing all the bytecode of the method. Otherwise, it just returns. 
+"When using the debugger we want to run a method step by step. What what happens when we do a step into a CompiledMethod which has a primitive? If such a method is executed from outside the Debugger (normal scenario) the VM knows that such CompiledMethod has a primitive declaration and hence executes it. If it fails then it continues executing all the bytecodes of the method. Otherwise, it just returns. 
 
 Now, what is the problem with the Debugger? The problem is that if the primitive fail, we don't want that the VM directly executes all the remaining bytecodes of the method. Instead, we would like to go step by step witht he Debugger, just as happens with normal methods. 
 
-To solve the mentioned problem, we use the following trick: We have the orignal compiled method (the one that has a primitive invokation), the receiver and the arguments. So the idea is to use a template compiled method that ONLY contains the primitive delcaration (it doesn't include all the smalltalk code after the primitive). #tryNamedPrimitiveTemplateMethod answers such a template method which looks like:
+To solve the mentioned problem, we use the following trick: We have the orignal compiled method (the one that has a primitive invocation), the receiver and the arguments. So the idea is to use a template compiled method that ONLY contains the primitive declaration (it doesn't include all the smalltalk code after the primitive). #tryNamedPrimitiveTemplateMethod answers such a template method which looks like:
 
 tryNamedPrimitive
 	<primitive:'' module:''>
 	^ Context primitiveFailToken'
 
- Since this method does not change its bytecodes for every invokation, we can reuse it for all methods with primitives. There are only 2 things we have to change in the template: the number of arguments and the primitive declaration (to use the correct primitive name and module name).
+Since this method does not change its bytecodes for every invocation, we can reuse it for all methods with primitives. There are only 2 things we have to change in the template: the number of arguments and the primitive declaration (to use the correct primitive name and module name).
 
-Then what we do is to run that compiled method with the receiver and arguments we have. The result is that we will be invoking almost the same original method but a slighly different version that does not have the smalltalk part after the primitive and that in contrast is sends #primitiveFailToken. If this method invokation does not fail, then the Debugger continues debugging the sender of the primitive method. In this case, the step in is the same as step over. If the primitive fails, then the debugger continues executing the smalltalk part after the primitive method. In this case, step in is a real step in.  "	
+Then what we do is to run that compiled method with the receiver and arguments we have. The result is that we will be invoking almost the same original method but a slighly different version that does not have the smalltalk part after the primitive and that in contrast sends #primitiveFailToken. If this method invocation does not fail, then the Debugger continues debugging the sender of the primitive method. In this case, the step in is the same as step over. If the primitive fails, then the debugger continues executing the smalltalk part after the primitive method. In this case, step in is a real step in."	
 	| theMethod  |
 	arguments size > 8 
 		ifTrue: [ ^ self class primitiveFailToken ].

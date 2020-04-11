@@ -4,7 +4,7 @@ I'm a font setting for Source Code Pro fonts.
 Class {
 	#name : #SourceCodeFonts,
 	#superclass : #Object,
-	#category : #EmbeddedFreeType
+	#category : #'EmbeddedFreeType-Base'
 }
 
 { #category : #accessing }
@@ -20,7 +20,7 @@ SourceCodeFonts class >> defaultFontName [
 { #category : #accessing }
 SourceCodeFonts class >> fontButton: aString size: size [ 
 	^ (Smalltalk ui theme 
-		newButtonIn: World
+		newButtonIn: self
 			for: self
 			getState: nil 
 			action: #setSourceCodeFonts:	
@@ -42,7 +42,7 @@ SourceCodeFonts class >> fontSourceCodeRow [
 	| theme |
 	
 	theme := Smalltalk ui theme.
-	^ theme newRowIn: World for: {
+	^ theme newRowIn: self for: {
 		theme buttonLabelForText: 'Predefined styles: ' translated.
 		self fontButton: 'Small' size: self sizeSmall.
 		self fontButton: 'Medium' size: self sizeMedium.
@@ -66,14 +66,9 @@ SourceCodeFonts class >> registerFonts: freeTypeFontManager [
 { #category : #settings }
 SourceCodeFonts class >> setFontsToStyleNamed: aSymbol [
 
-	| pragma |
-
-	pragma := (Pragma allNamed: #styleName: in: SourceCodeFonts class) detect: [ :each  | each arguments first = aSymbol ] ifNone: [ ^ self ].
-	
-	self setSourceCodeFonts: (self perform: pragma method selector).
-	
-	
-	
+	(Pragma allNamed: #styleName: in: SourceCodeFonts class)
+		detect: [ :each | each arguments first = aSymbol ]
+		ifFound: [ :pragma | self setSourceCodeFonts: (self perform: pragma method selector) ]
 ]
 
 { #category : #accessing }
@@ -103,6 +98,7 @@ SourceCodeFonts class >> settingsOn: aBuilder [
 		iconName: #smallConfigurationIcon;
 		label: 'Source Code Fonts';
 		description: 'Use Source Code Pro Fonts';
+		default: SourceCodeFonts;
 		precondition: [ FT2Library current isAvailable not ];
 		dialog: [ self fontSourceCodeRow ]
 ]

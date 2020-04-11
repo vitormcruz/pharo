@@ -10,7 +10,7 @@ Class {
 		'name',
 		'classNames'
 	],
-	#category : #'RPackage-Core'
+	#category : #'RPackage-Core-Base'
 }
 
 { #category : #'instance creation' }
@@ -79,13 +79,13 @@ RPackageTag >> ensureSystemCategory [
 ]
 
 { #category : #accessing }
-RPackageTag >> extensionCategoriesForClass: aClass [ 
-	^ self package extensionCategoriesForClass: aClass
+RPackageTag >> extendedClasses [
+	^ #()
 ]
 
 { #category : #accessing }
-RPackageTag >> extensionClasses [ 
-	^ #()
+RPackageTag >> extensionCategoriesForClass: aClass [ 
+	^ self package extensionCategoriesForClass: aClass
 ]
 
 { #category : #testing }

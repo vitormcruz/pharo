@@ -7,8 +7,13 @@ Class {
 	#instVars : [
 		'createdClasses'
 	],
-	#category : #'TraitsV2-Tests'
+	#category : #'TraitsV2-Tests-Base'
 }
+
+{ #category : #'instance creation' }
+T2AbstractTest >> newClass: aName [ 
+	^self newClass: aName with: #() uses: #()
+]
 
 { #category : #'instance creation' }
 T2AbstractTest >> newClass: aName superclass: aSuperclass with: slots uses: aComposition [
@@ -43,7 +48,7 @@ T2AbstractTest >> newTrait: aName with: slots uses: aComposition [
 { #category : #'instance creation' }
 T2AbstractTest >> newTrait: aName with: slots uses: aComposition category: category [
 	| class |
-	class := Trait named: aName uses: aComposition slots: slots category: category  env: self class environment. 
+	class := Trait named: aName uses: aComposition slots: slots package: category  env: self class environment. 
 	createdClasses add:class.
 	
 	^class.
@@ -57,8 +62,8 @@ T2AbstractTest >> setUp [
 
 { #category : #running }
 T2AbstractTest >> tearDown [
-	createdClasses reverse do:#removeFromSystem.
+	createdClasses reverseDo: #removeFromSystem.
 	createdClasses := nil.
-	
-	super tearDown.
+
+	super tearDown
 ]

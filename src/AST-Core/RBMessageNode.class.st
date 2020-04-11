@@ -61,8 +61,15 @@ RBMessageNode >> = anObject [
 ]
 
 { #category : #visiting }
-RBMessageNode >> acceptVisitor: aProgramNodeVisitor [ 
-	^aProgramNodeVisitor visitMessageNode: self
+RBMessageNode >> acceptVisitor: aProgramNodeVisitor [
+	^ aProgramNodeVisitor visitMessageNode: self
+]
+
+{ #category : #accessing }
+RBMessageNode >> argumentPartStrings [
+	"Return a collection of string representing the code of the argument."
+	^ arguments collect: [ :each | each formattedCode asString 
+			"strangely enough literal formatted code is not a string" ]  
 ]
 
 { #category : #accessing }
@@ -216,6 +223,14 @@ RBMessageNode >> lastIsReturn [
 		and: [ arguments last isBlock and: [ arguments last body lastIsReturn ]]] 
 ]
 
+{ #category : #accessing }
+RBMessageNode >> leftmostChainReceiver [
+
+	^ self receiver isMessage
+		ifTrue: [ self receiver receiver ]
+		ifFalse: [ self receiver ]
+]
+
 { #category : #matching }
 RBMessageNode >> match: aNode inContext: aDictionary [ 
 	aNode class = self class ifFalse: [^false].
@@ -266,7 +281,7 @@ RBMessageNode >> receiver: aValueNode [
 	receiver parent: self
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RBMessageNode >> receiver: aValueNode selector: aSelector keywordsPositions: positionList arguments: valueNodes [
 	aSelector numArgs == valueNodes size
 		ifFalse: 
@@ -277,6 +292,18 @@ RBMessageNode >> receiver: aValueNode selector: aSelector keywordsPositions: pos
 		arguments: valueNodes;
 		selector: aSelector;
 		keywordsPositions: positionList.
+]
+
+{ #category : #'adding/removing' }
+RBMessageNode >> removeFromTree [
+
+	self parent removeNode: self
+]
+
+{ #category : #'adding/removing' }
+RBMessageNode >> removeNode: aNode [
+
+	self replaceNode: aNode withNode: aNode receiver
 ]
 
 { #category : #accessing }
@@ -382,8 +409,37 @@ RBMessageNode >> selector: aSelector [
 ]
 
 { #category : #accessing }
+RBMessageNode >> selectorAndArgumentNames [
+	"Returns the selector and argument names portion of a method as a string"
+
+	^ self arguments
+		ifEmpty: [ self keywords first ]
+		ifNotEmpty: [
+			(String streamContents: [ :st | 
+				self selectorParts
+			 		with: self arguments 
+					do: [:sel :arg | 
+							st 
+								<< sel asString;
+								<< ' ';
+								<< arg formattedCode;
+								<< ' ']]) allButLast ]
+								
+					
+]
+
+{ #category : #accessing }
+RBMessageNode >> selectorInterval [
+	| positions |
+	positions := self keywordsIntervals. 
+	^positions first first to: positions last last.
+]
+
+{ #category : #accessing }
 RBMessageNode >> selectorParts [
-	^ self keywords collect: #asSymbol.
+	"Returns a collection containing all the selector composing a message"
+	
+	^ self keywords collect: [ :each | each asSymbol]
 ]
 
 { #category : #accessing }

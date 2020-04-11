@@ -84,20 +84,12 @@ SUnitExtensionsTest >> shouldFixTest [
 
 { #category : #'real tests' }
 SUnitExtensionsTest >> shouldRaiseWithExceptionDoTest [
-
-	self 
-		should: [ Error signal: '1' ]
-		raise: Error
-		withExceptionDo: [ :anException | self assert: anException messageText = '1' ]
+	self should: [ Error signal: '1' ] raise: Error withExceptionDo: [ :anException | self assert: anException messageText equals: '1' ]
 ]
 
 { #category : #'real tests' }
 SUnitExtensionsTest >> shouldRaiseWithSignalDoTest [
-
-	self 
-		should: [ Error signal: '1' ]
-		raise: Error
-		withExceptionDo: [ :anException | self assert: anException messageText = '1' ]
+	self should: [ Error signal: '1' ] raise: Error withExceptionDo: [ :anException | self assert: anException messageText equals: '1' ]
 ]
 
 { #category : #accessing }
@@ -107,18 +99,14 @@ SUnitExtensionsTest >> stream [
 
 { #category : #test }
 SUnitExtensionsTest >> testAssertionFailedInRaiseWithExceptionDo [
-
-	| testCase testResult  |
-	
+	| testCase testResult |
 	testCase := self class selector: #assertionFailedInRaiseWithExceptionDoTest.
 	testResult := testCase run.
-	
+
 	self assert: (testResult failures includes: testCase).
-	self assert: testResult failures size=1.
-	self assert: testResult passed isEmpty.
-	self assert: testResult errors isEmpty.
-	
-	
+	self assert: testResult failures size equals: 1.
+	self assertEmpty: testResult passed.
+	self assertEmpty: testResult errors
 ]
 
 { #category : #test }
@@ -132,7 +120,7 @@ SUnitExtensionsTest >> testAutoAssertFalse [
 
 { #category : #test }
 SUnitExtensionsTest >> testAutoAssertTrue [
-	self assert: 1 = 1.
+	self assert: 1 equals: 1.
 	self assert: true
 ]
 
@@ -147,38 +135,32 @@ SUnitExtensionsTest >> testAutoDenyFalse [
 
 { #category : #test }
 SUnitExtensionsTest >> testAutoDenyTrue [
-	self deny: 1 = 2.
+	self deny: 1 equals: 2.
 	self deny: false
 ]
 
 { #category : #test }
 SUnitExtensionsTest >> testDifferentExceptionInShouldRaiseWithExceptionDo [
-
-	| testCase testResult  |
-	
+	| testCase testResult |
 	testCase := self class selector: #differentExceptionInShouldRaiseWithExceptionDoTest.
 	testResult := testCase run.
-	
+
 	self assert: (testResult passed includes: testCase).
-	self assert: testResult errors isEmpty.
-	self assert: testResult failures isEmpty.
-	self assert: testResult passed size=1
+	self assertEmpty: testResult errors.
+	self assertEmpty: testResult failures.
+	self assert: testResult passed size equals: 1
 ]
 
 { #category : #test }
 SUnitExtensionsTest >> testErrorInRaiseWithExceptionDo [
-
-	| testCase testResult  |
-	
+	| testCase testResult |
 	testCase := self class selector: #errorInRaiseWithExceptionDoTest.
 	testResult := testCase run.
-		
+
 	self assert: (testResult errors includes: testCase).
-	self assert: testResult errors size=1.
-	self assert: testResult failures isEmpty.
-	self assert: testResult passed isEmpty.
-	
-	
+	self assert: testResult errors size equals: 1.
+	self assertEmpty: testResult failures.
+	self assertEmpty: testResult passed
 ]
 
 { #category : #tests }
@@ -197,50 +179,38 @@ SUnitExtensionsTest >> testExceptionWithoutMatchingString [
 
 { #category : #test }
 SUnitExtensionsTest >> testInvalidShouldNotTakeMoreThan [
-
 	| testCase testResult |
-
 	testCase := self class selector: #invalidShouldNotTakeMoreThan.
 	testResult := testCase run.
 
-	self assert: testResult passed isEmpty.
-	self assert: testResult failures size = 1.
+	self assertEmpty: testResult passed.
+	self assert: testResult failures size equals: 1.
 	self assert: (testResult failures includes: testCase).
-	self assert: testResult errors isEmpty
-
-
+	self assertEmpty: testResult errors
 ]
 
 { #category : #test }
 SUnitExtensionsTest >> testInvalidShouldNotTakeMoreThanMilliseconds [
-
 	| testCase testResult |
-
 	testCase := self class selector: #invalidShouldNotTakeMoreThanMilliseconds.
 	testResult := testCase run.
 
-	self assert: testResult passed isEmpty.
-	self assert: testResult failures size = 1.
+	self assertEmpty: testResult passed.
+	self assert: testResult failures size equals: 1.
 	self assert: (testResult failures includes: testCase).
-	self assert: testResult errors isEmpty
-
-
+	self assertEmpty: testResult errors
 ]
 
 { #category : #test }
 SUnitExtensionsTest >> testNoExceptionInShouldRaiseWithExceptionDo [
-
-	| testCase testResult  |
-	
+	| testCase testResult |
 	testCase := self class selector: #noExceptionInShouldRaiseWithExceptionDoTest.
 	testResult := testCase run.
-	
+
 	self assert: (testResult failures includes: testCase).
-	self assert: testResult failures size=1.
-	self assert: testResult passed isEmpty.
-	self assert: testResult errors isEmpty.
-	
-	
+	self assert: testResult failures size equals: 1.
+	self assertEmpty: testResult passed.
+	self assertEmpty: testResult errors
 ]
 
 { #category : #tests }
@@ -263,65 +233,50 @@ SUnitExtensionsTest >> testNoExceptionWithNoMatchingString [
 
 { #category : #test }
 SUnitExtensionsTest >> testShouldFix [
-
-	| testCase testResult  |
-	
+	| testCase testResult |
 	testCase := self class selector: #shouldFixTest.
 	testResult := testCase run.
-	
+
 	self assert: (testResult passed includes: testCase).
-	self assert: testResult passed size=1.
-	self assert: testResult failures isEmpty.
-	self assert: testResult errors isEmpty.
-	
-	
+	self assert: testResult passed size equals: 1.
+	self assertEmpty: testResult failures.
+	self assertEmpty: testResult errors
 ]
 
 { #category : #test }
 SUnitExtensionsTest >> testShouldRaiseWithExceptionDo [
-
-	| testCase testResult  |
-	
+	| testCase testResult |
 	testCase := self class selector: #shouldRaiseWithExceptionDoTest.
 	testResult := testCase run.
-	
+
 	self assert: (testResult passed includes: testCase).
-	self assert: testResult passed size=1.
-	self assert: testResult failures isEmpty.
-	self assert: testResult errors isEmpty.
-	
-	
+	self assert: testResult passed size equals: 1.
+	self assertEmpty: testResult failures.
+	self assertEmpty: testResult errors
 ]
 
 { #category : #test }
 SUnitExtensionsTest >> testValidShouldNotTakeMoreThan [
 	| testCase testResult |
-
 	testCase := self class selector: #validShouldNotTakeMoreThan.
 	testResult := testCase run.
 
 	self assert: (testResult passed includes: testCase).
-	self assert: testResult passed size = 1.
-	self assert: testResult failures isEmpty.
-	self assert: testResult errors isEmpty
-
-
+	self assert: testResult passed size equals: 1.
+	self assertEmpty: testResult failures.
+	self assertEmpty: testResult errors
 ]
 
 { #category : #test }
 SUnitExtensionsTest >> testValidShouldNotTakeMoreThanMilliseconds [
-
 	| testCase testResult |
-
 	testCase := self class selector: #validShouldNotTakeMoreThanMilliseconds.
 	testResult := testCase run.
 
 	self assert: (testResult passed includes: testCase).
-	self assert: testResult passed size = 1.
-	self assert: testResult failures isEmpty.
-	self assert: testResult errors isEmpty
-
-
+	self assert: testResult passed size equals: 1.
+	self assertEmpty: testResult failures.
+	self assertEmpty: testResult errors
 ]
 
 { #category : #'real tests' }

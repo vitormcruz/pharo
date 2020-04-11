@@ -5,10 +5,7 @@ I provide a simple mapping from high-level commands to low-level terminal charac
 Class {
 	#name : #NullTermInfo,
 	#superclass : #Object,
-	#instVars : [
-		'out'
-	],
-	#category : #'System-CommandLine'
+	#category : #'System-CommandLine-Utilities'
 }
 
 { #category : #'instance creation' }

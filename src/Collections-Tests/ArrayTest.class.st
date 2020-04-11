@@ -7,13 +7,12 @@ This is the unit test for the class Array. Unit tests are a good way to exercise
 Class {
 	#name : #ArrayTest,
 	#superclass : #CollectionRootTest,
-	#traits : 'TEmptySequenceableTest + TSequencedElementAccessTest + TCloneTest + TIncludesWithIdentityCheckTest + TCopyTest + TCreationWithTest + TPutBasicTest + (TConvertTest - {}) + TOccurrencesForMultiplinessTest + TIterateSequencedReadableTest + TSequencedConcatenationTest + TReplacementSequencedTest + TAsStringCommaAndDelimiterSequenceableTest + TBeginsEndsWith + TPrintOnSequencedTest + TIndexAccess + TSubCollectionAccess + TConvertAsSetForMultiplinessIdentityTest + TCopyPartOfSequenceable + TCopySequenceableSameContents + TCopySequenceableWithOrWithoutSpecificElements + TCopySequenceableWithReplacement + TIndexAccessForMultipliness + TCopyPartOfSequenceableForMultipliness + TConvertAsSortedTest + TPutTest + TSequencedStructuralEqualityTest + TSortTest + TSetArithmetic + TEnumeratingTest',
+	#traits : 'TEmptySequenceableTest + TSequencedElementAccessTest + TCloneTest + TIncludesWithIdentityCheckTest + TCopyTest + TCreationWithTest + TPutBasicTest + TConvertTest + TOccurrencesForMultiplinessTest + TIterateSequencedReadableTest + TSequencedConcatenationTest + TReplacementSequencedTest + TAsStringCommaAndDelimiterSequenceableTest + TBeginsEndsWith + TPrintOnSequencedTest + TIndexAccess + TSubCollectionAccess + TConvertAsSetForMultiplinessIdentityTest + TCopyPartOfSequenceable + TCopySequenceableSameContents + TCopySequenceableWithOrWithoutSpecificElements + TCopySequenceableWithReplacement + TIndexAccessForMultipliness + TCopyPartOfSequenceableForMultipliness + TConvertAsSortedTest + TPutTest + TSequencedStructuralEqualityTest + TSortTest + TSetArithmetic + TEnumeratingTest',
 	#classTraits : 'TEmptySequenceableTest classTrait + TSequencedElementAccessTest classTrait + TCloneTest classTrait + TIncludesWithIdentityCheckTest classTrait + TCopyTest classTrait + TCreationWithTest classTrait + TPutBasicTest classTrait + TConvertTest classTrait + TOccurrencesForMultiplinessTest classTrait + TIterateSequencedReadableTest classTrait + TSequencedConcatenationTest classTrait + TReplacementSequencedTest classTrait + TAsStringCommaAndDelimiterSequenceableTest classTrait + TBeginsEndsWith classTrait + TPrintOnSequencedTest classTrait + TIndexAccess classTrait + TSubCollectionAccess classTrait + TConvertAsSetForMultiplinessIdentityTest classTrait + TCopyPartOfSequenceable classTrait + TCopySequenceableSameContents classTrait + TCopySequenceableWithOrWithoutSpecificElements classTrait + TCopySequenceableWithReplacement classTrait + TIndexAccessForMultipliness classTrait + TCopyPartOfSequenceableForMultipliness classTrait + TConvertAsSortedTest classTrait + TPutTest classTrait + TSequencedStructuralEqualityTest classTrait + TSortTest classTrait + TSetArithmetic classTrait + TEnumeratingTest classTrait',
 	#instVars : [
 		'example1',
 		'literalArray',
 		'selfEvaluatingArray',
-		'otherArray',
 		'nonSEArray1',
 		'nonSEarray2',
 		'example2',
@@ -24,7 +23,6 @@ Class {
 		'withCharacters',
 		'unsortedCollection',
 		'sortedInAscendingOrderCollection',
-		'sizeCollection',
 		'collectionNotIncluded',
 		'removedCollection',
 		'elementInForCopy',
@@ -41,14 +39,15 @@ Class {
 		'nonEmpty1Element',
 		'collectionOfCollection',
 		'collectionOfFloatWithEqualElements',
-		'floatCollectionWithSameBeginingAnEnd',
 		'collectionWithoutNil',
 		'duplicateElement',
 		'collection5Elements',
 		'collectionWith4Elements',
 		'collectionOfCollectionsOfStrings',
 		'collectionOfCollectionsOfInts',
-		'simpleCollection'
+		'simpleCollection',
+		'stringCollectionWithSameBeginingAnEnd',
+		'collectionOfFloat'
 	],
 	#category : #'Collections-Tests-Arrayed'
 }
@@ -94,15 +93,13 @@ ArrayTest >> anotherValue [
 	^ 66
 ]
 
-{ #category : #'tests - converting' }
-ArrayTest >> assertSameContents: aCollection whenConvertedTo: aClass [ 
+{ #category : #asserting }
+ArrayTest >> assertSameContents: aCollection whenConvertedTo: aClass [
 	| result |
 	result := aCollection perform: ('as' , aClass name) asSymbol.
 	self assert: (result class includesBehavior: aClass).
-	result do: 
-		[ :each | 
-		self assert: (aCollection occurrencesOf: each) = (result occurrencesOf: each) ].
-	self assert: result size = aCollection size
+	result do: [ :each | self assert: (aCollection occurrencesOf: each) equals: (result occurrencesOf: each) ].
+	self assert: result size equals: aCollection size
 ]
 
 { #category : #initialization }
@@ -153,7 +150,7 @@ ArrayTest >> collectionOfCollectionsOfStrings [
 
 { #category : #requirements }
 ArrayTest >> collectionOfFloat [
-	^ collectionOfCollection
+	^ collectionOfFloat
 ]
 
 { #category : #requirements }
@@ -191,14 +188,14 @@ ArrayTest >> collectionWithEqualElements [
 ArrayTest >> collectionWithNonIdentitySameAtEndAndBegining [
 	" return a collection with elements at end and begining equals only with classic equality (they are not the same object).
 (others elements of the collection are not equal to those elements)"
-	^ floatCollectionWithSameBeginingAnEnd 
+	^ stringCollectionWithSameBeginingAnEnd 
 ]
 
 { #category : #requirements }
 ArrayTest >> collectionWithSameAtEndAndBegining [
 " return a collection with elements at end and begining equals .
 (others elements of the collection are not equal to those elements)"
-	^ floatCollectionWithSameBeginingAnEnd 
+	^ stringCollectionWithSameBeginingAnEnd 
 ]
 
 { #category : #requirements }
@@ -220,7 +217,7 @@ ArrayTest >> collectionWithoutNilElements [
 
 { #category : #requirements }
 ArrayTest >> elementInCollectionOfFloat [
-	^ collectionOfCollection atRandom
+	^ collectionOfFloat atRandom
 ]
 
 { #category : #requirements }
@@ -341,13 +338,6 @@ ArrayTest >> firstOdd [
 ]
 
 { #category : #requirements }
-ArrayTest >> floatCollectionWithSameAtEndAndBegining [
-" return a collection with elements at end and begining equals only with classic equality (they are not the same object).
-(others elements of the collection are not equal to those elements)"
-	^ floatCollectionWithSameBeginingAnEnd 
-]
-
-{ #category : #requirements }
 ArrayTest >> indexArray [
 	^ indexArray .
 ]
@@ -454,7 +444,7 @@ ArrayTest >> setUp [
 	literalArray := #(1 true 3 #four).
 	selfEvaluatingArray := { 1. true. (3/4). String loremIpsum. (2 to: 4) . 5 }.
 	nonSEArray1 := { 1 . Set with: 1 }.
-	nonSEarray2 := { Smalltalk globals associationAt: #Array }.
+	nonSEarray2 := { testingEnvironment associationAt: #Array }.
 	example1 := #(1 2 3 4 5) copy.
 	indexArray:= {2. 3. 4.}.
 	valueArray:={0. 0. 0.}.
@@ -485,9 +475,10 @@ ArrayTest >> setUp [
 	replacementCollection:= {4. 3. 2. 1.}.
 	replacementCollectionSameSize := {5. 4. 3.}.	
 	nonEmpty1Element:={ 5.}.
-	collectionOfCollection:={1.5. 5.5. 6.5.}.
+	collectionOfCollection:={'a'. 'b'. 'c'.}.
+	collectionOfFloat:={1.5. 5.5. 6.5.}.
 	collectionOfFloatWithEqualElements:={1.5. 5.5. 6.5. 1.5}.
-	floatCollectionWithSameBeginingAnEnd := {1.5. 5.5. 1.5 copy}.
+	stringCollectionWithSameBeginingAnEnd := {'c'. 's'. 'c' copy}.
 	collection5Elements := { 1. 2. 5. 3. 4.}.
 ]
 
@@ -529,7 +520,7 @@ ArrayTest >> subCollectionNotIn [
 ArrayTest >> test0FixtureIncludeTest [
 	| anElementIn |
 	self nonEmpty.
-	self deny: self nonEmpty isEmpty.
+	self denyEmpty: self nonEmpty.
 	self elementNotIn.
 	anElementIn := true.
 	self nonEmpty detect: [ :each | each = self elementNotIn ] ifNone: [ anElementIn := false ].
@@ -537,24 +528,24 @@ ArrayTest >> test0FixtureIncludeTest [
 	self anotherElementNotIn.
 	anElementIn := true.
 	self nonEmpty detect: [ :each | each = self anotherElementNotIn ] ifNone: [ anElementIn := false ].
-	self assert: anElementIn equals: false.
+	self deny: anElementIn.
 	self collection.
 	self empty.
-	self assert: self empty isEmpty.
+	self assertEmpty: self empty.
 	self collectionOfFloat.
 	self collectionOfFloat do: [ :each | self assert: each isFloat ].
 	self elementInForIncludesTest.
 	anElementIn := true.
 	self nonEmpty detect: [ :each | each = self elementInForIncludesTest ] ifNone: [ anElementIn := false ].
-	self assert: anElementIn equals: true
+	self assert: anElementIn
 ]
 
 { #category : #'tests - fixture' }
 ArrayTest >> test0FixtureOccurrencesTest [
 	self empty.
-	self assert: self empty isEmpty.
+	self assertEmpty: self empty.
 	self nonEmpty.
-	self deny: self nonEmpty isEmpty.
+	self denyEmpty: self nonEmpty.
 	self elementInForOccurrences.
 	self assert: (self nonEmpty includes: self elementInForOccurrences).
 	self elementNotInForOccurrences.
@@ -570,14 +561,12 @@ ArrayTest >> test0FixtureTConvertAsSetForMultiplinessTest [
 	self withEqualElements do: [ :each | self assert: each isFloat ].
 	res := true.
 	self withEqualElements detect: [ :each | (self withEqualElements occurrencesOf: each) > 1 ] ifNone: [ res := false ].
-	self assert: res = true.	"a collection of Float without equal elements:"
-	self elementsCopyNonIdenticalWithoutEqualElements.
-	self elementsCopyNonIdenticalWithoutEqualElements do: [ :each | self assert: each isFloat ].
+	self assert: res.	"a collection of Float without equal elements:"
 	res := true.
 	self elementsCopyNonIdenticalWithoutEqualElements
 		detect: [ :each | (self elementsCopyNonIdenticalWithoutEqualElements occurrencesOf: each) > 1 ]
 		ifNone: [ res := false ].
-	self assert: res = false
+	self deny: res
 ]
 
 { #category : #'tests - iterate' }
@@ -589,56 +578,39 @@ ArrayTest >> testAnySatisfy [
 
 { #category : #'tests - converting' }
 ArrayTest >> testAsArrayKeepsIdentity [
-	 
-	|x y|
+	| x y |
 	x := #(1 2 3 4 5).
 	y := x asArray.
-	self assert: y identityHash = x identityHash
+	self assert: y identityHash equals: x identityHash
 ]
 
 { #category : #'tests - accessing' }
 ArrayTest >> testAtWrap2 [
 	| tabTest |
-	tabTest := #(5 6 8 ).
-	self assert: (tabTest atWrap: 2) = 6.
-	self assert: (tabTest atWrap: 7) = 5.
-	self assert: (tabTest atWrap: 5) = 6.
-	self assert: (tabTest atWrap: 0) = 8.
-	self assert: (tabTest atWrap: 1) = 5.
-	self assert: (tabTest atWrap: -2) = 5
+	tabTest := #(5 6 8).
+	self assert: (tabTest atWrap: 2) equals: 6.
+	self assert: (tabTest atWrap: 7) equals: 5.
+	self assert: (tabTest atWrap: 5) equals: 6.
+	self assert: (tabTest atWrap: 0) equals: 8.
+	self assert: (tabTest atWrap: 1) equals: 5.
+	self assert: (tabTest atWrap: -2) equals: 5
 ]
 
 { #category : #tests }
 ArrayTest >> testCombinations [
-
-	self assert: #(1 2 3) combinations = #(#(1) #(2) #(3) #(1 2) #(1 3) #(2 3) #(1 2 3)).
-	self assert: (1 to: 3) combinations = #(#(1) #(2) #(3) #(1 2) #(1 3) #(2 3) #(1 2 3)).
+	self assert: #(1 2 3) combinations equals: #(#(1) #(2) #(3) #(1 2) #(1 3) #(2 3) #(1 2 3)).
+	self assert: (1 to: 3) combinations equals: #(#(1) #(2) #(3) #(1 2) #(1 3) #(2 3) #(1 2 3))
 ]
 
 { #category : #tests }
 ArrayTest >> testComplexIsSelfEvaluating [
-
 	| complexArray restoredArray |
-	complexArray := {1.
-	true.
-	false.
-	nil.
-	#a.
-	'a'.
-	$a.
-	(Float pi).
-	(Float halfPi).
-	(4 / 5).
-	(Float infinity negated).
-	(1 @ 2).
-	(0 @ 0 extent: 1 @ 1).
-	('hola' -> 0).
-	Object.
-	(Object class)}.
+	complexArray := {1 . true . false . nil . #a . 'a' . $a . Float pi . Float halfPi . (4 / 5) . Float infinity negated . (1 @ 2) . (0 @ 0 extent: 1 @ 1).
+	('hola' -> 0) . Object . Object class}.
 	complexArray := complexArray copyWith: complexArray.
 	self assert: complexArray isSelfEvaluating.
 	restoredArray := self class evaluate: complexArray printString.
-	self assert: restoredArray = complexArray
+	self assert: restoredArray equals: complexArray
 ]
 
 { #category : #'tests - copy' }
@@ -648,33 +620,31 @@ ArrayTest >> testCopyNonEmptyWithoutAllNotIncluded [
 
 { #category : #'tests - iterate' }
 ArrayTest >> testDo [
-
 	| res |
-	res := OrderedCollection new.  
-	self collection do: [:each | res add: each class].
-	self assert: res asArray = self result.
+	res := OrderedCollection new.
+	self collection do: [ :each | res add: each class ].
+	self assert: res asArray equals: self result
 ]
 
 { #category : #'tests - iterate' }
 ArrayTest >> testDo2 [
-
 	| res |
-	res := OrderedCollection new.  
-	self collection do: [:each | res add: each class].
-	self assert: res asArray = self result. 
+	res := OrderedCollection new.
+	self collection do: [ :each | res add: each class ].
+	self assert: res asArray equals: self result
 ]
 
 { #category : #'tests - find binary' }
 ArrayTest >> testFindBinary [
-	self assert: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 1 - arg ]) = 1.
-	self assert: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 23 - arg ]) = 23.
-	self assert: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 11 - arg ]) = 11.
+	self assert: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 1 - arg ]) equals: 1.
+	self assert: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 23 - arg ]) equals: 23.
+	self assert: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 11 - arg ]) equals: 11.
 	self should: [ #(1 3 5 7 11 15 23) findBinary: [ :arg | 8 - arg ] ] raise: NotFound
 ]
 
 { #category : #'tests - find binary' }
 ArrayTest >> testFindBinaryIfNone [
-	self assert: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 11 - arg ] ifNone: [ #none ]) = 11.
+	self assert: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 11 - arg ] ifNone: [ #none ]) equals: 11.
 	self should: (#(1 3 5 7 11 15 23) findBinary: [ :arg | 8 - arg ] ifNone: [ #none ]) = #none
 ]
 
@@ -693,11 +663,10 @@ ArrayTest >> testIdentityIncludes [
 
 { #category : #'tests - index access' }
 ArrayTest >> testIdentityIndexOf [
-	
 	| collection element |
-	element := self elementInCollectionOfFloat copy.
-	self deny: self elementInCollectionOfFloat == element.
-	collection := self collectionOfFloat copyWith: element.
+	element := self collectionWithCopyNonIdentical anyOne copy.
+	self deny: self collectionWithCopyNonIdentical anyOne identicalTo: element.
+	collection := self collectionWithCopyNonIdentical copyWith: element.
 	self assert: (collection identityIndexOf: element) equals: collection size
 ]
 
@@ -736,10 +705,10 @@ ArrayTest >> testLiteralEqual [
 
 { #category : #tests }
 ArrayTest >> testNewWithSize [
-	|array|
+	| array |
 	array := Array new: 5.
-	self assert: array size = 5.
-	1 to: 5 do: [:index | self assert: (array at: index) isNil]
+	self assert: array size equals: 5.
+	1 to: 5 do: [ :index | self assert: (array at: index) isNil ]
 ]
 
 { #category : #'tests - occurrencesOf' }
@@ -755,7 +724,7 @@ ArrayTest >> testOccurrencesOf [
 ArrayTest >> testOccurrencesOfEmpty [
 	| result |
 	result := self empty occurrencesOf: self elementInForOccurrences.
-	self assert: result = 0
+	self assert: result equals: 0
 ]
 
 { #category : #'tests - occurrencesOf' }
@@ -768,18 +737,48 @@ ArrayTest >> testOccurrencesOfNotIn [
 
 { #category : #'tests - arithmetic' }
 ArrayTest >> testPremultiply [
-	self assert: example1 +* #(2 ) = #(2 4 6 8 10 ) 
+	self assert: example1 +* #(2) equals: #(2 4 6 8 10)
 ]
 
 { #category : #tests }
 ArrayTest >> testPrinting [
-		
-	self assert: literalArray printString = '#(1 true 3 #four)'.
-	self assert: (literalArray = (self class compiler evaluate: literalArray printString)).
-	self assert: (selfEvaluatingArray = (self class compiler evaluate: selfEvaluatingArray printString)).
-	self assert: nonSEArray1 printString =  'an Array(1 a Set(1))'.
-	self assert: nonSEarray2 printString = '{#Array->Array}'
+	self assert: literalArray printString equals: '#(1 true 3 #four)'.
+	self assert: literalArray equals: (self class compiler evaluate: literalArray printString).
+	self assert: selfEvaluatingArray equals: (self class compiler evaluate: selfEvaluatingArray printString).
+	self assert: nonSEArray1 printString equals: 'an Array(1 a Set(1))'.
+	self assert: nonSEarray2 printString equals: '{#Array->Array}'
+]
 
+{ #category : #'tests - shuffling' }
+ArrayTest >> testShuffleBy [
+
+	| base random shuffleByResult |
+	base := #(1 2 3 4 5).
+	random := (Random seed: 42).
+	shuffleByResult := #(2 5 4 3 1).
+	
+	self assert: ((base shuffleBy: random) hasEqualElements: shuffleByResult).
+	
+]
+
+{ #category : #'tests - shuffling' }
+ArrayTest >> testShuffleChangeOrder [
+
+	| array shuffled |
+	array := #( 1 2 3 4 5).
+	shuffled := array copy shuffle.
+	array do: [ :e | self assert: (shuffled includes: e) ]
+	
+]
+
+{ #category : #'tests - shuffling' }
+ArrayTest >> testShuffleModifyTheReceiver [
+
+	| array shuffled |
+	array := #( 1 2 3 4 5).
+	shuffled := array shuffle.
+	self assert: array == shuffled. 
+	
 ]
 
 { #category : #'tests - arithmetic' }

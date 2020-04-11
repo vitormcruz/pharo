@@ -202,11 +202,10 @@ SimpleButtonMorph >> initialize [
 	self color: (Color r: 0.4 g: 0.8 b: 0.6).
 	self borderColor: self color darker.
 	self borderStyle: BorderStyle thinGray.
-	target := nil.
 	actionSelector := #flash.
 	arguments := EmptyArray.
 	actWhen := #buttonUp.
-	self setDefaultLabel 
+	self setDefaultLabel
 ]
 
 { #category : #testing }
@@ -380,7 +379,7 @@ SimpleButtonMorph >> themeChanged [
 	cornerStyle: (self theme buttonCornerStyleIn: self window);
 	fillStyle: self themedFillStyle.
 	
-	label ifNotNil: [ label color: self fillStyle asColor contrastingColor ].
+	label ifNotNil: [ label color: self fillStyle asColor contrastingBlackAndWhiteColor ].
 
 	super themeChanged
 ]

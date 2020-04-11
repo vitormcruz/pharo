@@ -1,7 +1,7 @@
 "
 RBLiteralNode is an AST node that represents literal values (e.g., #foo, true, 1, etc.), but not literal arrays.
 
-The sourceText field is needed for the formatter for the correct printing of strings vs. symbols. If we just call
+The sourceText field is needed for the formatter for the correct printing of strings vs symbols. If we just call
 value asString, both a string and a symbol print itself as a string.
 
 Instance Variables
@@ -45,18 +45,13 @@ RBLiteralValueNode >> = anObject [
 ]
 
 { #category : #visiting }
-RBLiteralValueNode >> acceptVisitor: aProgramNodeVisitor [ 
-	^aProgramNodeVisitor visitLiteralNode: self
+RBLiteralValueNode >> acceptVisitor: aProgramNodeVisitor [
+	^ aProgramNodeVisitor visitLiteralValueNode: self
 ]
 
 { #category : #matching }
 RBLiteralValueNode >> copyInContext: aDictionary [
 	^ self class value: self value
-]
-
-{ #category : #testing }
-RBLiteralValueNode >> isFaulty [
-	^false
 ]
 
 { #category : #accessing }
@@ -81,7 +76,7 @@ RBLiteralValueNode >> value [
 	^ value
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RBLiteralValueNode >> value: aValue start: aPosition stop: anotherPosition [
 
 	value := aValue.
@@ -89,7 +84,7 @@ RBLiteralValueNode >> value: aValue start: aPosition stop: anotherPosition [
 	stop := anotherPosition.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RBLiteralValueNode >> value: aValue start: aPosition stop: anotherPosition source: aString [ 
 
 	self value: aValue start: aPosition stop: anotherPosition.

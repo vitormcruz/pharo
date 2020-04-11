@@ -14,17 +14,17 @@ Class {
 		'loopback',
 		'alternative'
 	],
-	#category : #'Regex-Core'
+	#category : #'Regex-Core-Links'
 }
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RxmBranch >> alternative: aBranch [
 	"See class comment for instance variable description."
 
 	alternative := aBranch
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RxmBranch >> beLoopback [
 	"See class comment for instance variable description."
 

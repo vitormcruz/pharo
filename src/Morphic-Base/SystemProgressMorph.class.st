@@ -58,12 +58,9 @@ SystemProgressMorph class >> enable [
 ]
 
 { #category : #'job subscription' }
-SystemProgressMorph class >> endJob: aJobEnd [ 
-	| bars |
-	self flag: #toFix. "camillo I need help"
-	bars := self uniqueInstance bars.
-	bars isEmpty
-		ifFalse: [ self uniqueInstance close:  bars last ] 
+SystemProgressMorph class >> endJob: aJobEnd [
+	self flag: #pharoFixMe.	"camillo I need help"
+	self uniqueInstance bars ifNotEmpty: [ :bars | self uniqueInstance close: bars last ]
 ]
 
 { #category : #examples }
@@ -119,7 +116,7 @@ SystemProgressMorph class >> initialize [
 	self reset.
 ]
 
-{ #category : #'instance creation' }
+{ #category : #initialization }
 SystemProgressMorph class >> reset [
 	"SystemProgressMorph reset"
 	UniqueInstance ifNotNil: [ UniqueInstance delete ].
@@ -145,6 +142,7 @@ SystemProgressMorph class >> settingOn: aBuilder [
 				target: self;
 				getSelector: #verticalPosition;
 				setSelector: #verticalPosition:;
+				default: 0;
 				label: 'Vertical progress indicator position';
 				domainValues: {'bottom'->1. 'middle'->0.5. 'top'->0}]
 ]
@@ -157,16 +155,20 @@ SystemProgressMorph class >> show: aJob [
 
 { #category : #'instance creation' }
 SystemProgressMorph class >> show: aString from: startNumber to: endNumber [
-	self flag: 'When we go from Exceptions to announcements, delete this and use show:from:to:during:'.
+	self flag: #pharoFixMe.	"When we go from Exceptions to announcements, delete this and use show:from:to:during:"
 
-	^ self uniqueInstance show: aString from: startNumber to: endNumber.
+	^ self uniqueInstance show: aString from: startNumber to: endNumber
 ]
 
 { #category : #'instance creation' }
 SystemProgressMorph class >> show: aString from: startNumber to: endNumber during: aBlock [
-	self flag: 'When we go from Exceptions to announcements, this will be the primary entry point'.
+	self flag: #pharoFixMe.	"When we go from Exceptions to announcements, this will be the primary entry point"
 
-	^ self uniqueInstance show: aString from: startNumber to: endNumber during: aBlock.
+	^ self uniqueInstance
+		show: aString
+		from: startNumber
+		to: endNumber
+		during: aBlock
 ]
 
 { #category : #'job subscription' }
@@ -293,13 +295,11 @@ SystemProgressMorph >> morphicLayerNumber [
 
 ]
 
-{ #category : #display }
-SystemProgressMorph >> openInWorld [
+{ #category : #opening }
+SystemProgressMorph >> preOpenInWorld: aWorld [
 
-	super openInWorld.
 	self width: 200.
-	self resize.
-	
+	self resize.	
 ]
 
 { #category : #updating }
@@ -349,33 +349,30 @@ SystemProgressMorph >> setDefaultParameters [
 
 { #category : #private }
 SystemProgressMorph >> show: aJob [
-
 	| progressMorph |
+	self flag: #pharoFixMe.	"When we go from Exceptions to announcements, delete this and use show:from:to:during:"
 
-	self flag: 'When we go from Exceptions to announcements, delete this and use show:from:to:during:'.
-	
 	progressMorph := self addItemShowing: aJob.
-	
+
 	self openInWorld.
 	self updateWidth.
-	
-	^ progressMorph.
+
+	^ progressMorph
 ]
 
 { #category : #private }
 SystemProgressMorph >> show: aString from: startNumber to: endNumber [
-
 	| progressMorph |
-	self flag: 'When we go from Exceptions to announcements, delete this and use show:from:to:during:'.
+	self flag: #pharoFixMe.	"When we go from Exceptions to announcements, delete this and use show:from:to:during:"
 
 	self openInWorld.
 	progressMorph := self addItemShowing: aString from: startNumber to: endNumber.
 
-	self 
+	self
 		refresh;
 		reposition.
-	
-	^ progressMorph.
+
+	^ progressMorph
 ]
 
 { #category : #private }

@@ -48,17 +48,10 @@ EpHasImpactVisitor >> visitBehaviorCategoryChange: aChange [
 
 { #category : #visitor }
 EpHasImpactVisitor >> visitBehaviorChange: aChange [
+	self behaviorNamed: aChange behaviorAffectedName ifPresent: [ :behavior | 
+		^ behavior oldDefinition ~= aChange behaviorAffected definitionSource or: [
+			behavior classSide oldDefinition ~= aChange behaviorAffected classSide definitionSource ] ].
 
-	self flag: #todo. "Remove when ready"
-	Halt if: [ ({EpClassAddition. EpClassModification. EpTraitAddition. EpTraitModification} includes: aChange class) not ].
-
-	self
-		behaviorNamed: aChange behaviorAffectedName
-		ifPresent: [ :behavior |"
-Halt if: [ aChange behaviorAffectedName = 'EpApplyPreviewer' and: [ 
-		behavior definition ~= aChange behaviorAffected definitionSource ] ]."
-			^ behavior definition ~= aChange behaviorAffected definitionSource ].
-			
 	^ true
 ]
 

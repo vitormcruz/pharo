@@ -18,6 +18,46 @@ Class {
 }
 
 { #category : #exceptions }
+TestResult class >> currentTheme [
+	^ Smalltalk ui theme
+]
+
+{ #category : #'default-color' }
+TestResult class >> defaultColorBackGroundForErrorTest [
+	^ self currentTheme testColorError
+]
+
+{ #category : #'default-color' }
+TestResult class >> defaultColorBackGroundForFailureTest [
+	^ self currentTheme testColorFailure
+]
+
+{ #category : #'default-color' }
+TestResult class >> defaultColorBackGroundForPassingTest [
+	^ self currentTheme testColorPassing
+]
+
+{ #category : #'default-color' }
+TestResult class >> defaultColorText [
+	^ Color black
+]
+
+{ #category : #'default-color' }
+TestResult class >> defaultColorTextForErrorTest [
+	^ self defaultColorText
+]
+
+{ #category : #'default-color' }
+TestResult class >> defaultColorTextForFailureTest [
+	^ self defaultColorText
+]
+
+{ #category : #'default-color' }
+TestResult class >> defaultColorTextForPassingTest [
+	^ self defaultColorText
+]
+
+{ #category : #exceptions }
 TestResult class >> error [
 	^self exError
 ]
@@ -198,6 +238,11 @@ TestResult >> errors [
 ]
 
 { #category : #accessing }
+TestResult >> errors: anOrderedCollection [
+	errors := anOrderedCollection
+]
+
+{ #category : #accessing }
 TestResult >> expectedDefectCount [
 	^ self expectedDefects size
 ]
@@ -228,7 +273,12 @@ TestResult >> failures [
 	^ self unexpectedFailures, self unexpectedPasses 
 ]
 
-{ #category : #'filein/out' }
+{ #category : #accessing }
+TestResult >> failures: aSet [
+	failures := aSet
+]
+
+{ #category : #'file in/out' }
 TestResult >> fileOutOn: aFileStream [
 	"Write in aFileStream like:
 	3 run, 2 passes, 0 expected failures, 1 failures, 0 errors, 0 unexpected passes
@@ -314,6 +364,11 @@ TestResult >> passed [
 ]
 
 { #category : #accessing }
+TestResult >> passed: anOrderedCollection [
+	passed := anOrderedCollection
+]
+
+{ #category : #accessing }
 TestResult >> passedCount [
 
 	^self passed size
@@ -321,21 +376,25 @@ TestResult >> passedCount [
 
 { #category : #printing }
 TestResult >> printOn: aStream [
+	self runCount isZero ifTrue: [ ^ aStream nextPutAll: 'No tests ran' ].
 	aStream
-		nextPutAll: self runCount printString;
-		nextPutAll: ' run, ';
-		nextPutAll: self expectedPassCount printString;
-		nextPutAll: ' passes, ';
-		nextPutAll: self skippedCount printString;
+		print: self runCount;
+		nextPutAll: ' ran, ';
+		print: self expectedPassCount;
+		nextPutAll: ' passed, ';
+		print: self skippedCount;
 		nextPutAll: ' skipped, ';
-		nextPutAll: self expectedDefectCount printString;
-		nextPutAll:' expected failures, ';
-		nextPutAll: self unexpectedFailureCount printString;
-		nextPutAll: ' failures, ';
-		nextPutAll: self unexpectedErrorCount printString;
-		nextPutAll:' errors, ';
-		nextPutAll: self unexpectedPassCount printString;
-		nextPutAll:' unexpected passes'.
+		print: self expectedDefectCount;
+		nextPutAll: (' expected failure' asPluralBasedOn: self expectedDefectCount); 
+		nextPutAll: ', ';
+		print: self unexpectedFailureCount;
+		nextPutAll: (' failure' asPluralBasedOn: self unexpectedFailureCount);
+		nextPutAll: ', ';
+		print: self unexpectedErrorCount;
+		nextPutAll: (' error' asPluralBasedOn: self unexpectedErrorCount);
+		nextPutAll: ', ';
+		print: self unexpectedPassCount;
+		nextPutAll: ' passed unexpected'
 ]
 
 { #category : #running }

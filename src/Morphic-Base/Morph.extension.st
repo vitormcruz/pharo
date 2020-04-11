@@ -249,13 +249,10 @@ Morph >> dispatchKeystrokeForEvent: evt [
 Morph >> exportAs: anExtension using: aWriter [
 	
 	| reference |
-	
-	reference := UIManager default 
-		fileSave: 'Save Morph as ', anExtension asUppercase 
-		initialAnswer: (self externalName, '.' , anExtension)
-		extensions: { anExtension } 
-		path: Smalltalk imageDirectory.
-		
+	reference := UIManager default
+		chooseForSaveFileReference: 'Save Morph as ', anExtension asUppercase
+		extensions: { anExtension }
+		path: (self externalName, '.' , anExtension).
 	reference ifNotNil: [ aWriter putForm: self imageForm onFileNamed: reference ]
 	
 ]
@@ -352,7 +349,7 @@ Morph >> justDroppedInto: aMorph event: anEvent [
 
 	"An object launched by certain parts-launcher mechanisms should end up fully visible..."
 	(self hasProperty: #beFullyVisibleAfterDrop) 
-		ifTrue: [aMorph == ActiveWorld 
+		ifTrue: [aMorph == self world 
 			ifTrue: [self goHome].
 			self removeProperty: #beFullyVisibleAfterDrop].
 

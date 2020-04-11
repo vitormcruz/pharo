@@ -14,15 +14,18 @@ RBRemoveClassChange class >> remove: aClass [
 
 { #category : #'instance creation' }
 RBRemoveClassChange class >> removeClassName: aSymbol [
-	^ self new changeClassName: aSymbol
+	^ self basicNew onSystemDictionary: self environment; 
+			changeClassName: aSymbol;
+			initialize
+			
 ]
 
 { #category : #converting }
 RBRemoveClassChange >> asUndoOperation [
 	| classChanges |
-	classChanges := RBRefactoryChangeManager changeFactory compositeRefactoryChange.
+	classChanges := changeFactory compositeRefactoryChange.
 	self changeClass withAllSubclasses do: [ :each | 
-		classChanges defineClass: each definition.
+		classChanges defineClass: each oldDefinition.
 		each class instVarNames 
 			do: [ :varName | classChanges addInstanceVariable: varName to: each class ].
 		each selectors 
@@ -41,6 +44,13 @@ RBRemoveClassChange >> changeClass: aBehavior [
 { #category : #printing }
 RBRemoveClassChange >> changeString [
 	^ 'Remove ' , self displayClassName
+]
+
+{ #category : #printing }
+RBRemoveClassChange >> initialize [ 
+	super initialize.
+	onSystemDictionary ifNil: [ onSystemDictionary := Smalltalk globals ].
+	changeFactory := RBRefactoryChangeManager changeFactory
 ]
 
 { #category : #private }

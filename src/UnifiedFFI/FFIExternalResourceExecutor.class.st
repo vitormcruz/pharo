@@ -66,7 +66,7 @@ Class {
 		'data',
 		'resourceClass'
 	],
-	#category : #UnifiedFFI
+	#category : #'UnifiedFFI-External-Resources'
 }
 
 { #category : #finalization }
@@ -81,7 +81,7 @@ FFIExternalResourceExecutor >> initialize [
 	session := Smalltalk session
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 FFIExternalResourceExecutor >> resourceClass: aResourceClass data: aData [
 	resourceClass := aResourceClass.
 	data := aData

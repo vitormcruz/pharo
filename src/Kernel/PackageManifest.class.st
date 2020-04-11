@@ -4,7 +4,7 @@ I store meta-data for a package. I'm the common superclass of all package Manife
 Class {
 	#name : #PackageManifest,
 	#superclass : #Object,
-	#category : #Kernel
+	#category : #'Kernel-Manifest'
 }
 
 { #category : #'accessing comment' }
@@ -20,7 +20,12 @@ PackageManifest class >> description [
 
 { #category : #'meta-data - dependency analyser' }
 PackageManifest class >> ignoredDependencies [
-	^ #(#'System-Settings')
+	^ #(#'System-Settings-Core')
+]
+
+{ #category : #deprecation }
+PackageManifest class >> isDeprecated [
+	^ false
 ]
 
 { #category : #testing }

@@ -84,12 +84,12 @@ GLMNestedBrowserTest >> testCondition [
 				yourself).
 	self assert: (browser1 pane port: #entity) value isNil.
 	self assert: (browser1 panes first port: #entity) value isNil.
-	self assert: browser1 panes first presentations isEmpty.
+	self assertEmpty: browser1 panes first presentations.
 	(browser1 pane port: #entity) value: 41.
 	self assert: (browser1 pane port: #entity) value equals: 41.
 	self assert: (browser1 panes first port: #entity) value equals: 41.
 	self assert: browser1 panes first presentations size equals: 1.
-	self assert: browser1 panes first matchingPresentations size equals: 0.
+	self assertEmpty: browser1 panes first matchingPresentations.
 	(browser1 pane port: #entity) value: 42.
 	self assert: (browser1 pane port: #entity) value equals: 42.	"	self assert: (browser1 panes first port: #entity) presentations value = 84.
 "
@@ -116,10 +116,10 @@ GLMNestedBrowserTest >> testEntityPropogation [
 		addTransmission:
 			(transmission1
 				addActiveOrigin:
-						((GLMPresentationBoundPort new)
-								presentation: browser1;
-								name: #entity;
-								yourself);
+					(GLMPresentationBoundPort new
+						presentation: browser1;
+						name: #entity;
+						yourself);
 				destination: (browser1 panes first port: #entity);
 				yourself).	"Jumpstart presentation for inner browser."
 	transmission2 := GLMTransmission new ensureReplacePresentationsStrategy.
@@ -128,19 +128,19 @@ GLMNestedBrowserTest >> testEntityPropogation [
 		addTransmission:
 			(transmission2
 				addActiveOrigin:
-						((GLMPresentationBoundPort new)
-								presentation: browser2;
-								name: #entity;
-								yourself);
+					(GLMPresentationBoundPort new
+						presentation: browser2;
+						name: #entity;
+						yourself);
 				destination: (browser2 panes first port: #entity);
 				yourself).
 	self assert: (browser1 pane port: #entity) value isNil.
 	self assert: browser1 panes size equals: 1.
 	self assert: (browser1 panes first port: #entity) value isNil.
-	self assert: browser1 panes first presentations isEmpty.
+	self assertEmpty: browser1 panes first presentations.
 	self assert: browser2 panes size equals: 1.
 	self assert: (browser2 panes first port: #entity) value isNil.
-	self assert: browser2 panes first presentations isEmpty.
+	self assertEmpty: browser2 panes first presentations.
 	(browser1 pane port: #entity) value: 42.
 	self assert: (browser1 pane port: #entity) value equals: 42.
 	self assert: browser1 panes size equals: 1.
@@ -148,7 +148,7 @@ GLMNestedBrowserTest >> testEntityPropogation [
 	self assert: browser1 panes first presentations size equals: 1.
 	innerBrowser := browser1 panes first presentations first.
 	self assert: innerBrowser rootPrototype equals: browser2.
-	self assert: innerBrowser pane == browser1 panes first.
+	self assert: innerBrowser pane identicalTo: browser1 panes first.
 	self assert: innerBrowser panes size equals: 1.
 	self assert: (innerBrowser panes first port: #entity) value equals: 42.
 	self assert: innerBrowser panes first presentations size equals: 1.
@@ -168,25 +168,25 @@ GLMNestedBrowserTest >> testInnerTransmissions [
 	browser2 addNewPane name: 'innerpane 1'.	"Jumpstart presentation for outer browser."
 	browser1
 		addTransmission:
-			((GLMTransmission new)
+			(GLMTransmission new
 				ensureReplacePresentationsStrategy;
 				addActiveOrigin:
-						((GLMPresentationBoundPort new)
-								presentation: browser1;
-								name: #entity;
-								yourself);
+					(GLMPresentationBoundPort new
+						presentation: browser1;
+						name: #entity;
+						yourself);
 				destination: (browser1 panes first port: #entity);
 				addPresentation: browser2;
 				yourself).	"Jumpstart presentation for inner browser."
 	browser2
 		addTransmission:
-			((GLMTransmission new)
+			(GLMTransmission new
 				ensureReplacePresentationsStrategy;
 				addActiveOrigin:
-						((GLMPresentationBoundPort new)
-								presentation: browser2;
-								name: #entity;
-								yourself);
+					(GLMPresentationBoundPort new
+						presentation: browser2;
+						name: #entity;
+						yourself);
 				destination: (browser2 panes first port: #entity);
 				addPresentation: presentation;
 				yourself).
@@ -194,7 +194,7 @@ GLMNestedBrowserTest >> testInnerTransmissions [
 	innerBrowser := browser1 panes first presentations first.
 	self assert: innerBrowser transmissions size equals: 1.
 	self assert: (innerBrowser transmissions first origins first isKindOf: GLMPresentationBoundPort).
-	self assert: innerBrowser transmissions first origins first pane == browser1 panes first
+	self assert: innerBrowser transmissions first origins first pane identicalTo: browser1 panes first
 ]
 
 { #category : #tests }

@@ -1,3 +1,6 @@
+"
+A more recent implementation of a handle morph
+"
 Class {
 	#name : #NewHandleMorph,
 	#superclass : #HandleMorph,
@@ -10,10 +13,8 @@ Class {
 
 { #category : #'submorphs-add/remove' }
 NewHandleMorph >> delete [
-	hand ifNotNil:[
-		hand showTemporaryCursor: nil.
-	].
-	super delete.
+	hand ifNotNil: [ hand showTemporaryCursor: nil ].
+	super delete
 ]
 
 { #category : #all }
@@ -40,7 +41,7 @@ NewHandleMorph >> initialize [
 	"initialize the state of the receiver"
 
 	super initialize.
-	waitingForClickInside := true.
+	waitingForClickInside := true
 	
 ]
 
@@ -53,8 +54,9 @@ NewHandleMorph >> justDroppedInto: aMorph event: anEvent [
 
 { #category : #'wiw support' }
 NewHandleMorph >> morphicLayerNumber [
-
-	^1		"handles are very front-like - e.g. the spawn reframe logic actually asks if the first submorph of the world is one of us before deciding to create one"
+	"Handles are very front-like - e.g. the spawn reframe logic actually asks if the first submorph of the world is one of us before deciding to create one"
+	
+	^1
 ]
 
 { #category : #'stepping and presenter' }

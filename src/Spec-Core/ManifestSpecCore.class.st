@@ -1,8 +1,18 @@
+"
+Core package for the Spec UI framework
+"
 Class {
 	#name : #ManifestSpecCore,
 	#superclass : #PackageManifest,
-	#category : #'Spec-Core'
+	#category : #'Spec-Core-Manifest'
 }
+
+{ #category : #deprecation }
+ManifestSpecCore class >> isDeprecated [
+	"Spec should be replaced by Spec 2"
+
+	^ true
+]
 
 { #category : #'code-critics' }
 ManifestSpecCore class >> ruleEqualsTrueRuleV1FalsePositive [
@@ -32,6 +42,11 @@ ManifestSpecCore class >> ruleImplementedNotSentRuleV1FalsePositive [
 { #category : #'code-critics' }
 ManifestSpecCore class >> ruleLongMethodsRuleV1FalsePositive [
 	^ #(#(#(#RGMethodDefinition #(#AbstractWidgetPresenter #initialize #false)) #'2016-07-01T15:56:13.356024+02:00') #(#(#RGMethodDefinition #(#ComposablePresenter #initialize #false)) #'2016-07-01T15:56:13.355982+02:00') )
+]
+
+{ #category : #'code-critics' }
+ManifestSpecCore class >> ruleRBEquivalentSuperclassMethodsRuleV1FalsePositive [
+	^ #(#(#(#RGMethodDefinition #(#'ComposablePresenter class' #iconNamed: #true)) #'2018-11-07T14:51:01.186582+01:00') )
 ]
 
 { #category : #'code-critics' }

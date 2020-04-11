@@ -27,7 +27,7 @@ SourceFile >> atEnd [
 	^ stream atEnd
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #initialization }
 SourceFile >> close [
 
 	stream ifNil: [ ^ self ].
@@ -43,67 +43,119 @@ SourceFile >> closed [
 	^ stream isNil or: [ stream closed ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'stop conditions' }
 SourceFile >> cr [
 
 	stream cr
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #buffering }
+SourceFile >> discardBuffer [
+
+	stream wrappedStream discardBuffer
+]
+
+{ #category : #accessing }
+SourceFile >> ensureWrittenPosition: aPosition [
+
+	self isReadOnly ifTrue: [ ^ false ].
+	
+	^ stream ensureWrittenPosition: aPosition
+]
+
+{ #category : #accessing }
 SourceFile >> flush [
 
+	(stream isNil or: [ stream isReadOnly ])
+		ifTrue: [ ^ self ].
+	
 	stream flush
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> fullName [
 
 	^ path asString
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
+SourceFile >> getPreambleAt: startingPosition [
+	"Search backwards from byte startingPosition in my stream for a method preamble and return it.
+	A method preamble looks like: MyClass methodsFor: 'test' stamp: 'author 1/27/2019 12:27'
+	but with exclamation marks ($!) around it (the contents excluding the $!'s is returned).
+	startingPosition should be set one position before the closing $!"
+	
+	| characterReadStream binaryStream encoder position |
+	"I hold either a ZnCharacterReadStream or a ZnCharacterReadWriteStream (see #tryOpenReadOnly:)
+	Use #isReadOnly and #readOnlyCopy to access the ZnCharacterReadStream in both cases"
+	characterReadStream := self isReadOnly ifTrue: [ stream ] ifFalse: [ stream readOnlyCopy ].
+	"Access the binary read stream wrapped by the character read stream"
+	binaryStream := characterReadStream wrappedStream.
+	"Access the encoder held by the character read stream"
+	encoder := characterReadStream encoder.
+	"Search backwards for the previous occurrence of $!
+	Although the underlying encoding is UTF-8 we can still operate/move at the byte level
+	since $! code 33 cannot occur in code points encoded using 2, 3 or 4 bytes"
+	position := startingPosition.
+	[ position >= 0 
+		and: [ 
+			binaryStream position: position. 
+			binaryStream next ~= 33 "$!" ] ] 
+		whileTrue: [ position := position - 1 ].
+	"Now that we found the byte range, extract and decode it"
+	^ encoder decodeBytes: (binaryStream next: startingPosition - position)
+]
+
+{ #category : #testing }
 SourceFile >> isOpen [
 
 	^ stream notNil and: [ stream closed not ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #testing }
 SourceFile >> isReadOnly [
 
 	^ stream isReadOnly
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> next [
 
 	^ stream next
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> next: anInteger [
 
 	^ stream next: anInteger
 ]
 
-{ #category : #'fileIn/Out' }
+{ #category : #accessing }
+SourceFile >> next: anInteger putAll: aString startingAt: startIndex [
+
+	stream next: anInteger putAll: aString startingAt: startIndex
+
+]
+
+{ #category : #'file in/out' }
 SourceFile >> nextChunk [
 
 	^ (ChunkReadStream on: stream) next
 ]
 
-{ #category : #'fileIn/Out' }
+{ #category : #'file in/out' }
 SourceFile >> nextChunkPut: aChunk [
 
 	^ (ChunkWriteStream on: stream) nextPut: aChunk
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> nextPut: aCharacter [
 
 	stream nextPut: aCharacter
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> nextPutAll: aString [
 
 	stream nextPutAll: aString
@@ -115,8 +167,8 @@ SourceFile >> path [
 ]
 
 { #category : #accessing }
-SourceFile >> path: arg1 [
-	path := arg1
+SourceFile >> path: aPath [
+	path := aPath
 ]
 
 { #category : #accessing }
@@ -125,31 +177,31 @@ SourceFile >> peek [
 	^ stream peek
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> position [
 
 	^ stream position
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> position: anInteger [
 
 	stream position: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> potentialLocations [
 
 	^ potentialLocations
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> potentialLocations: aCollection [
 
 	potentialLocations := aCollection
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #printing }
 SourceFile >> printOn: aStream [
 
 	aStream
@@ -159,7 +211,7 @@ SourceFile >> printOn: aStream [
 		nextPut: $)
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> readOnlyCopy [
 
 	^ (self species on: path potentialLocations: potentialLocations)
@@ -167,25 +219,25 @@ SourceFile >> readOnlyCopy [
 		yourself
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #initialization }
 SourceFile >> setToEnd [
 
 	stream setToEnd
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> size [
 
 	^ stream size
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 SourceFile >> skip: anInteger [
 
 	stream skip: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #streaming }
 SourceFile >> space [
 
 	stream space
@@ -197,13 +249,13 @@ SourceFile >> stream: aStream [
 	stream := aStream
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #opening }
 SourceFile >> tryOpen [
 
 	self tryOpenReadOnly: false
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #opening }
 SourceFile >> tryOpenReadOnly: readOnly [
 	| basename |
 	basename := path asFileReference basename.
@@ -213,14 +265,16 @@ SourceFile >> tryOpenReadOnly: readOnly [
 	readOnly ifFalse: [
 		potentialLocations
 			do: [ :each | 
-				[ stream := ZnCharacterReadWriteStream
-					on: (ZnBufferedReadWriteStream on: (each asFileReference / basename) binaryWriteStream)
+				[ stream := SourceFileCharacterReadWriteStream
+					on: (SourceFileBufferedReadWriteStream on:(each asFileReference / basename) unbufferedBinaryWriteStream)
 					encoding: 'utf8'.
 				^ self ] on: Error do: [  ] ] ].
 
 	potentialLocations do: [ :each | 
-			[ stream := (each asFileReference / basename) readStream.
-			^ self ] on: Error do: [  ] ]
+			[ stream := ZnCharacterReadStream
+					on: (each asFileReference / basename) binaryReadStream
+					encoding: 'utf8'.
+				^ self ] on: Error do: [  ] ]
 ]
 
 { #category : #accessing }

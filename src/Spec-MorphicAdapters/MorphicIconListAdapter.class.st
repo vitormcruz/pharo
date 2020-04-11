@@ -4,7 +4,7 @@ I am the adapter used to bridge an IconListPresenter and a PluggableIconListMorp
 Class {
 	#name : #MorphicIconListAdapter,
 	#superclass : #MorphicListAdapter,
-	#category : #'Spec-MorphicAdapters'
+	#category : #'Spec-MorphicAdapters-Base'
 }
 
 { #category : #factory }
@@ -28,6 +28,7 @@ MorphicIconListAdapter >> buildWidget [
 			setBalloonText: self help; 
 			hResizing: 	#spaceFill;
 			vResizing: 	#spaceFill;
+			backgroundColoringBlockOrSelector: #backgroundColorFor:at: ;
 			yourself
 ]
 

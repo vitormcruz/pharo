@@ -37,9 +37,9 @@ MalDominanceNode >> hasUniqueSource [
 	^ self previousNodes size = 1
 ]
 
-{ #category : #accessing }
+{ #category : #initialization }
 MalDominanceNode >> initialize [
-
+	super initialize.
 	previousNodes := OrderedCollection new.
 	uniqueSource := false
 ]

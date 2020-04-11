@@ -92,42 +92,79 @@ DockingBarMorph >> activate: evt [
 ]
 
 { #category : #control }
-DockingBarMorph >> activeSubmenu: aSubmenu [ 
-	activeSubMenu ifNotNil: [activeSubMenu delete].
+DockingBarMorph >> activeSubmenu: aSubmenu [
+
+	activeSubMenu ifNotNil: [ activeSubMenu delete ].
 	activeSubMenu := aSubmenu.
-	aSubmenu isNil ifTrue: [^ self].
+	aSubmenu ifNil: [ ^ self ].
 	activeSubMenu selectItem: nil event: nil.
 	activeSubMenu borderColor: self borderColor.
 	activeSubMenu beSticky.
 	activeSubMenu resistsRemoval: true.
-	activeSubMenu removeMatchString.
+	activeSubMenu removeMatchString
 ]
 
 { #category : #menu }
-DockingBarMorph >> add: wordingString font: aFont icon: aForm help: helpString subMenu: aMenuMorph [ 
+DockingBarMorph >> add: wordingString font: aFont icon: aForm help: helpString subMenu: aMenuMorph [
+
 	"Append the given submenu with the given label."
-	
+
 	| item |
+
 	item := DockingBarToggleMenuItemMorph new.
 	item
 		font: aFont;
 		contents: wordingString;
 		subMenu: aMenuMorph;
 		icon: aForm.
-	helpString isNil
-		ifFalse: [item setBalloonText: helpString].
+	helpString ifNotNil: [ item setBalloonText: helpString ].
 	self addMorphBack: item
 ]
 
 { #category : #construction }
-DockingBarMorph >> add: wordingString icon: aForm help: helpString subMenu: aMenuMorph [ 
+DockingBarMorph >> add: wordingString icon: aForm help: helpString action: anAction keyText: aText [
 	"Append the given submenu with the given label."
+
 	| item |
 	item := self newMenuItem.
 	item contents: wordingString.
-	item subMenu: aMenuMorph.
+	item keyText: aText.
+	anAction
+		ifNotNil: [ :act | 
+			item
+				target: act receiver;
+				selector: act selector;
+				arguments: act arguments ].
 	item icon: aForm.
-	helpString ifNotNil: [item setBalloonText: helpString].
+	helpString ifNotNil: [ item setBalloonText: helpString ].
+	self addMorphBack: item
+]
+
+{ #category : #construction }
+DockingBarMorph >> add: wordingString icon: aForm help: helpString subMenu: aMenuMorph [
+	"Append the given submenu with the given label."
+	
+	self add: wordingString icon: aForm help: helpString subMenu: aMenuMorph action: nil keyText: nil
+]
+
+{ #category : #construction }
+DockingBarMorph >> add: wordingString icon: aForm help: helpString subMenu: aMenuMorph action: anAction keyText: aText [
+	"Append the given submenu with the given label."
+
+	| item |
+	item := self newMenuItem
+		contents: wordingString;
+		subMenu: aMenuMorph;
+		icon: aForm;
+		keyText: aText;
+		yourself.
+	anAction
+		ifNotNil: [ :act | 
+			item
+				target: act receiver;
+				selector: act selector;
+				arguments: act arguments ].
+	helpString ifNotNil: [ item setBalloonText: helpString ].
 	self addMorphBack: item
 ]
 
@@ -386,7 +423,7 @@ DockingBarMorph >> gradientRamp: colorRamp [
 DockingBarMorph >> handleFocusEvent: evt [
 	"Handle focus events. Valid menu transitions are determined based on the menu currently holding the focus after the mouse went down on one of its children."
 
-	(evt isMouse and:[ evt isMouseUp ]) ifTrue:[^ self].
+	(evt isMouse and: [ evt isMouseUp ]) ifTrue: [ ^ self mouseUp: evt ].
 
 	self processEvent: evt.
 
@@ -418,8 +455,6 @@ DockingBarMorph >> initialize [
 
 	super initialize.
 	""
-	selectedItem := nil.
-	activeSubMenu := nil.
 	fillsOwner := true.
 	avoidVisibleBordersAtEdge := true.
 	autoGradient := self wantsGradientByDefault.
@@ -483,31 +518,33 @@ DockingBarMorph >> isVertical [
 ]
 
 { #category : #'dropping/grabbing' }
-DockingBarMorph >> justDroppedInto: aMorph event: anEvent [ 
-	| ownerBounds leftRegion droppedPosition rightRegion topRegion bottomRegion |
-	super justDroppedInto: aMorph event: anEvent.
-	
-	self owner isNil ifTrue: [^ self].
-	ownerBounds := aMorph bounds.
-	topRegion := ownerBounds bottom: ownerBounds top + (ownerBounds height // 5).
-	bottomRegion := ownerBounds top: ownerBounds bottom - (ownerBounds height // 5).
+DockingBarMorph >> justDroppedInto: aMorph event: anEvent [
 
-	leftRegion := ownerBounds right: ownerBounds left + (ownerBounds width // 5).
+	| ownerBounds leftRegion droppedPosition rightRegion topRegion bottomRegion |
+
+	super justDroppedInto: aMorph event: anEvent.
+
+	self owner ifNil: [ ^ self ].
+	ownerBounds := aMorph bounds.
+	topRegion := ownerBounds bottom: ownerBounds top + ( ownerBounds height // 5 ).
+	bottomRegion := ownerBounds top: ownerBounds bottom - ( ownerBounds height // 5 ).
+
+	leftRegion := ownerBounds right: ownerBounds left + ( ownerBounds width // 5 ).
 	leftRegion := leftRegion top: topRegion bottom.
 	leftRegion := leftRegion bottom: bottomRegion top.
-	rightRegion := ownerBounds left: ownerBounds right - (ownerBounds width // 5).
+	rightRegion := ownerBounds left: ownerBounds right - ( ownerBounds width // 5 ).
 	rightRegion := rightRegion top: topRegion bottom.
 	rightRegion := rightRegion bottom: bottomRegion top.
 
 	droppedPosition := anEvent position.
-	(topRegion containsPoint: droppedPosition) ifTrue: [
-			^ self adhereToTop].
-	(bottomRegion containsPoint: droppedPosition) ifTrue: [
-			^ self adhereToBottom].
-	(leftRegion containsPoint: droppedPosition) ifTrue: [
-			^ self adhereToLeft].
-	(rightRegion containsPoint: droppedPosition) ifTrue: [
-			^ self adhereToRight].
+	( topRegion containsPoint: droppedPosition )
+		ifTrue: [ ^ self adhereToTop ].
+	( bottomRegion containsPoint: droppedPosition )
+		ifTrue: [ ^ self adhereToBottom ].
+	( leftRegion containsPoint: droppedPosition )
+		ifTrue: [ ^ self adhereToLeft ].
+	( rightRegion containsPoint: droppedPosition )
+		ifTrue: [ ^ self adhereToRight ].
 	self beFloating
 ]
 
@@ -538,6 +575,21 @@ DockingBarMorph >> mouseDown: anEvent [
 	(self fullContainsPoint: anEvent position)
 		ifFalse: [anEvent hand releaseMouseFocus: self].
 	^super mouseDown: anEvent
+]
+
+{ #category : #'events-processing' }
+DockingBarMorph >> mouseUp: evt [
+	"If we click on a selected item with an action we want to execute the action and deselect the menu item."
+	
+	super mouseUp: evt.
+	
+	self selectedItem ifNil: [ ^ self ]. "No selected item"
+	self selectedItem selector ifNil: [ ^ self ]. "No action for the selected item"
+	(self selectedItem containsPoint: evt cursorPoint) ifFalse: [ ^ self ]. "The user did not clicked on the selected menu item"
+
+	"Execute the action of the menu item and deselect it"
+	self selectedItem invokeWithEvent: evt.
+	self selectItem: nil event: evt
 ]
 
 { #category : #'events-processing' }
@@ -650,11 +702,11 @@ DockingBarMorph >> selectItem: aMenuItem event: anEvent [
 
 { #category : #private }
 DockingBarMorph >> selectedItem [
-	selectedItem isNil
-		ifTrue: [^ nil].
+
+	selectedItem ifNil: [ ^ nil ].
 	^ selectedItem isSelected
-		ifTrue: [ selectedItem]
-		ifFalse: [ nil]
+		ifTrue: [ selectedItem ]
+		ifFalse: [ nil ]
 ]
 
 { #category : #construction }
@@ -713,19 +765,19 @@ DockingBarMorph >> updateColor [
 { #category : #'private - layout' }
 DockingBarMorph >> updateExtent [
 	"private - update the receiver's extent"
+
 	| margin usedHeight |
 	self fullBounds.
-	self fillsOwner
-		ifFalse: [^ self].
-	margin := self avoidVisibleBordersAtEdge
-				ifTrue: [self borderWidth * 2]
-				ifFalse: [0].
-	self isHorizontal
-		ifTrue: [self width: self owner width + margin].
-	self isVertical
-		ifTrue: [
-			usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#top #bottom ).
-			self height: self owner height + margin - usedHeight]
+	self fillsOwner ifFalse: [ ^ self ].
+	
+	"Nil check because there is probably a race condition here making the CI fail a lot."
+	self owner
+		ifNotNil: [ :anOwner | 
+			margin := self avoidVisibleBordersAtEdge ifTrue: [ self borderWidth * 2 ] ifFalse: [ 0 ].
+			self isHorizontal ifTrue: [ self width: anOwner width + margin ].
+			self isVertical
+				ifTrue: [ usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#top #bottom).
+					self height: anOwner height + margin - usedHeight ] ]
 ]
 
 { #category : #'private - layout' }
@@ -750,37 +802,35 @@ DockingBarMorph >> updatePosition [
 	"private - update the receiver's position.
 	Fixed so as not to keep changing position!
 	(called twice if adhereing)"
-	
-	| edgeSymbol margin |
-	edgeSymbol := self edgeToAdhereTo.
-	edgeSymbol == #none
-		ifTrue: [self
-				perform: (edgeSymbol , ':') asSymbol
-				with: (self owner perform: edgeSymbol)].
-	""
-	margin := self avoidVisibleBordersAtEdge
-				ifTrue: [self borderWidth asPoint]
-				ifFalse: [0 asPoint].
-	""
-	self isAdheringToTop
-		ifTrue: [| usedHeight | 
-			usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#top ).
-			self topLeft: self owner topLeft - margin + (0 @ usedHeight)].
-	self isAdheringToBottom
-		ifTrue: [| usedHeight | 
-			usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#bottom ).
-			self bottomLeft: self owner bottomLeft + (-1 @ 1 * margin) - (0 @ usedHeight)].
-	""
-	self isAdheringToLeft
-		ifTrue: [| usedHeight usedWidth | 
-			usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#top ).
-			usedWidth := self usedWidthByPredominantDockingBarsOfChastes: #(#left ).
-			self topLeft: self owner topLeft - margin + (usedWidth @ usedHeight)].
-	self isAdheringToRight
-		ifTrue: [| usedHeight usedWidth | 
-			usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#top ).
-			usedWidth := self usedWidthByPredominantDockingBarsOfChastes: #(#right ).
-			self topRight: self owner topRight + (1 @ -1 * margin) + (usedWidth negated @ usedHeight)]
+
+	self owner
+		ifNotNil: [ :anOwner | 
+			| edgeSymbol margin usedHeight |
+			edgeSymbol := self edgeToAdhereTo.
+			edgeSymbol == #none
+				ifTrue: [ self perform: (edgeSymbol , ':') asSymbol with: (anOwner perform: edgeSymbol) ].
+
+			margin := (self avoidVisibleBordersAtEdge ifTrue: [ self borderWidth ] ifFalse: [ 0 ]) asPoint.
+
+			self isAdheringToTop
+				ifTrue: [ usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#top).
+					self topLeft: anOwner topLeft - margin + (0 @ usedHeight) ].
+
+			self isAdheringToBottom
+				ifTrue: [ usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#bottom).
+					self bottomLeft: anOwner bottomLeft + (-1 @ 1 * margin) - (0 @ usedHeight) ].
+
+			self isAdheringToLeft
+				ifTrue: [ | usedWidth |
+					usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#top).
+					usedWidth := self usedWidthByPredominantDockingBarsOfChastes: #(#left).
+					self topLeft: anOwner topLeft - margin + (usedWidth @ usedHeight) ].
+
+			self isAdheringToRight
+				ifTrue: [ | usedWidth |
+					usedHeight := self usedHeightByPredominantDockingBarsOfChastes: #(#top).
+					usedWidth := self usedWidthByPredominantDockingBarsOfChastes: #(#right).
+					self topRight: anOwner topRight + (1 @ -1 * margin) + (usedWidth negated @ usedHeight) ] ]
 ]
 
 { #category : #'private - accessing' }

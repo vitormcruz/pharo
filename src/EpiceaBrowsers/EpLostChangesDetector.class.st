@@ -101,7 +101,7 @@ EpLostChangesDetector >> lostChanges [
 	"Then, there are lost events"
 	entries := freshLog priorEntriesFrom: freshLog headReference upTo: lastSessionHeadReference.
 
-	^ entries ifNotEmpty: [ entries allButLast "reject lastSessionHeadReference's change"]
+	^ entries ifNotEmpty: [ entries allButLast reversed ]
 ]
 
 { #category : #accessing }
@@ -110,12 +110,11 @@ EpLostChangesDetector >> openBrowserIfLostChanges [
 	| lostChanges lostChangesLog browser |
 	lostChanges := self lostChanges collect: #content.
 	lostChanges ifEmpty: [ ^ self ].
-	lostChangesLog := EpLog newWithStore: (OmMemoryStore withAll: lostChanges).
+	lostChangesLog := EpLog newWithStore: (OmMemoryStore withAllContents: lostChanges).
 
-	browser := EpLogBrowserModel newWithLog: lostChangesLog.
-	browser
-		refresh;
-		title: 'Epicea - Lost Changes Detected';
-		openWithSpec.
+	browser := EpLogBrowserPresenter newWithLog: lostChangesLog.
+	browser refresh.
+	browser withWindowDo: [ :w | w title: 'Epicea - Lost Changes Detected'].
+	browser openWithSpec.
 
 ]

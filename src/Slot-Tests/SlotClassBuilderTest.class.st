@@ -1,14 +1,12 @@
 Class {
 	#name : #SlotClassBuilderTest,
-	#superclass : #TestCase,
+	#superclass : #AbstractEnvironmentTestCase,
 	#instVars : [
 		'aClass',
-		'instance',
 		'anotherClass',
-		'yetAnotherClass',
-		'yetYetAnotherClass'
+		'yetAnotherClass'
 	],
-	#category : #'Slot-Tests'
+	#category : #'Slot-Tests-ClassBuilder'
 }
 
 { #category : #'helpers-names' }
@@ -36,7 +34,7 @@ SlotClassBuilderTest >> assertTraitIntegrity [
 	self assert: TOne traitUsers isHealthy.
 	self assert: TOne classTrait traitUsers isHealthy.
 	self assert: TTwo traitUsers isHealthy.
-	self assert: TTwo classTrait traitUsers isHealthy.
+	self assert: TTwo classTrait traitUsers isHealthy
 ]
 
 { #category : #running }
@@ -45,7 +43,7 @@ SlotClassBuilderTest >> cleanUpTrait: trait [
 	To avoid follow-up failures we reset the trait state here as good as possible."
 	
 	trait traitUsers removeAll.
-	trait classTrait traitUsers removeAll.
+	trait classTrait traitUsers removeAll
 ]
 
 { #category : #'helpers-names' }
@@ -69,7 +67,7 @@ SlotClassBuilderTest >> make: anUnaryBlock [
 			layoutClass: FixedLayout;
 			category: self aCategory.
 		anUnaryBlock value: builder
-		].
+		]
 ]
 
 { #category : #'helpers-building' }
@@ -87,7 +85,7 @@ SlotClassBuilderTest >> makeWithLayout: aClassLayout andSlots: someSlots [
 		builder
 			layoutClass: aClassLayout;
 			slots: someSlots
-		].
+		]
 ]
 
 { #category : #running }
@@ -96,7 +94,7 @@ SlotClassBuilderTest >> tearDown [
 
 	SystemAnnouncer uniqueInstance suspendAllWhile: [
 		{ self aClassName. self anotherClassName. self yetAnotherClassName. self yetYetAnotherClassName } do: [ :each | 
-			Smalltalk globals 
+			testingEnvironment
 				at: each 
 				ifPresent: [ :class | class removeFromSystem ]]].
 
@@ -112,7 +110,7 @@ SlotClassBuilderTest >> tearDown [
 		ifAbsent: [ ^ self ]) 
 		unregister.
 		
-	super tearDown.	
+	super tearDown
 ]
 
 { #category : #'helpers-names' }

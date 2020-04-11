@@ -47,8 +47,8 @@ GLMActionButtonBrick class >> gtExample [
 	<label: 'Action button with icon and dynamic background color'>
 	
 	^ self new
-			action: [ :b | b gtDisplayString logCr ];
-			hoverAction: [ :b | b gtDisplayString logCr ];
+			action: [ :b | b gtDisplayString traceCr ];
+			hoverAction: [ :b | b gtDisplayString traceCr ];
 			icon: GLMUIThemeExtraIcons glamorousGrayCircleEmpty;
 			hoverIcon: GLMUIThemeExtraIcons glamorousRedCircle;
 			selectedColor: Color veryVeryLightGray whiter slightlyLighter;
@@ -94,6 +94,12 @@ GLMActionButtonBrick >> hShrinkWrap [
 						self hoverIcon
 							ifNil: [ self icon width ]
 							ifNotNil: [ self icon width max: self hoverIcon width ] ] ]) ]
+]
+
+{ #category : #'brick-morph-mouse-events' }
+GLMActionButtonBrick >> handlesMouseDown: evt [
+
+	^ clickAction notNil
 ]
 
 { #category : #'action-button-actions' }

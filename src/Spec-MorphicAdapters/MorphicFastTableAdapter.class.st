@@ -4,14 +4,13 @@ I am the adapter used to bridge an FastTablePresenter and a FTPluggableIconListM
 Class {
 	#name : #MorphicFastTableAdapter,
 	#superclass : #MorphicListAdapter,
-	#category : #'Spec-MorphicAdapters'
+	#category : #'Spec-MorphicAdapters-Base'
 }
 
 { #category : #factory }
 MorphicFastTableAdapter >> buildWidget [
-
 	^ FTPluggableIconListMorphAdaptor new
-		   model: self model;
+		  model: self model;
 			hideColumnHeaders;
 			beResizable;
 			columns: self model columns;
@@ -32,7 +31,7 @@ MorphicFastTableAdapter >> buildWidget [
 			setBalloonText: self help; 
 			hResizing: 	#spaceFill;
 			vResizing: 	#spaceFill;
-			selectRowIndex: 1;
+			selectIndex: 1;
 			enableFilter: FTSubstringFilter;			
 			explicitFunction;
 			yourself

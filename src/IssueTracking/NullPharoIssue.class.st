@@ -6,7 +6,7 @@ I am an instance of the Null Object Pattern [1] so that users of PharoIssue do n
 Class {
 	#name : #NullPharoIssue,
 	#superclass : #Object,
-	#category : #IssueTracking
+	#category : #'IssueTracking-Base'
 }
 
 { #category : #accessing }
@@ -14,7 +14,7 @@ NullPharoIssue >> number [
 	^ nil
 ]
 
-{ #category : #acccessing }
+{ #category : #accessing }
 NullPharoIssue >> title [
 	^ nil
 ]

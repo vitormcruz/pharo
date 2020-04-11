@@ -12,13 +12,13 @@ Class {
 		'otherProcess',
 		'otherSession'
 	],
-	#category : #'Debugger-Tests'
+	#category : #'Debugger-Tests-Filter'
 }
 
 { #category : #running }
 FilterTest >> setUp [
 	super setUp.
-	context := [ (Set with: 1 with: 2) collect: [ :e | e * 2 ]. self halt ] asContext.
+	context := [ (Set with: 1 with: 2) collect: [ :e | e * 2 ]] asContext.
 	process := Process 
 		forContext: context 
 		priority: Processor userInterruptPriority.

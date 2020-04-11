@@ -12,6 +12,22 @@ Class {
 	#category : #'Shout-Styling'
 }
 
+{ #category : #'instance creation api' }
+SHStyleElement class >> color: aColor tokens: tokens [ 
+
+	^ self new
+		basicColor: aColor tokens: tokens emphasis: nil;
+		yourself
+]
+
+{ #category : #instanceCreation }
+SHStyleElement class >> emphasis: anEmphasis tokens: someTokens [ 
+	
+	^ self new 
+		basicColor: nil tokens: someTokens emphasis: anEmphasis;
+		yourself
+]
+
 { #category : #settings }
 SHStyleElement class >> settingInputWidgetForNode: aSettingNode [ 
 	| theme |
@@ -32,9 +48,34 @@ SHStyleElement class >> settingInputWidgetForNode: aSettingNode [
 ]
 
 { #category : #'instance creation' }
+SHStyleElement class >> tokens: aCollection [ 
+	
+	^ self new
+		basicColor: nil tokens: aCollection  emphasis: nil;
+		yourself
+]
+
+{ #category : #'instance creation' }
 SHStyleElement class >> withTokens: aCollection [ 
 	^ self new tokens: aCollection;
 		 yourself
+]
+
+{ #category : #comparing }
+SHStyleElement >> = otherObject [
+
+	^ self species = otherObject species
+		and: [ tokens = otherObject tokens
+				and:
+					[ self color = otherObject color and: [ self emphasis = otherObject emphasis ] ] ]
+]
+
+{ #category : #accessing }
+SHStyleElement >> basicColor: aColor tokens: someTokens emphasis: anEmphasis [
+
+	color := aColor.
+	tokens := someTokens.
+	emphasis := anEmphasis.
 ]
 
 { #category : #accessing }
@@ -77,24 +118,31 @@ SHStyleElement >> emphasisAsArray [
 		ifFalse: [self emphasis]
 ]
 
+{ #category : #comparing }
+SHStyleElement >> hash [ 
+
+	^ tokens hash
+]
+
 { #category : #printing }
 SHStyleElement >> printOn: aStream [
+
 	super printOn: aStream.
-	color isNil
-		ifFalse: [ 
-			aStream
+	color
+		ifNotNil: [ aStream
 				nextPutAll: ' color: ';
-				nextPutAll: color printString ].
-	emphasis isNil
-		ifFalse: [ 
-			aStream
+				nextPutAll: color printString
+			].
+	emphasis
+		ifNotNil: [ aStream
 				nextPutAll: ' emphasis: ';
-				nextPutAll: emphasis printString ].
-	tokens isNil
-		ifFalse: [ 
-			aStream
+				nextPutAll: emphasis printString
+			].
+	tokens
+		ifNotNil: [ aStream
 				nextPutAll: ' tokens: ';
-				nextPutAll: tokens printString ]
+				nextPutAll: tokens printString
+			]
 ]
 
 { #category : #styling }

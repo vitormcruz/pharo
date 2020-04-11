@@ -47,7 +47,8 @@ TestRunner class >> menuCommandOn: aBuilder [
 		order: 20;
 		keyText: 'o, u';
 		help: 'Let you run and debug SUnit tests.';
-		icon: self taskbarIcon
+		icon: self taskbarIcon.
+	aBuilder withSeparatorAfter	
 ]
 
 { #category : #'instance creation' }
@@ -71,28 +72,29 @@ TestRunner class >> taskbarIconName [
 	^#testRunnerIcon
 ]
 
-{ #category : #theme }
-TestRunner class >> theme [
-	^ Smalltalk ui theme
-]
-
 { #category : #actions }
 TestRunner >> addDeclaredPackagesUnderTestTo: listOfPackages [ 
-	classesSelected do: 
-		[ :class | 
-		(class class includesSelector: #packageNamesUnderTest) ifTrue: 
-			[ class packageNamesUnderTest do: [ :name | listOfPackages add: (RPackage organizer packageNamed: name) ] ] ]
+	"This method looks for #packageNamesUnderTest method in class side of classes defined packages in listOfPackages.
+	 If a class defines this method, then the coverage tool knows the methods of which packages should be spied to compute the coverage.
+	 Thus, it adds it to #listOfPackages collection provided as parameter."
+	classesSelected
+		select: [ :class | (class class includesSelector: #packageNamesUnderTest) ]
+		thenDo: [ :class | 
+			class packageNamesUnderTest do: [ :name | 
+				listOfPackages add: (RPackage organizer packageNamed: name) ] ]
 ]
 
 { #category : #actions }
 TestRunner >> addMethodsUnderTestIn: listOfPackages to: methods [ 
 	listOfPackages
-		do: [:package | package isNil
-				ifFalse: [package methodReferences
-						do: [:method | ((#(#packageNamesUnderTest #classNamesNotUnderTest ) includes: method selector)
-									or: [method compiledMethod isAbstract
-											or: [method compiledMethod refersToLiteral: #ignoreForCoverage]])
-								ifFalse: [methods add: method]]]]
+		reject: #isNil
+		thenDo: [:package | 
+			package methods
+				reject: [ :method | (#(#packageNamesUnderTest #classNamesNotUnderTest ) includes: method selector)
+												or: [ method  isAbstract
+													or: [ (method  refersToLiteral: #ignoreForCoverage)
+														or: [ method methodClass isTestCase ] ] ] ]
+				thenDo: [:method | methods add: method ] ]
 ]
 
 { #category : #accessing }
@@ -109,8 +111,15 @@ TestRunner >> baseClass [
 
 { #category : #'accessing-classes' }
 TestRunner >> browseClass [
-
-	^ (classes at: classIndex ifAbsent: [ ^ self ]) browse
+	| targetClasses |
+	targetClasses := classesSelected asArray.
+	targetClasses ifEmpty: [ ^ self ].
+	targetClasses size > 1
+		ifTrue: [ (UIManager default
+				confirm: 'Do you want to open all ' , targetClasses size printString , ' classes?')
+				ifTrue: [ targetClasses do: #browse ].
+			^ self ].
+	targetClasses anyOne browse
 ]
 
 { #category : #browsing }
@@ -204,7 +213,7 @@ TestRunner >> buildClassesSearch [
 	^ SearchMorph new
 		model: self;
 		updateSelector: #classSearchUpdate:;
-		ghostText: 'TestCaseA|TestCaseB';
+		ghostText: 'TestCase #1 | TestCase #2';
 		yourself
 ]
 
@@ -238,9 +247,9 @@ TestRunner >> buildFailures [
 TestRunner >> buildPackageSearch [
 
 	^ SearchMorph new
+		ghostText: 'Package #1 | Package #2';
 		model: self;
 		updateSelector: #packageSearchUpdate:;
-		ghostText: 'PackageA|PackageB';
 		yourself
 ]
 
@@ -262,12 +271,14 @@ TestRunner >> buildPackages [
 { #category : #newbuilding }
 TestRunner >> buildStatus [
 
-	^ (PluggableTextFieldMorph
+	^ (RubPluggableTextMorph
 		on: self 
 		text: #statusText 
 		accept: nil 
 		readSelection: nil 
 		menu: #statusMenu:)
+			beReadOnly;
+			beWrapped;
 			textColor: self theme textColorForNonStandardBackground;
 			getColorSelector: #statusColor ; 
 			yourself.
@@ -372,7 +383,7 @@ TestRunner >> classSelected: anInteger [
 TestRunner >> classesFrame [
 	^LayoutFrame new
 		leftFraction: 0.25;
-		topOffset: (Smalltalk ui theme textFont height + 13);
+		topOffset: (self theme textFont height + 13);
 		rightFraction: 0.5;
 		bottomOffset: self buttonHeight negated
 ]
@@ -383,7 +394,7 @@ TestRunner >> classesSearchFrame [
 		leftFraction: 0.25;
 		rightFraction: 0.5;
 		bottomFraction: 0 ;
-		bottomOffset: (StandardFonts defaultFont height + 10)
+		bottomOffset: (StandardFonts defaultFont height + 6)
 ]
 
 { #category : #actions }
@@ -486,14 +497,14 @@ TestRunner >> excludeClassesNotUnderTestFrom: methods [
 							theClass := Smalltalk globals classNamed: className.
 							theClass
 								ifNotNil: [ 
-									theClass methods do: [ :each | methods remove: each methodReference ifAbsent: [  ] ].
-									theClass class methods do: [ :each | methods remove: each methodReference ifAbsent: [  ] ] ] ] ] ]
+									theClass methods do: [ :each | methods remove: each  ifAbsent: [  ] ].
+									theClass class methods do: [ :each | methods remove: each  ifAbsent: [  ] ] ] ] ] ]
 ]
 
 { #category : #processing }
 TestRunner >> executeSuite: aTestSuite as: aBlock [
 " The block defines how to interact with the suite. run with a result or debug "
-	aTestSuite subscribe:TestAnnouncement do: self updateUIBlock.
+	aTestSuite when:TestAnnouncement do: self updateUIBlock.
 	[ aBlock cull: aTestSuite cull: result  ] ensure: [
 		aTestSuite unsubscribe:TestAnnouncement.
 	].
@@ -574,13 +585,12 @@ TestRunner >> fileOutResults [
 
 { #category : #'accessing-classes' }
 TestRunner >> filterClasses [
+
 	| pattern |
-	pattern := UIManager default 
-		request: 'Pattern to select tests:' 
-		initialAnswer: '*'.
-	pattern isNil ifTrue: [ ^ self ].
-	classesSelected := (classes select: [ :each | 
-		pattern match: each name ]) asSet.
+
+	pattern := UIManager default request: 'Pattern to select tests:' initialAnswer: '*'.
+	pattern ifNil: [ ^ self ].
+	classesSelected := ( classes select: [ :each | pattern match: each name ] ) asSet.
 	self
 		changed: #allSelections;
 		changed: #classSelected;
@@ -589,14 +599,16 @@ TestRunner >> filterClasses [
 
 { #category : #'accessing-packages' }
 TestRunner >> filterPackages [
+
 	| pattern |
-	pattern := UIManager default 
-		request: 'Pattern to select package:' 
-		initialAnswer: '*'.
-	pattern isNil ifTrue: [ ^ self ].
-	packagesSelected := (packages 
-		select: [ :each | pattern match: each ]) asSet.
-	self changed: #allSelections; changed: #packageSelected; updateClasses
+
+	pattern := UIManager default request: 'Pattern to select package:' initialAnswer: '*'.
+	pattern ifNil: [ ^ self ].
+	packagesSelected := ( packages select: [ :each | pattern match: each ] ) asSet.
+	self
+		changed: #allSelections;
+		changed: #packageSelected;
+		updateClasses
 ]
 
 { #category : #utilities }
@@ -623,7 +635,7 @@ TestRunner >> findPackages [
 	^ Array streamContents: [ :stream |
 		Smalltalk organization categories do: [ :each |
 			((visible includes: each) 
-					and: [ packagePattern isNil or: [ (packagePattern matchesIn: each) isEmpty not]])
+					and: [ packagePattern isNil or: [ (packagePattern matchesIn: each) isNotEmpty]])
 				ifTrue: [ stream nextPut: each ] ] ].
 ]
 
@@ -751,7 +763,7 @@ TestRunner >> packageMenu: aMenu [
 TestRunner >> packageSearchFrame [
 	^LayoutFrame new
 		rightFraction: 0.25;
-		bottomFraction: 0 offset: (Smalltalk ui theme textFont height + 10)
+		bottomFraction: 0 offset: (self theme textFont height + 6)
 ]
 
 { #category : #building }
@@ -777,7 +789,7 @@ TestRunner >> packageSelected: anInteger [
 TestRunner >> packagesFrame [
 	^LayoutFrame new
 		rightFraction: 0.25;
-		topOffset: (Smalltalk ui theme textFont height + 13);
+		topOffset: (self theme textFont height + 13);
 		bottomOffset: self buttonHeight negated
 ]
 
@@ -795,8 +807,7 @@ TestRunner >> promptForPackages [
 						or: [(package packageName beginsWith: 'Collections')
 								or: [(package packageName beginsWith: 'Exceptions')
 										or: [(package packageName beginsWith: 'SUnit')
-												or: [(package packageName beginsWith: 'System')
-														or: [package packageName includesSubstring: 'Test' caseSensitive: false]]]]]])
+												or: [(package packageName beginsWith: 'System') ]]]]])
 				sort: [:a :b | a packageName < b packageName].
 	choosenpackages := Array
 				with: (UIManager default
@@ -851,14 +862,14 @@ TestRunner >> runCoverage [
 
 { #category : #actions }
 TestRunner >> runErrors [
-	self result instVarNamed: 'errors' put: OrderedCollection new.
+	self result errors: OrderedCollection new.
 	self runTestSuites: self errorTestSuites.
 ]
 
 { #category : #actions }
 TestRunner >> runFailures [
-	self result instVarNamed: 'failures' put: Set new.
-	self runTestSuites: self failureTestSuites.
+	self result failures: Set new.
+	self runTestSuites: self failureTestSuites
 ]
 
 { #category : #actions }
@@ -1097,12 +1108,13 @@ TestRunner >> statusFrame [
 
 { #category : #building }
 TestRunner >> statusHeight [
-	^ self theme textFont height * 4
+	^ self theme textFont height * 3
 ]
 
 { #category : #'accessing-menu' }
 TestRunner >> statusMenu: aMenu [
-	^ aMenu
+	^ aMenu 
+		defaultTarget: self;
 		add: 'History' selector: #showHistoryMenu;
 		add: 'Store result as progress reference' selector: #storeResultIntoTestCases;
 		add: 'Show progress' selector: #showProgress; 
@@ -1141,35 +1153,38 @@ TestRunner >> update [
 
 { #category : #updating }
 TestRunner >> updateClasses [
+
 	| classesForCategories |
+
 	classesForCategories := self findClassesForPackages: packagesSelected.
-	
-	classPattern ifNotNil: [
-		classesForCategories := classesForCategories reject: [:cls| (classPattern matchesIn: cls name) isEmpty ]].
-	
-	classes := classesForCategories asArray
-		sort: [ :a :b | self sortClass: a before: b ].
+
+	classPattern
+		ifNotNil: [ classesForCategories := classesForCategories
+				reject: [ :cls | ( classPattern matchesIn: cls name ) isEmpty ]
+			].
+
+	classes := classesForCategories asArray sort: [ :a :b | self sortClass: a before: b ].
 	classIndex := 0.
-	classesSelected := classesSelected isNil
-		ifTrue: [ classesForCategories ]
-		ifFalse: [ 
-			classesSelected
-				select: [ :each | classesForCategories includes: each ] ].
-	self changed: #classList; 
-		changed: #classSelected; 
-		changed: #hasRunnable.
+	classesSelected := classesSelected
+		ifNil: [ classesForCategories ]
+		ifNotNil: [ classesSelected select: [ :each | classesForCategories includes: each ] ].
+	self
+		changed: #classList;
+		changed: #classSelected;
+		changed: #hasRunnable
 ]
 
 { #category : #updating }
 TestRunner >> updatePackages [
+
 	packages := self findPackages.
 	packageIndex := 0.
-	packagesSelected := packagesSelected isNil
-		ifTrue: [ Set new ]
-		ifFalse: [
-			packagesSelected
-				select: [ :each | packages includes: each ] ].
-	self changed: #packageList; changed: #packageSelected.
+	packagesSelected := packagesSelected
+		ifNil: [ Set new ]
+		ifNotNil: [ packagesSelected select: [ :each | packages includes: each ] ].
+	self
+		changed: #packageList;
+		changed: #packageSelected
 ]
 
 { #category : #updating }

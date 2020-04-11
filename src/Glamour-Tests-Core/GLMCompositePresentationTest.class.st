@@ -9,7 +9,7 @@ GLMCompositePresentationTest >> testAdd [
 	| composite |
 	composite := GLMCompositePresentation new.
 	composite add: GLMPresentation new.
-	self assert: composite isEmpty not.
+	self deny: composite isEmpty.
 	self assert: composite presentations size equals: 1
 ]
 
@@ -103,9 +103,7 @@ GLMCompositePresentationTest >> testCreateTabulator [
 
 { #category : #tests }
 GLMCompositePresentationTest >> testCreation [
-	| composite |
-	composite := GLMCompositePresentation new.
-	self assert: composite isEmpty
+	self assertEmpty: GLMCompositePresentation new
 ]
 
 { #category : #tests }
@@ -123,8 +121,8 @@ GLMCompositePresentationTest >> testPane [
 	presentation := GLMPresentation new.
 	composite add: presentation.
 	composite pane: pane.
-	self assert: composite pane == pane.
-	self assert: composite first pane == pane
+	self assert: composite pane identicalTo: pane.
+	self assert: composite first pane identicalTo: pane
 ]
 
 { #category : #tests }
@@ -134,5 +132,5 @@ GLMCompositePresentationTest >> testStartingPreservesItself [
 	finder := composite finder.
 	composite startOn: 42.
 	self assert: composite pane presentations equals: composite.
-	self assert: composite first == finder
+	self assert: composite first identicalTo: finder
 ]

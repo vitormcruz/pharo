@@ -44,15 +44,12 @@ DockingBarMenuItemMorph >> deselectTimeOut: evt [
 DockingBarMenuItemMorph >> mouseDown: evt [
 	"Handle a mouse down event. Menu items get activated when the mouse is over them."
 
-	evt shiftPressed ifTrue: [^ super mouseDown: evt].  "enable label editing"
+	(evt shiftPressed and: [ self isEditable ])
+		ifTrue: [^ super mouseDown: evt].  "enable label editing"
 	isSelected
-		ifTrue: [
-			evt hand newMouseFocus: nil.
-			owner selectItem: nil event: evt. ]
-		ifFalse: [
-			owner activate: evt. "Redirect to menu for valid transitions"
-			owner selectItem: self event: evt. ]
-
+		ifTrue: [ owner selectItem: nil event: evt ]
+		ifFalse: [ owner activate: evt.	"Redirect to menu for valid transitions"
+			owner selectItem: self event: evt ]
 ]
 
 { #category : #events }

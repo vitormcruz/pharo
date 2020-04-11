@@ -76,7 +76,7 @@ Class {
 		'continue',
 		'home'
 	],
-	#category : #'Collections-Streams'
+	#category : #'Collections-Streams-Base'
 }
 
 { #category : #'instance creation' }
@@ -98,7 +98,7 @@ Generator class >> somePrimes [
 Generator >> atEnd [
 	"Answer whether the receiver can access any more objects."
 
-	^ continue isNil
+	^ continue isNil or: [ continue isDead ]
 ]
 
 { #category : #'open/close' }
@@ -170,7 +170,7 @@ Generator >> printOn: aStream [
 	aStream nextPutAll: self class name; nextPutAll: ' on: '; print: block
 ]
 
-{ #category : #public }
+{ #category : #initialization }
 Generator >> reset [
 	"Reset the generator, i.e., start it over"
 	continue ifNotNil:[continue unwindTo: home].

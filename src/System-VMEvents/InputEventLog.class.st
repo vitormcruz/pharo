@@ -7,7 +7,7 @@ Class {
 	#instVars : [
 		'filterBlock'
 	],
-	#category : #'System-VMEvents'
+	#category : #'System-VMEvents-Base'
 }
 
 { #category : #accessing }
@@ -20,5 +20,5 @@ InputEventLog >> filter: aBlock [
 InputEventLog >> handleEvent: anEvent [
 
 	(filterBlock isNil or: [ filterBlock value: anEvent ])
-		ifTrue: [ anEvent asString logCr ]
+		ifTrue: [ SystemNotification signal: anEvent asString ]
 ]

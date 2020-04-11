@@ -53,8 +53,12 @@ GlobalIdentifierPersistenceTest >> tearDown [
 
 { #category : #tests }
 GlobalIdentifierPersistenceTest >> testDefault [
-	self deny: preferences exists description: 'The preference file should not exists by default.'.
-	self deny: preferences parent exists description: 'The preference directory should not exists by default.'
+	self
+		deny: preferences exists
+		description: 'The preference file should not exist by default.'.
+	self
+		deny: preferences parent exists
+		description: 'The preference directory should not exist by default.'
 ]
 
 { #category : #tests }
@@ -114,6 +118,7 @@ GlobalIdentifierPersistenceTest >> testLoad2 [
 { #category : #tests }
 GlobalIdentifierPersistenceTest >> testLoad3 [
 	"Load stored values."
+
 	| values loaded |
 	persistence checker: self newFalseChecker.
 	values := Dictionary new.
@@ -121,7 +126,7 @@ GlobalIdentifierPersistenceTest >> testLoad3 [
 	persistence save: values.
 	loaded := Dictionary new.
 	persistence load: loaded.
-	self assert: loaded isEmpty.
+	self assertEmpty: loaded
 ]
 
 { #category : #tests }

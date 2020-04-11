@@ -6,10 +6,10 @@ Class {
 	#name : #ClassOrganization,
 	#superclass : #Object,
 	#instVars : [
-		'comment',
 		'commentStamp',
 		'protocolOrganizer',
-		'organizedClass'
+		'organizedClass',
+		'commentRemoteString'
 	],
 	#category : #'Kernel-Protocols'
 }
@@ -48,8 +48,7 @@ ClassOrganization >> allCategories [
 
 { #category : #'backward compatibility' }
 ClassOrganization >> allMethodSelectors [
-	
-	^ protocolOrganizer allMethods
+	^ protocolOrganizer allMethodSelectors
 ]
 
 { #category : #accessing }
@@ -137,11 +136,18 @@ ClassOrganization >> classify: selector under: aProtocolName suppressIfDefault: 
 	oldCategory ifNotNil: [ self notifyOfChangedSelector: selector from: oldCategory to: aProtocolName ]
 ]
 
+{ #category : #cleanup }
+ClassOrganization >> cleanUpCategoriesForClass: aClass [
+	"remove all entries that have no methods"
+	 self allMethodSelectors do: [:each | 
+		(aClass includesSelector: each) ifFalse: [self removeElement: each ]].
+]
+
 { #category : #accessing }
 ClassOrganization >> comment [
 
-	comment ifNil: [^ ''].
-	^ comment string ifNil: ['']
+	commentRemoteString ifNil: [^ ''].
+	^ commentRemoteString string ifNil: ['']
 ]
 
 { #category : #accessing }
@@ -149,7 +155,7 @@ ClassOrganization >> comment: aString [
 	"Store the comment, aString, associated with the object that refers to the 
 	receiver."
 
-	comment := aString isRemoteString
+	commentRemoteString := aString isRemoteString
 		ifTrue: [ aString ]
 		ifFalse: [ 
 			aString isEmptyOrNil
@@ -160,7 +166,7 @@ ClassOrganization >> comment: aString [
 { #category : #'backward compatibility' }
 ClassOrganization >> commentRemoteString [
 
-	^ comment
+	^ commentRemoteString
 ]
 
 { #category : #accessing }
@@ -180,7 +186,7 @@ ClassOrganization >> extensionProtocols [
 
 { #category : #testing }
 ClassOrganization >> hasComment [
-	^ self comment isEmptyOrNil not 
+	^ self commentRemoteString isNotNil
 ]
 
 { #category : #'backward compatibility' }
@@ -369,7 +375,7 @@ ClassOrganization >> renameCategory: oldName toBe: newName [
 
 	self notifyOfChangedCategoryFrom: oldName to: newName.
 	"I need to notify also the selector changes, otherwise RPackage will not notice"
-	(self protocolOrganizer protocolNamed: newName) methods 
+	(self protocolOrganizer protocolNamed: newName) methodSelectors 
 		do: [ :each | self notifyOfChangedSelector: each from: oldName to: newName ]
 ]
 

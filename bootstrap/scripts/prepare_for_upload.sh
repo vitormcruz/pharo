@@ -1,44 +1,43 @@
+#!/usr/bin/env bash
+
 set -o errexit
 set -o pipefail
 set -o nounset
 set -o xtrace
 
-#Get the hash of the built image
-HASH=$(find Pharo7.0-32bit-*.zip | head -n 1 | cut -d '-' -f 3 | cut -d '.' -f 1)
-FULL_IMAGE_NAME32="Pharo7.0-32bit-${HASH}.zip"
-FULL_IMAGE_NAME64="Pharo7.0-64bit-${HASH}.zip"
+ARCH=$1
 
-MINIMAL_IMAGE_NAME32="Pharo7.0-metacello-32bit-${HASH}.zip"
-MINIMAL_IMAGE_NAME64="Pharo7.0-metacello-64bit-${HASH}.zip"
+SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
+. ${SCRIPTS}/envversion.sh
+
+#Get the hash of the built image
+
+PHARO_NAME_PREFIX=$(find . -name "Pharo*.zip" | head -n 1 | cut -d'/' -f 2 | cut -d'-' -f 1-2)
+HASH=$(find . -name "${PHARO_NAME_PREFIX}-${ARCH}bit*.zip" | head -n 1 | cut -d '-' -f 4 | cut -d'.' -f 1)
+FULL_IMAGE_NAME="${PHARO_NAME_PREFIX}-${ARCH}bit-${HASH}.zip"
+
+MINIMAL_IMAGE_NAME="${PHARO_NAME_PREFIX}-metacello-${ARCH}bit-${HASH}.zip"
 BUILD_NUMBER=${BUILD_NUMBER:-nobuildnumber}
 
-cp "${FULL_IMAGE_NAME32}" latest.zip
-cp "${FULL_IMAGE_NAME32}" latest-32.zip
-cp "${FULL_IMAGE_NAME64}" latest-64.zip
-cp "${MINIMAL_IMAGE_NAME32}" latest-minimal.zip
-cp "${MINIMAL_IMAGE_NAME32}" latest-minimal-32.zip
-cp "${MINIMAL_IMAGE_NAME64}" latest-minimal-64.zip
+if [ $(ARCH) == 32]; then
+	cp "${FULL_IMAGE_NAME}" latest.zip
+	cp "${MINIMAL_IMAGE_NAME}" latest-minimal.zip
+fi
 
-for f in Pharo7.0*-32bit-*.zip; do
-	#If it is not base image
-	BITNESS=32bit
-	if [[ "$f" != "${FULL_IMAGE_NAME32}" ]]; then
-		IMAGE_KIND=$(echo "$f" | cut -d '-' -f 2)
-		mv "$f" Pharo-${IMAGE_KIND}-7.0.0-alpha.build.${BUILD_NUMBER}.sha.${HASH}.arch.${BITNESS}.zip;
-	else
-		mv "$f" Pharo-7.0.0-alpha.build.${BUILD_NUMBER}.sha.${HASH}.arch.${BITNESS}.zip;
-	fi
-done
+cp "${FULL_IMAGE_NAME}" latest-${ARCH}.zip
+cp "${MINIMAL_IMAGE_NAME}" latest-minimal-${ARCH}.zip
 
-for f in Pharo7.0*-64bit-*.zip; do
+if [ $(is_release_build) == 1 ]; then
+	cp "${FULL_IMAGE_NAME}" stable-${ARCH}.zip
+fi
+
+for f in ${PHARO_NAME_PREFIX}*-${ARCH}bit-*.zip; do
 	#If it is not base image
-	BITNESS=64bit
-	echo $f
-	echo ${FULL_IMAGE_NAME64}
-	if [[ "$f" != "${FULL_IMAGE_NAME64}" ]]; then
-		IMAGE_KIND=$(echo "$f" | cut -d '-' -f 2)
-		mv "$f" Pharo-${IMAGE_KIND}-7.0.0-alpha.build.${BUILD_NUMBER}.sha.${HASH}.arch.${BITNESS}.zip;
+	BITNESS=${ARCH}bit
+	if [[ "$f" != "${FULL_IMAGE_NAME}" ]]; then
+		IMAGE_KIND=$(echo "$f" | cut -d '-' -f 3)
+		mv "$f" ${PHARO_NAME_PREFIX}-${IMAGE_KIND}.build.${BUILD_NUMBER}.sha.${HASH}.arch.${BITNESS}.zip;
 	else
-		mv "$f" Pharo-7.0.0-alpha.build.${BUILD_NUMBER}.sha.${HASH}.arch.${BITNESS}.zip;
+		mv "$f" ${PHARO_NAME_PREFIX}.build.${BUILD_NUMBER}.sha.${HASH}.arch.${BITNESS}.zip;
 	fi
 done

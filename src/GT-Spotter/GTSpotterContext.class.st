@@ -142,12 +142,6 @@ GTSpotterContext >> equals: aContext [
    ^ self matches: aContext search
 ]
 
-{ #category : #public }
-GTSpotterContext >> exceptionHandler [
-	self flag: 'Bloc -> overrides doesNotUnderstand discarding the current exception context'.
-	^ GTCurrentSpotterExceptionHandler value ifNil: [ self step exceptionHandler ]
-]
-
 { #category : #accessing }
 GTSpotterContext >> filter [
 	^ filter
@@ -158,7 +152,7 @@ GTSpotterContext >> filter: anObject [
 	filter := anObject
 ]
 
-{ #category : #initializing }
+{ #category : #initialization }
 GTSpotterContext >> initialize [
 	super initialize.
 	

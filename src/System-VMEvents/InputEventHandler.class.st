@@ -18,7 +18,7 @@ Class {
 	#pools : [
 		'EventSensorConstants'
 	],
-	#category : #'System-VMEvents'
+	#category : #'System-VMEvents-Base'
 }
 
 { #category : #'events - testing' }
@@ -41,13 +41,13 @@ InputEventHandler >> isKeyboardEvent: eventBuffer [
 	^self class isKeyboardEvent: eventBuffer
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 InputEventHandler >> registerIn: anEventFetcher [
 	eventFetcher := anEventFetcher.
 	eventFetcher registerHandler: self
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 InputEventHandler >> unregister [
 	eventFetcher ifNotNil: [
 			eventFetcher unregisterHandler: self.

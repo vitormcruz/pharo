@@ -26,7 +26,7 @@ Class {
 	#classVars : [
 		'CallbackRegistry'
 	],
-	#category : #UnifiedFFI
+	#category : #'UnifiedFFI-Callouts'
 }
 
 { #category : #private }
@@ -54,7 +54,7 @@ FFICallbackFunctionResolution class >> registerCallback: aCallback as: functionN
 
 ]
 
-{ #category : #accessing }
+{ #category : #initialization }
 FFICallbackFunctionResolution class >> reset [
 	CallbackRegistry := nil
 ]

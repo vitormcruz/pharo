@@ -9,7 +9,7 @@ Class {
 	#instVars : [
 		'widget'
 	],
-	#category : #'Spec-MorphicAdapters'
+	#category : #'Spec-MorphicAdapters-Base'
 }
 
 { #category : #specs }
@@ -17,20 +17,17 @@ WorldPresenter class >> defaultSpec [
 	<spec>
 	
 	self setUpWorld.
-	^ World asSpecAdapter
+	^ self currentWorld asSpecAdapter
 ]
 
 { #category : #private }
 WorldPresenter class >> setUpWorld [
-
-	World changeProportionalLayout.
-	World submorphs do: [:e | e delete ].
- 
- 	(Smalltalk at: #PolymorphSystemSettings) 
+	self currentWorld changeProportionalLayout.
+	self currentWorld submorphs do: [:e | e delete ].
+ 	(self environment at: #PolymorphSystemSettings) 
 		perform: #desktopColor: 
-		with: Smalltalk ui theme backgroundColor.
- 	"((Smalltalk at: #UITheme) perform: #currentSettings) perform: #windowColor: with: (Color r: 0.745 g: 0.745 b: 0.745)."
-	(Smalltalk at: #TaskbarMorph) perform: #showTaskbar: with: false
+		with: self theme backgroundColor.
+	(self environment at: #TaskbarMorph) perform: #showTaskbar: with: false
 ]
 
 { #category : #private }
@@ -58,13 +55,13 @@ WorldPresenter >> addModelIn: container withSpecLayout: aSpec [
 { #category : #factory }
 WorldPresenter >> buildWidget [
 
-	^ World asSpecAdapter
+	^ self currentWorld asSpecAdapter
 ]
 
 { #category : #private }
 WorldPresenter >> defaultInitialExtent [
 	
-	^ World extent
+	^ self currentWorld extent
 ]
 
 { #category : #api }

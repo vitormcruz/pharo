@@ -32,7 +32,7 @@ Class {
 		'argumentGetter',
 		'buttonLabel'
 	],
-	#category : #'System-FileRegistry'
+	#category : #'System-FileRegistry-Base'
 }
 
 { #category : #'instance creation' }
@@ -73,7 +73,7 @@ SimpleServiceEntry >> buttonLabel: aString [
 	"Set the receiver's buttonLabel, to be used on a button in a 
 	tool-pane; this is split out so that a more abbreviated wording 
 	can be deployed if desired"
-	buttonLabel := aString translated
+	buttonLabel := aString
 ]
 
 { #category : #accessing }
@@ -158,10 +158,10 @@ SimpleServiceEntry >> printOn: aStream [
 
 	aStream nextPutAll: self class name; nextPutAll: ': ('.
 	self provider notNil
-		ifTrue: [aStream nextPutAll: provider printString].
+		ifTrue: [ aStream print: provider ].
 	aStream nextPutAll: ' --- '. 
 	self selector notNil
-		ifTrue: [aStream nextPutAll: selector asString].
+		ifTrue: [ aStream print: selector ].
 	aStream nextPut: $)
 
 
@@ -177,7 +177,7 @@ SimpleServiceEntry >> provider [
 SimpleServiceEntry >> provider: anObject label: aString selector: aSymbol [ 
 	"basic initialization message"
 	provider := anObject.
-	label := aString translated.
+	label := aString.
 	selector := aSymbol.
 	stateSelector := #none.
 	description := ''
@@ -191,7 +191,7 @@ SimpleServiceEntry >> provider: anObject label: aString selector: aSymbol descri
 		label: aString
 		selector: aSymbol.
 	stateSelector := #none.
-	description := anotherString translated
+	description := anotherString
 ]
 
 { #category : #extra }

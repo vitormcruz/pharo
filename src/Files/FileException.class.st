@@ -18,7 +18,7 @@ FileException class >> fileName: aFileName [
 { #category : #'instance creation' }
 FileException class >> signalOnFile: aFile [ 
 	
-	(self fileName: aFile name) signal
+	(self fileName: aFile basename) signal
 ]
 
 { #category : #'instance creation' }
@@ -48,9 +48,8 @@ FileException >> isResumable [
 
 { #category : #exceptiondescription }
 FileException >> messageText [
+
 	"Return an exception's message text."
 
-	^ messageText isNil
-		ifTrue: [ fileName printString ]
-		ifFalse: [ messageText ]
+	^ messageText ifNil: [ fileName printString ] ifNotNil: [ messageText ]
 ]

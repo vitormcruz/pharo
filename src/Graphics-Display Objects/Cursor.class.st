@@ -1,10 +1,26 @@
 "
-I am a Form that is a possible appearance for a mouse cursor.  My size is always 16x16, ever since the original implementation on the Alto.
+Description
+--------------------
 
-There are many examples available in the ""current cursor"" category of class methods.  For example, ""Cursor normal"" and ""Cursor wait"".  For example:
+I am a Form that is a possible appearance for a mouse cursor. My size is always 16x16, ever since the original implementation on the Alto.
 
-	Cursor wait show
+There are many examples available in the ""constants"" category of class methods. For example, ""Cursor normal"" and ""Cursor wait"". 
 
+Public API and Key Messages
+--------------------
+
+- #showWhile: 	When send to a cursor, it will use the cursor as the current cursor during the block execution
+
+Examples
+--------------------
+
+	""Use the wait cursor for 3 seconds""
+	Cursor wait showWhile: [ 3 second wait ].
+	
+	""Morph implements methods to help with the management of cursors via the hand morph. This is useful when you want to change the cursor and revert the change in different places instead of changinig it during the execution of a block.""
+	self currentHand showTemporaryCursor: Cursor wait. 
+	self flag: #doSomethingHere.
+	self currentHand showTemporaryCursor: nil. ""Reset the cursor to the previous one""
 
 "
 Class {
@@ -16,7 +32,6 @@ Class {
 		'BottomRightCursor',
 		'CornerCursor',
 		'CrossHairCursor',
-		'CurrentCursor',
 		'DownCursor',
 		'MarkerCursor',
 		'MenuCursor',
@@ -40,7 +55,7 @@ Class {
 		'WriteCursor',
 		'XeqCursor'
 	],
-	#category : #'Graphics-Display Objects'
+	#category : #'Graphics-Display Objects-Cursors'
 }
 
 { #category : #constants }
@@ -110,29 +125,6 @@ Cursor class >> crossHair [
 	"Answer the instance of me that is the shape of a cross."
 
 	^CrossHairCursor
-]
-
-{ #category : #'current cursor' }
-Cursor class >> currentCursor [
-	"Answer the instance of Cursor that is the one currently displayed."
-
-	^ ActiveHand ifNotNil: [ActiveHand world currentCursor] ifNil: [ CurrentCursor ]
-]
-
-{ #category : #'current cursor' }
-Cursor class >> currentCursor: aCursor [ 
-	"Make the instance of cursor, aCursor, be the current cursor. Display it."
-
-	ActiveHand ifNotNil: [
-		ActiveHand world currentCursor: aCursor.
-		ActiveHand world isCursorOwner ifTrue: [
-			aCursor beCursor
-		].
-		^ self
-	].
-
-	CurrentCursor := aCursor.
-	aCursor beCursor
 ]
 
 { #category : #constants }
@@ -866,7 +858,6 @@ Cursor class >> new [
 		fromArray: (Array new: 16 withAll: 0)
 		offset: 0 @ 0
 
-	"Cursor new bitEdit show"
 ]
 
 { #category : #constants }
@@ -965,11 +956,6 @@ Cursor class >> square [
 	^SquareCursor
 ]
 
-{ #category : #'system startup' }
-Cursor class >> startUp [
-	self currentCursor: self currentCursor
-]
-
 { #category : #constants }
 Cursor class >> target [
 	"Answer the instance of me that is the shape of a gunsight."
@@ -1024,6 +1010,11 @@ Cursor class >> write [
 	^WriteCursor
 ]
 
+{ #category : #primitives }
+Cursor >> activateInCursorOwner: aCursorOwner [
+	^ self beCursor
+]
+
 { #category : #converting }
 Cursor >> asCursorForm [
 	| form |
@@ -1034,31 +1025,27 @@ Cursor >> asCursorForm [
 
 { #category : #primitives }
 Cursor >> beCursor [
-	"TODO: This is the place for redirecting the be cursor primitive into OSWindow"
 	self primitiveBeCursor
 ]
 
 { #category : #primitives }
 Cursor >> beCursorWithMask: maskForm [
-	"TODO: This is the place for redirecting the be cursor primitive into OSWindow"
 	self primitiveBeCursorWithMask: maskForm
 ]
 
 { #category : #updating }
 Cursor >> changed: aParameter [
 	"overriden to reinstall the cursor if it is the active cursor, in case the appearance has changed.  (Is this used anywhere?  Do cursors really change in place these days?)"
-	self == CurrentCursor ifTrue: [self beCursor].
+	self flag: 'FIXME: Please, check on whether is this really needed'.
+	
+	"Removed for Morphic World specific cursor."
+	"self == CurrentCursor ifTrue: [self beCursor]."
 	super changed: aParameter
 ]
 
 { #category : #testing }
 Cursor >> hasMask [
 	^false
-]
-
-{ #category : #testing }
-Cursor >> isCurrent [
-	^ self class currentCursor == self 
 ]
 
 { #category : #primitives }
@@ -1095,15 +1082,14 @@ Cursor >> printOn: aStream [
 { #category : #displaying }
 Cursor >> show [
 	"Make the hardware's mouse cursor look like the receiver"
-
-	self class currentCursor: self
+	self currentWorld activeHand currentCursor: self
 ]
 
 { #category : #displaying }
 Cursor >> showWhile: aBlock [ 
 	"While evaluating the argument, aBlock, make the receiver be the cursor shape."
 	| oldcursor |
-	oldcursor := self class currentCursor.
+	oldcursor := self currentWorld currentCursor.
 	self show.
 	^aBlock ensure: [oldcursor show]
 

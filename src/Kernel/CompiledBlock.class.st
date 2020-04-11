@@ -22,6 +22,16 @@ CompiledBlock >> hasMethodReturn [
 		 self encoderClass methodReturnBytecodes includes: byte]
 ]
 
+{ #category : #testing }
+CompiledBlock >> hasPragmaNamed: aSymbol [
+	^ false
+]
+
+{ #category : #testing }
+CompiledBlock >> hasSourceCode [
+	^ self method hasSourceCode
+]
+
 { #category : #comparing }
 CompiledBlock >> hash [
 	"CompiledMethod>>#= compares code, i.e. same literals and same bytecode.
@@ -44,6 +54,11 @@ CompiledBlock >> hash [
 ]
 
 { #category : #testing }
+CompiledBlock >> isCompiledBlock [
+	^ true
+]
+
+{ #category : #testing }
 CompiledBlock >> isTestMethod [
 	^ false
 ]
@@ -63,6 +78,12 @@ CompiledBlock >> methodClass [
 { #category : #accessing }
 CompiledBlock >> methodNode [
 	^ self outerCode methodNode
+]
+
+{ #category : #accessing }
+CompiledBlock >> numberOfReservedLiterals [
+
+	^ 1
 ]
 
 { #category : #accessing }
@@ -126,4 +147,9 @@ CompiledBlock >> selector [
 { #category : #accessing }
 CompiledBlock >> sourceCode [
 	^ self outerCode sourceCode
+]
+
+{ #category : #'source code management' }
+CompiledBlock >> sourcePointer [
+	^self outerCode sourcePointer
 ]

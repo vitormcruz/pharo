@@ -18,6 +18,14 @@ FFIExternalString class >> externalTypeAlignment [
 	^ self pointerSize
 ]
 
+{ #category : #'emitting code' }
+FFIExternalString >> basicEmitArgument: aBuilder context: aContext inCallout: aCallout [
+
+	self loader 
+		emitArgument: aBuilder 
+		context: aContext
+]
+
 { #category : #private }
 FFIExternalString >> basicHandle: aHandle at: index [
 	| data |
@@ -34,8 +42,20 @@ FFIExternalString >> basicHandle: aHandle at: index put: value [
 ]
 
 { #category : #accessing }
+FFIExternalString >> defaultReturnOnError [
+
+	^ ''
+]
+
+{ #category : #accessing }
 FFIExternalString >> externalTypeSize [
 	^ self pointerSize "i am live and die as a pointer (a char*)"
+]
+
+{ #category : #callbacks }
+FFIExternalString >> extractFromCallbackOn: aFFICallbackArgumentReader [ 
+	
+	aFFICallbackArgumentReader extractExternalString: self
 ]
 
 { #category : #'stack parameter classification' }

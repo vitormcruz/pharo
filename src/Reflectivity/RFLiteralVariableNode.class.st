@@ -14,7 +14,7 @@ Class {
 
 { #category : #'instance creation' }
 RFLiteralVariableNode class >> value: anObject [
-	^self new binding: #RFMetaBinding -> anObject
+	^self new binding: (AdditionalBinding key: #RFMetaBinding value: anObject)
 ]
 
 { #category : #visiting }
@@ -30,11 +30,6 @@ RFLiteralVariableNode >> binding [
 { #category : #accessing }
 RFLiteralVariableNode >> binding: anAssocation [
 	binding := anAssocation
-]
-
-{ #category : #testing }
-RFLiteralVariableNode >> isFaulty [
-	^false
 ]
 
 { #category : #accessing }

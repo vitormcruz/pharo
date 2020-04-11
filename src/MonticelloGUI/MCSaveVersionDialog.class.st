@@ -11,7 +11,7 @@ Class {
 	#classVars : [
 		'PreviousMessages'
 	],
-	#category : #MonticelloGUI
+	#category : #'MonticelloGUI-Tools'
 }
 
 { #category : #history }
@@ -123,6 +123,12 @@ MCSaveVersionDialog >> setDefaultFocus [
 	(self findTextMorph: #logMessage)
 		textArea selectAll;
 		takeKeyboardFocus
+]
+
+{ #category : #'morphic ui' }
+MCSaveVersionDialog >> textMorph: aMorph [
+	"here the text field is not used for code editing"
+	^(super textMorph: aMorph) beForPlainText
 ]
 
 { #category : #accessing }

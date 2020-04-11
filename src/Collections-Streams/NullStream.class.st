@@ -10,7 +10,7 @@ Class {
 		'position',
 		'lastElement'
 	],
-	#category : #'Collections-Streams'
+	#category : #'Collections-Streams-Base'
 }
 
 { #category : #'instance creation' }
@@ -240,7 +240,7 @@ NullStream >> readInto: collection startingAt: startIndex count: n [
 	^ n
 ]
 
-{ #category : #positioning }
+{ #category : #initialization }
 NullStream >> reset [
 	"Set the receiver's position to the beginning of the sequence of objects."
 

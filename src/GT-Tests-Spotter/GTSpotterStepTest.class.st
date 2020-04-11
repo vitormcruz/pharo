@@ -17,15 +17,15 @@ Class {
 GTSpotterStepTest >> assertCandidateMatching: aBlock [
 	| candidates |
 	self assert: currentProcessor notNil.
-	
+
 	candidates := currentProcessor allFilteredCandidates select: [ :each | aBlock value: each ].
-	
-	self deny: candidates isEmpty.
-	self assert: candidates size = 1.
-	
+
+	self denyEmpty: candidates.
+	self assert: candidates size equals: 1.
+
 	currentCandidate := candidates anyOne.
 	self assert: currentCandidate notNil.
-	
+
 	^ currentCandidate
 ]
 
@@ -43,27 +43,27 @@ GTSpotterStepTest >> assertDiveIn: aSelector [
 
 	" get and validate the link "
 	link := spotter currentStep candidates getCandidateLink: currentCandidate in: currentProcessor.
-	
+
 	self assert: link notNil.
-	self assert: link candidate == currentCandidate.
-	self assert: link processor == currentProcessor.
+	self assert: link candidate identicalTo: currentCandidate.
+	self assert: link processor identicalTo: currentProcessor.
 
 	" set the selection - like the UI would do "
 	self shouldnt: [ spotter currentStep select: link ] raise: Error.
-	self assert: spotter currentStep selected == link.
-	
+	self assert: spotter currentStep selected identicalTo: link.
+
 	" perform the dive operation - like the UI would do "
 	self shouldnt: [ spotter currentStep perform: aSelector ] raise: Error.
 	currentStep := spotter currentStep.
 	currentProcessor := currentCandidate := previousContext := currentContext := nil.
-	
-	self deny: spotter steps isEmpty .
+
+	self denyEmpty: spotter steps.
 	self assert: spotter steps size > previousStepsSize.
-	self assert: spotter steps size = (previousStepsSize + 1).
-	
-	self deny: previousStep = currentStep.
-	self deny: previousStep = spotter currentStep.
-	self assert: currentStep = spotter currentStep.
+	self assert: spotter steps size equals: previousStepsSize + 1.
+
+	self deny: previousStep equals: currentStep.
+	self deny: previousStep equals: spotter currentStep.
+	self assert: currentStep equals: spotter currentStep
 ]
 
 { #category : #convenience }
@@ -82,13 +82,13 @@ GTSpotterStepTest >> assertDiveOut [
 	self shouldnt: [ spotter popStep ] raise: Error.
 	currentStep := spotter currentStep.
 	currentProcessor := currentCandidate := previousContext := currentContext := nil.
-	
+
 	self assert: spotter steps size < previousStepsSize.
-	self assert: spotter steps size = (previousStepsSize - 1).
-	
+	self assert: spotter steps size equals: previousStepsSize - 1.
+
 	self deny: (previousStepsSize > 1 and: [ previousStep = currentStep ]).
 	self deny: (previousStepsSize > 1 and: [ previousStep = spotter currentStep ]).
-	self assert: currentStep = spotter currentStep.
+	self assert: currentStep equals: spotter currentStep
 ]
 
 { #category : #convenience }
@@ -120,34 +120,34 @@ GTSpotterStepTest >> assertProcessorIncludesAll: aCollection [
 GTSpotterStepTest >> assertProcessorMatching: aBlock [
 	| processors |
 	processors := spotter currentStep processors select: [ :each | aBlock value: each ].
-	
+
 	self assert: processors notEmpty.
-	self assert: processors size = 1.
-	
+	self assert: processors size equals: 1.
+
 	currentProcessor := processors anyOne.
 	self assert: currentProcessor notNil.
-	
+
 	^ currentProcessor
 ]
 
 { #category : #convenience }
 GTSpotterStepTest >> assertProcessorNotEmpty [
 	self assert: currentProcessor notNil.
-	self deny: currentProcessor allFilteredCandidates isEmpty.
+	self deny: currentProcessor allFilteredCandidates isEmpty
 ]
 
 { #category : #convenience }
 GTSpotterStepTest >> assertSearch: aString [
-
 	" assert conditions before search "
+
 	self deny: (spotter currentStep context matches: aString).
-	
+
 	self basicSearch: aString.
-		
+
 	" assert conditions after search "
-	self deny: previousContext == currentContext.
-	self deny: previousContext == spotter currentStep context.
-	self assert: spotter currentStep context text asString = aString asString
+	self deny: previousContext identicalTo: currentContext.
+	self deny: previousContext identicalTo: spotter currentStep context.
+	self assert: spotter currentStep context text asString equals: aString asString
 ]
 
 { #category : #convenience }
@@ -156,23 +156,24 @@ GTSpotterStepTest >> assortCandidatesSize: aNumber [
 
 { #category : #private }
 GTSpotterStepTest >> basicSearch: aString [
-	
 	" assert conditions before search "
-	self flag: '#currentStep should be made more stable. This will fail for an empty, uninitialized spotter / but after multiple diveIn/diveOut it will be ok - inconsistent'.
-	self assert: spotter currentStep == spotter currentStep.
-	
+
+	self
+		flag: '#currentStep should be made more stable. This will fail for an empty, uninitialized spotter / but after multiple diveIn/diveOut it will be ok - inconsistent'.
+	self assert: spotter currentStep identicalTo: spotter currentStep.
+
 	" backup preconditions "
 	previousStep := spotter currentStep.
 	previousContext := previousStep context.
 
 	self shouldnt: [ spotter setText: aString from: nil ] raise: Error.
-	
+
 	" backup postconditions "
 	currentStep := spotter currentStep.
 	currentContext := spotter currentStep context.
-	
+
 	" assert conditions after search "
-	self assert: previousStep == currentStep.
+	self assert: previousStep identicalTo: currentStep
 ]
 
 { #category : #'private-navigation' }
@@ -183,15 +184,15 @@ GTSpotterStepTest >> defaultPackages [
 { #category : #convenience }
 GTSpotterStepTest >> denySearch: aString [
 	" if the new input is the same as before we do not expect a new search to be triggered . Therefore the context should not change "
-	
+
 	"self assert: (spotter currentStep context matches: aStringOrText)."
-	
+
 	self basicSearch: aString.
-	
+
 	" assert conditions after search "
-	self assert: previousContext == currentContext.
-	self assert: previousContext == spotter currentStep context.
-	self assert: (previousContext matches: aString).
+	self assert: previousContext identicalTo: currentContext.
+	self assert: previousContext identicalTo: spotter currentStep context.
+	self assert: (previousContext matches: aString)
 ]
 
 { #category : #'private-navigation' }
@@ -214,7 +215,7 @@ GTSpotterStepTest >> implementors: aSelector inPackages: anArray [
 { #category : #'private-navigation' }
 GTSpotterStepTest >> pragma: aSelector of: aCompiledMethod [
 	^ aCompiledMethod pragmas 
-		detect: [ :each | each keyword = aSelector ] 
+		detect: [ :each | each selector = aSelector ] 
 		ifNone: [ nil ]
 ]
 
@@ -233,7 +234,7 @@ GTSpotterStepTest >> pragmas: aSelector inPackages: anArray [
 				package methods do: [ :cm | 
 					cm methodClass isTrait ifFalse: [ 
 						(cm pragmas 
-							detect: [ :p | p keyword = aSelector ] 
+							detect: [ :p | p selector = aSelector ] 
 							ifNone: [ nil ]) ifNotNil: [ :p | pragmas add: p ] ] ] ] ] ].
 	^ pragmas
 ]
@@ -290,140 +291,43 @@ GTSpotterStepTest >> tearDown [
 
 { #category : #tests }
 GTSpotterStepTest >> testContextChange [
-	
 	self assertSearch: 'a'.
-	self assert: previousContext text = ''.
+	self assert: previousContext text equals: ''.
 	self denySearch: 'a'.
-	
+
 	self assertSearch: 'ab'.
-	self assert: previousContext text = 'a'.
+	self assert: previousContext text equals: 'a'.
 	self denySearch: 'ab'.
-	
+
 	self assertSearch: 'abc'.
-	self assert: previousContext text = 'ab'.
+	self assert: previousContext text equals: 'ab'.
 	self denySearch: 'abc'.
-	
+
 	self assertSearch: 'ab'.
-	self assert: previousContext text = 'abc'.
+	self assert: previousContext text equals: 'abc'.
 	self denySearch: 'ab'.
-	
+
 	self assertSearch: 'a'.
-	self assert: previousContext text = 'ab'.
+	self assert: previousContext text equals: 'ab'.
 	self denySearch: 'a'.
-	
+
 	self assertSearch: ''.
-	self assert: previousContext text = 'a'.
-	
-	self flag: 'because the decision for triggering a search is made in multiple places, an empty input will always trigger a search - this should be simplified - one place to make the decision GTSpotter>>#setText:from: <-> #Context>>#matches:'.
+	self assert: previousContext text equals: 'a'.
+
+	self
+		flag:
+			'because the decision for triggering a search is made in multiple places, an empty input will always trigger a search - this should be simplified - one place to make the decision GTSpotter>>#setText:from: <-> #Context>>#matches:'.
 	self assertSearch: ''.
-	self assertSearch: ''.
-	
+	self assertSearch: ''
 ]
 
 { #category : #tests }
 GTSpotterStepTest >> testMock [
 	" test the mock setup - the mock objects do exactly the same as the original implementation, but we replace the asynchronous implementation by a synchronous "
-	self assert: spotter class = GTMockSpotter.
-	self assert: spotter newStep class = GTMockSpotterStep.
-	self assert: spotter newStep asyncTask class = GTMockSpotterTask.
-]
 
-{ #category : #tests }
-GTSpotterStepTest >> testProcessorForClasses [
-	self assertSearch: 'Collection'.
-	self assertProcessorByTitle: 'Classes'.
-	self assertProcessorNotEmpty.
-	self assertProcessorIncludesAll: (self subclassesOf: Collection 
-														filterBySubstring: 'Collection' 
-														inPackage: 'Collections-Abstract')
-]
-
-{ #category : #tests }
-GTSpotterStepTest >> testProcessorForImplementors [
-	| partialImplementors |
-	self assertSearch: 'do:'.
-	self assertProcessorByTitle: 'Implementors'.
-	self assertProcessorNotEmpty.
-	
-	partialImplementors := (SystemNavigation default allImplementorsOf: #do:) collect: [ :rm | rm compiledMethod ].
-	self assertProcessorIncludesAll: partialImplementors.
-	self assert: currentProcessor allFilteredCandidates size > partialImplementors size.
-	
-	self assertSearch: 'size'.
-	self assertProcessorByTitle: 'Implementors'.
-	self assertProcessorNotEmpty.
-	
-	partialImplementors := (SystemNavigation default allImplementorsOf: #size) collect: [ :rm | rm compiledMethod ].
-	self assertProcessorIncludesAll: partialImplementors.
-	self assert: currentProcessor allFilteredCandidates size > partialImplementors size.
-]
-
-{ #category : #tests }
-GTSpotterStepTest >> testProcessorForPragmas [
-	self assertSearch: 'spotterOrder:'.
-	self assertProcessorByTitle: 'Pragmas'.
-	self assertProcessorNotEmpty.
-	self assert: currentProcessor allFilteredCandidates size >= 1.
-	self assertCandidateMatching: [ :each | each class = PragmaType and: [ each keyword = #spotterOrder: ] ]  
-]
-
-{ #category : #tests }
-GTSpotterStepTest >> testProcessorForPragmasThenDiveIn [
-	self testProcessorForPragmas.
-	
-	self assertDiveIn.
-	
-	self assertSearch: ''.
-
-	self assertProcessorByTitle: 'Pragmas'.
-	self assertProcessorNotEmpty.
-	self assertProcessorIncludesAll: (self pragmas: #spotterOrder:).
-		
-	self assertProcessorByTitle: 'Users'.
-	self assertProcessorNotEmpty.
-	self assertProcessorIncludesAll: (self users: #spotterOrder:).
-	
-	self assertSearch: 'spotterForClassesFor:'.
-	
-	self assertProcessorByTitle: 'Pragmas'.
-	self assertProcessorNotEmpty.
-	self assertProcessorIncludes: (self pragma: #spotterOrder: of: (GTSpotter >> #spotterForClassesFor:)).
-	
-	self assertSearch: 'extensionsPragma'.
-	
-	self assertProcessorByTitle: 'Users'.
-	self assertProcessorNotEmpty.
-	self assertProcessorIncludes: (GTSpotter class >> #extensionsPragma).
-	
-	self assertSearch: 'spotterForF'.
-	
-	self assertProcessorByTitle: 'Pragmas'.
-	self assertProcessorNotEmpty.
-	self assertProcessorIncludes: (self pragma: #spotterOrder: of: (GTSpotter >> #spotterForFilesFor:)).
-	self assertProcessorIncludes: (self pragma: #spotterOrder: of: (FileReference lookupSelector: #spotterForFilesFor:)).
-	
-	self assertDiveOut.
-	
-	self assert: currentStep context text = 'spotterOrder:'
-]
-
-{ #category : #tests }
-GTSpotterStepTest >> testProcessorForPragmasThenDiveInCategory [
-	self testProcessorForPragmas.
-	
-	" diving into the category (without search) just reveals what was shown before - so this can be repeated infinitely and should return the same result each time "
-	4 timesRepeat: [
-		self assertDiveInCategory.
-		self assertProcessorByTitle: 'Pragmas'.
-		self assertProcessorNotEmpty.
-		self assert: currentProcessor allFilteredCandidates size >= 1.
-		self assertCandidateMatching: [ :each | each class = PragmaType and: [ each keyword = #spotterOrder: ] ]  ].
-	
-	4 timesRepeat: [
-		self assert: currentStep context text = ''.
-		self assertDiveOut ].
-	
-	self assert: currentStep context text = 'spotterOrder:'
+	self assert: spotter class equals: GTMockSpotter.
+	self assert: spotter newStep class equals: GTMockSpotterStep.
+	self assert: spotter newStep asyncTask class equals: GTMockSpotterTask
 ]
 
 { #category : #'private-navigation' }

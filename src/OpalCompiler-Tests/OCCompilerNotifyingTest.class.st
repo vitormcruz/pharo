@@ -42,11 +42,11 @@ Class {
 
 { #category : #private }
 OCCompilerNotifyingTest >> enumerateAllSelections [
-	1 to: self numberOfSelections do: [:n |
-		self assert: (self evaluateSelectionNumber: n) == failure.
-		self assert: morph editor selection asString equals: (expectedErrors at: n).  
+	1 to: self numberOfSelections do: [ :n | 
+		self assert: (self evaluateSelectionNumber: n) identicalTo: failure.
+		self assert: morph editor selection asString equals: (expectedErrors at: n).
 		self assert: (expectedErrorPositions at: n) equals: morph editor startIndex.
-		morph editor cut].
+		morph editor cut ]
 ]
 
 { #category : #private }
@@ -74,7 +74,7 @@ OCCompilerNotifyingTest >> evaluateSelectionNumber: n [
 	
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 OCCompilerNotifyingTest >> initializeTextWithoutError [
 	"Remove the errors from the text to be compiled and answer the text without errors.
 	Meanwhile, collect the expected error messages and their expected position."
@@ -106,7 +106,7 @@ OCCompilerNotifyingTest >> setUp [
 	failure := Object new.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 OCCompilerNotifyingTest >> setUpForErrorsIn: aTextWithErrorsEnclosedInBackQuote [
   "Extract the expectedErrors, the expectedErrorPositions and set up a TextMorph containing the text without errors.
   each section separated by % in aTextWithErrorsEnclosedInBackQuote will be evaluated separately.

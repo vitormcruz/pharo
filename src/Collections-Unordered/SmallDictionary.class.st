@@ -55,7 +55,7 @@ Class {
 		'values',
 		'size'
 	],
-	#category : #'Collections-Unordered'
+	#category : #'Collections-Unordered-Dictionaries'
 }
 
 { #category : #'instance creation' }
@@ -177,6 +177,16 @@ SmallDictionary >> associationAt: key ifPresent: aBlock [
 ]
 
 { #category : #accessing }
+SmallDictionary >> associationAt: key ifPresent: aPresentBlock ifAbsent: anAbsentBlock [
+	"Lookup the given key in the receiver. If it is present, answer the
+	value of evaluating the first block optionally with the association for the key.
+	Otherwise answer the value of the second block."
+
+	self associationAt: key ifPresent: [:assoc | ^ aPresentBlock cull: assoc].
+	^ anAbsentBlock value
+]
+
+{ #category : #accessing }
 SmallDictionary >> associations [
 	"Answer a collection containing associations for the receiver.
 	Suggested by l. Uzonyi
@@ -224,13 +234,10 @@ SmallDictionary >> at: firstKey at: secondKey [
 	"Return the object stored in the second dictionary at secondKey. The second dictionary is accessed via the key firstKey."
 
 	"
-	[
-	| d |
-	d := Dictionary new.
-	d at: #top at: #below1 put: 1.
-	d at: #top at: #below1 put: 2.
-	d at: #top at: #below1.
-	] value
+	(Dictionary new
+		at: #top at: #below1 put: 1;
+		at: #top at: #below1 put: 2;
+		at: #top at: #below1)
 	>>>
 	2"
 
@@ -344,6 +351,26 @@ SmallDictionary >> at: key put: value [
 		ifFalse: [values at: index put: value]
 		ifTrue: [self privateAt: key put: value]	
 	
+]
+
+{ #category : #accessing }
+SmallDictionary >> at: key update: updateBlock [ 
+	"I am used to update the value at a given key, or if the key does not exist, to throw an error"
+	self at: key update: updateBlock initial: [ self errorKeyNotFound: key ].
+]
+
+{ #category : #accessing }
+SmallDictionary >> at: key update: updateBlock initial: initBlocktOrValue [
+	"I am used to update the value at a given key. The updateBlock is passed 
+	the existing value, and the result of the block is stored back.
+	If the key does not exist, store the value of the initBlocktOrValue.
+	initBlocktOrValue can be a block in case the initial value is expencive to compute.
+	I use findElementOrNil: to avoid looking up the key twice."
+	| index |
+	index := self findIndexForKey: key.
+	(index = 0)
+		ifTrue:  [ self at: key put: initBlocktOrValue value]
+		ifFalse: [ (values at: index) in: [ :val | values at: index put: (updateBlock value: val) ] ]
 ]
 
 { #category : #accessing }
@@ -705,11 +732,6 @@ SmallDictionary >> removeKey: key ifAbsent: aBlock [
 	^value
 ]
 
-{ #category : #removing }
-SmallDictionary >> removeUnreferencedKeys [
-	^ self unreferencedKeys do: [ :key | self removeKey: key ]
-]
-
 { #category : #enumerating }
 SmallDictionary >> select: aBlock [ 
 	"Evaluate aBlock with each of my values as the argument. Collect into a
@@ -751,20 +773,12 @@ SmallDictionary >> storeOn: aStream [
 	aStream nextPut: $)
 ]
 
-{ #category : #private }
-SmallDictionary >> unreferencedKeys [
-	^ Dictionary unreferencedKeysIn: self
-]
-
 { #category : #accessing }
 SmallDictionary >> values [
 	"Answer a Collection containing the receiver's values."
-	"^ values copyFrom: 1 to: size."
-	
-| out |
-	out := (Array new: self size) writeStream.
-	self valuesDo: [:value | out nextPut: value].
-	^ out contents
+	^Array 
+		new: self size 
+		streamContents: [ :out | self valuesDo: [:value | out nextPut: value]]
 ]
 
 { #category : #enumerating }

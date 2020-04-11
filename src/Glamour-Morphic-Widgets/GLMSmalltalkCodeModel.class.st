@@ -49,11 +49,6 @@ GLMSmalltalkCodeModel >> doItReceiver [
 	^ self glamourPresentation doItReceiver 
 ]
 
-{ #category : #completion }
-GLMSmalltalkCodeModel >> guessTypeForName: aString [ 
-	^ nil
-]
-
 { #category : #accessing }
 GLMSmalltalkCodeModel >> hasBindingOf: aSymbol [
 	^ self variableBindings includesKey: aSymbol
@@ -82,11 +77,6 @@ GLMSmalltalkCodeModel >> highlightSmalltalkContext [
 { #category : #accessing }
 GLMSmalltalkCodeModel >> highlightSmalltalkContext: anObject [
 	highlightSmalltalkContext := anObject
-]
-
-{ #category : #completion }
-GLMSmalltalkCodeModel >> isCodeCompletionAllowed [ 
-	^true
 ]
 
 { #category : #accessing }

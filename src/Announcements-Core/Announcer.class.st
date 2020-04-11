@@ -1,7 +1,5 @@
 "
 The implementation uses a threadsafe subscription registry, in the sense that registering, unregistering, and announcing from an announcer at the same time in different threads should never cause failures.
-
-For security reasons, registry is kept private, and has no accessor like in other implementations
 "
 Class {
 	#name : #Announcer,
@@ -26,6 +24,13 @@ Announcer >> announce: anAnnouncement [
 { #category : #private }
 Announcer >> basicSubscribe: subscription [
 	^ registry add: subscription
+]
+
+{ #category : #testing }
+Announcer >> handleSubscriberClass: eventClass [
+	^ self subscriptions 
+		ifNil: [ false ]
+		ifNotNil: [:subscriptions | subscriptions handleSubscriberClass: eventClass]
 ]
 
 { #category : #testing }
@@ -61,27 +66,37 @@ Announcer >> replace: subscription with: newOne [
 
 ]
 
-{ #category : #subscription }
+{ #category : #deprecated }
 Announcer >> subscribe: anAnnouncementClass do: aValuable [ 
 	"Declare that when anAnnouncementClass is raised, aValuable is executed."
-	^ registry add: (
-		AnnouncementSubscription new 
-			announcer: self;
-			announcementClass: anAnnouncementClass;
-			valuable: aValuable)
+	
+	self
+		deprecated: 'Please use #when:do: instead'
+		transformWith: '`@receiver subscribe: `@statements1 do: `@statements2' 
+						-> '`@receiver when: `@statements1 do: `@statements2'.
+	^ self when: anAnnouncementClass do: aValuable
 ]
 
-{ #category : #subscription }
+{ #category : #deprecated }
 Announcer >> subscribe: anAnnouncementClass send: aSelector to: anObject [
 	"Declare that when anAnnouncementClass is raised, anObject should receive the message aSelector."
-	
-	^ self subscribe: anAnnouncementClass do: (MessageSend receiver: anObject selector: aSelector)
+	self
+		deprecated: 'Please use #when:send:to: instead'
+		transformWith: '`@receiver subscribe: `@statements1 send: `@statements2 to: `@anObject' 
+						-> '`@receiver when: `@statements1 send: `@statements2 to: `@anObject'.
+	^ self when: anAnnouncementClass do: (MessageSend receiver: anObject selector: aSelector)
 ]
 
 { #category : #accessing }
 Announcer >> subscriptions [
 
 	^ registry
+]
+
+{ #category : #accessing }
+Announcer >> subscriptionsForClass: subscriberClass [
+	"Return the list of subscription for a given class"
+	^ self subscriptions subscriptionsForClass: subscriberClass
 ]
 
 { #category : #subscription }
@@ -97,26 +112,33 @@ Announcer >> weak [
 	^ WeakSubscriptionBuilder on: self
 ]
 
-{ #category : #convenience }
+{ #category : #'registration api' }
 Announcer >> when: anAnnouncementClass do: aValuable [
-	"Declare that when anAnnouncementClass is raised, aValuable is executed.  Pay attention that ushc method as well as when:do: should not be used on weak announcer since the block holds the receiver and more strongly."
+	"Declare that when anAnnouncementClass is raised, aValuable is executed.  Pay attention that such method as well as #when:do: should not be used on weak announcer since the block holds the receiver and more strongly."
 	
-	^ self subscribe: anAnnouncementClass do: aValuable
+	^ registry add: (
+		AnnouncementSubscription new 
+			announcer: self;
+			announcementClass: anAnnouncementClass;
+			valuable: aValuable)
+	
 ]
 
-{ #category : #convenience }
+{ #category : #subscription }
 Announcer >> when: anAnnouncementClass do: aValuable for: aSubscriber [
 	"Declare that when anAnnouncementClass is raised, aValuable is executed and define the subscriber."
 	
-    ^ (self subscribe: anAnnouncementClass do: aValuable) subscriber: aSubscriber; yourself
+    ^ (self when: anAnnouncementClass do: aValuable) subscriber: aSubscriber; yourself
 ]
 
-{ #category : #convenience }
+{ #category : #'registration api' }
 Announcer >> when: anAnnouncementClass send: aSelector to: anObject [
 	"Declare that when anAnnouncementClass is raised, anObject should receive the message aSelector.
     When the message expects one argument (eg #fooAnnouncement:) the announcement is passed as argument.
-    When the message expects two arguments (eg #fooAnnouncement:announcer:) both the announcement and the announcer 
-    are passed as argument"
+    When the message expects two arguments (eg #fooAnnouncement:announcer:) both the announcement and 
+    the announcer are passed as argument"
 
-	^ self subscribe: anAnnouncementClass send: aSelector to: anObject
+	^ self
+		when: anAnnouncementClass
+		do: (MessageSend receiver: anObject selector: aSelector)
 ]

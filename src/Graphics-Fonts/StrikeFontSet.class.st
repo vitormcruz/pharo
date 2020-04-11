@@ -57,7 +57,7 @@ StrikeFontSet class >> findMaximumLessThan: f in: array [
 
 ]
 
-{ #category : #'filein/out' }
+{ #category : #'file in/out' }
 StrikeFontSet class >> installNewFontAtIndex: newIndex fromOld: oldIndex [
 
 	
@@ -87,7 +87,7 @@ StrikeFontSet class >> newFontArray: anArray [
 
 ]
 
-{ #category : #'filein/out' }
+{ #category : #'file in/out' }
 StrikeFontSet class >> removeFontsForEncoding: leadingChar encodingName: encodingSymbol [
 
 	| insts |
@@ -796,7 +796,7 @@ StrikeFontSet >> questionGlyphInfoInto: glyphInfoArray [
 
 ]
 
-{ #category : #'private - initialization' }
+{ #category : #initialization }
 StrikeFontSet >> reset [
 	"Reset the cache of derivative emphasized fonts"
 

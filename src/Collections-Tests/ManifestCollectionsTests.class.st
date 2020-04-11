@@ -4,7 +4,7 @@ I contain tests for collections
 Class {
 	#name : #ManifestCollectionsTests,
 	#superclass : #PackageManifest,
-	#category : #'Collections-Tests'
+	#category : #'Collections-Tests-Manifest'
 }
 
 { #category : #'meta-data' }
@@ -14,7 +14,7 @@ ManifestCollectionsTests class >> dependencies [
 
 { #category : #'meta-data - dependency analyser' }
 ManifestCollectionsTests class >> manuallyResolvedDependencies [
-	^ #(#'Collections-Arithmetic' #'Transcript-Core' #'OpalCompiler-Core')
+	^ #(#'Kernel-Chronology-Extras' #'Math-Operations-Extensions' #'OpalCompiler-Core')
 ]
 
 { #category : #'meta-data' }

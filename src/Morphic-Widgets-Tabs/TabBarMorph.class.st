@@ -15,7 +15,7 @@ Class {
 
 { #category : #'private-constants' }
 TabBarMorph >> actionOffset [
-	^ 4
+	^ 4 * self displayScaleFactor
 ]
 
 { #category : #private }
@@ -30,6 +30,9 @@ TabBarMorph >> actionsChanged: aTab [
 TabBarMorph >> addActionsFor: aTab [
 	| rightOffset |
 	
+	"This check should maybe not be there but without it the CI fails a lot. Maybe it is due to a race condition?"
+	aTab ifNil: [ ^ self ].
+
 	rightOffset := self actionOffset.
 	
 	aTab hasMenu
@@ -71,7 +74,7 @@ TabBarMorph >> addMenuButton [
 	| topOffset rightOffset |
 	
 	rightOffset := self actionOffset.
-	topOffset := (self height - 16) // 2.
+	topOffset := (self height - 16 * self displayScaleFactor) // 2.
 	self
 		addMorph: menuButton
 		fullFrame:
@@ -126,7 +129,7 @@ TabBarMorph >> adjustLayout [
 { #category : #drawing }
 TabBarMorph >> borderColor [
 	"I do not use #borderColor because I want a light border"
-	^ Smalltalk ui theme lightBackgroundColor
+	^ self theme lightBackgroundColor
 ]
 
 { #category : #accessing }
@@ -157,8 +160,8 @@ TabBarMorph >> computeLength [
 	width := self width - self extraSpace + ((size-1) * self overlap).
 	
 	length := width / size.
-	length := length min: 150.
-	length := length max: 33.
+	length := length min: 150 * self displayScaleFactor.
+	length := length max: 33 * self displayScaleFactor.
 
 	^ length
 	
@@ -175,23 +178,23 @@ TabBarMorph >> createMenuButton [
 	"Answer a button for the window menu."
 	| form msb |
 	
-	form := Smalltalk ui theme windowMenuForm.
+	form := self theme windowMenuForm.
 	msb := MultistateButtonMorph new extent: form extent.
 	msb activeEnabledNotOverUpFillStyle: (ImageFillStyle form: form).
 	
-	form := Smalltalk ui theme windowMenuPassiveForm.
+	form := self theme windowMenuPassiveForm.
 	msb extent: form extent.
 	msb activeDisabledNotOverUpFillStyle: (ImageFillStyle form: form).
 	msb passiveEnabledNotOverUpFillStyle: (ImageFillStyle form: form).
 	msb passiveDisabledNotOverUpFillStyle: (ImageFillStyle form: form).
 	
-	form := Smalltalk ui theme windowMenuForm.
+	form := self theme windowMenuForm.
 	msb extent: form extent.
 	msb
 		activeEnabledOverUpFillStyle: (ImageFillStyle form: form);
 		passiveEnabledOverUpFillStyle: (ImageFillStyle form: form).
 	
-	form := Smalltalk ui theme windowMenuPassiveForm.
+	form := self theme windowMenuPassiveForm.
 	msb
 		extent: form extent;
 		activeEnabledOverDownFillStyle: (ImageFillStyle form: form);
@@ -289,12 +292,12 @@ TabBarMorph >> isMultiSelection [
 
 { #category : #'private-constants' }
 TabBarMorph >> menuButtonHeight [
-	^ 16
+	^ 16 * self displayScaleFactor
 ]
 
 { #category : #'private-constants' }
 TabBarMorph >> menuButtonWidth [
-	^ 16
+	^ 16 * self displayScaleFactor
 ]
 
 { #category : #private }
@@ -316,7 +319,7 @@ TabBarMorph >> orderedSelectedTabs [
 { #category : #private }
 TabBarMorph >> overlap [
 
-	^ 8
+	^ 8 * self displayScaleFactor
 ]
 
 { #category : #'change reporting' }
@@ -331,7 +334,7 @@ TabBarMorph >> popUpMenu [
 	| menu |
 	
 	menu := self selectedTab menu.
-	menu popUpAt: menuButton bottomRight forHand: ActiveHand in: World
+	menu popUpAt: menuButton bottomRight forHand: self activeHand in: self currentWorld
 ]
 
 { #category : #private }
@@ -415,7 +418,7 @@ TabBarMorph >> selectTabAt: index ifAbsent: aBlock [
 
 { #category : #drawing }
 TabBarMorph >> selectedColor [
-	^ Smalltalk ui theme selectionColor
+	^ self theme selectionColor
 ]
 
 { #category : #accessing }

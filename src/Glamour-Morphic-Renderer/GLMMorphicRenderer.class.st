@@ -25,14 +25,15 @@ GLMMorphicRenderer >> open: aRenderable [
 	^ window openInWorld 
 ]
 
+{ #category : #OSWindow }
+GLMMorphicRenderer >> openInExternalWindow: aRenderable [
+    window := GLMOSWindowMorphWorldRenderer render: aRenderable from: self.
+    ^ window open
+]
+
 { #category : #'rendering presentations' }
 GLMMorphicRenderer >> renderAccordionCompositePresentation: aCompositePresentation [
 	^ GLMMorphicAccordionRenderer render: aCompositePresentation from: self
-]
-
-{ #category : #'rendering browsers' }
-GLMMorphicRenderer >> renderAccumulator: aBrowser [ 
-	^ GLMMorphicAccumulatorRenderer render: aBrowser from: self
 ]
 
 { #category : #'rendering actions' }
@@ -43,11 +44,6 @@ GLMMorphicRenderer >> renderAction: anAction [
 { #category : #'rendering presentations' }
 GLMMorphicRenderer >> renderActionListPresentation: anActionListPresentation [ 
 	^GLMMorphicActionListRenderer render: anActionListPresentation from: self
-]
-
-{ #category : #'rendering browsers' }
-GLMMorphicRenderer >> renderDashboard: aBrowser [ 
-	^ GLMMorphicDashboardRenderer render: aBrowser from: self
 ]
 
 { #category : #'rendering presentations' }
@@ -171,29 +167,6 @@ GLMMorphicRenderer >> renderTextPresentation: aTextPresentation [
 { #category : #'rendering presentations' }
 GLMMorphicRenderer >> renderTreePresentation: aPresentation [ 
 	^ GLMMorphicTreeRenderer render: aPresentation from: self
-]
-
-{ #category : #'rendering browsers' }
-GLMMorphicRenderer >> renderValidator: aBrowser [ 
-
-	| tmpValidatorRenderer |
-	tmpValidatorRenderer :=  GLMMorphicValidatorRenderer new.
-	aBrowser  setSpecificAnnouncementActionsTo: tmpValidatorRenderer.  
-	^ tmpValidatorRenderer render: aBrowser from: self
-]
-
-{ #category : #'rendering browsers' }
-GLMMorphicRenderer >> renderWizard: aGLMWizard [
-
-	|tmpRenderer|
-	tmpRenderer :=  GLMMorphicWizardRenderer new.
-	aGLMWizard  setSpecificAnnouncementActionsTo: tmpRenderer.  
-	^ (tmpRenderer renderer: self) render: aGLMWizard
-]
-
-{ #category : #'rendering browsers' }
-GLMMorphicRenderer >> renderWrapper: aBrowser [ 
-	^ GLMMorphicWrapperRenderer render: aBrowser from: self
 ]
 
 { #category : #accessing }

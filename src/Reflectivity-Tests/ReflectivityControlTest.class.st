@@ -12,6 +12,11 @@ Class {
 }
 
 { #category : #tagging }
+ReflectivityControlTest >> recordLevel [
+	tag := Processor activeProcess level
+]
+
+{ #category : #tagging }
 ReflectivityControlTest >> return3 [
 	^3
 ]
@@ -23,7 +28,7 @@ ReflectivityControlTest >> tagExec [
 
 { #category : #tagging }
 ReflectivityControlTest >> tagExec: aTag [
-	tag := aTag.
+	tag := aTag
 ]
 
 { #category : #running }
@@ -35,23 +40,18 @@ ReflectivityControlTest >> tearDown [
 { #category : #'tests - after' }
 ReflectivityControlTest >> testAfterArray [
 	| arrayNode |
-	arrayNode := (ReflectivityExamples >> #exampleArray) ast statements
-		first value.
+	arrayNode := (ReflectivityExamples >> #exampleArray) ast statements first value.
 	link := MetaLink new
 		metaObject: self;
 		selector: #tagExec;
 		control: #after.
 	arrayNode link: link.
 	self assert: arrayNode hasMetalinkAfter.
-	self
-		assert: (ReflectivityExamples >> #exampleArray) class
-		equals: ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleArray) class equals: ReflectiveMethod.
 	self assert: tag isNil.
 	self assert: ReflectivityExamples new exampleArray isArray.
 	self assert: tag equals: 'yes'.
-	self
-		assert: (ReflectivityExamples >> #exampleArray) class
-		equals: CompiledMethod
+	self assert: (ReflectivityExamples >> #exampleArray) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after' }
@@ -80,8 +80,7 @@ ReflectivityControlTest >> testAfterAssignment [
 { #category : #'tests - after' }
 ReflectivityControlTest >> testAfterBlock [
 	| blockNode |
-	blockNode := (ReflectivityExamples >> #exampleBlock) ast statements
-		first value receiver.
+	blockNode := (ReflectivityExamples >> #exampleBlock) ast statements first value receiver.
 	self assert: blockNode isBlock.
 	link := MetaLink new
 		metaObject: self;
@@ -89,15 +88,29 @@ ReflectivityControlTest >> testAfterBlock [
 		control: #after.
 	blockNode link: link.
 	self assert: blockNode hasMetalinkAfter.
-	self
-		assert: (ReflectivityExamples >> #exampleBlock) class
-		equals: ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleBlock == 5.
+	self assert: ReflectivityExamples new exampleBlock identicalTo: 5.
 	self assert: tag equals: 'yes'.
-	self
-		assert: (ReflectivityExamples >> #exampleBlock) class
-		equals: CompiledMethod
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: CompiledMethod
+]
+
+{ #category : #'tests - after' }
+ReflectivityControlTest >> testAfterBlockOptimizedIfTrue [
+	| blockNode |
+	blockNode := (ReflectivityExamples >> #exampleIfTrueIfFalse) ast blockNodes second.
+	self assert: blockNode isBlock.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec;
+		control: #after.
+	blockNode link: link.
+	self assert: blockNode hasMetalinkAfter.
+	self assert: (ReflectivityExamples >> #exampleIfTrueIfFalse) class equals: ReflectiveMethod.
+	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleIfTrueIfFalse identicalTo: 5.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleIfTrueIfFalse) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after' }
@@ -111,11 +124,28 @@ ReflectivityControlTest >> testAfterBlockSequence [
 		control: #after.
 	sequence link: link.
 	self assert: sequence hasMetalinkAfter.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleBlock == 5.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleBlock identicalTo: 5.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: CompiledMethod
+]
+
+{ #category : #'tests - after' }
+ReflectivityControlTest >> testAfterCascade [
+	| cascadeNode |
+	cascadeNode := (ReflectivityExamples >> #exampleCascade) ast statements first value.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec;
+		control: #after.
+	cascadeNode link: link.
+	self assert: cascadeNode hasMetalinkAfter.
+	self assert: (ReflectivityExamples >> #exampleCascade) class equals: ReflectiveMethod.
+	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleCascade equals: 1.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleCascade) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after - variables' }
@@ -128,12 +158,12 @@ ReflectivityControlTest >> testAfterClassVariable [
 		control: #after.
 	classVar link: link.
 	self assert: classVar hasMetalinkAfter.
-	self assert: (ReflectivityExamples >> #exampleClassVarRead) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleClassVarRead) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleClassVarRead  = #AClassVar.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleClassVarRead) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleClassVarRead) isQuick.
+	self assert: ReflectivityExamples new exampleClassVarRead equals: #AClassVar.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleClassVarRead) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleClassVarRead) isQuick
 ]
 
 { #category : #'tests - after' }
@@ -147,12 +177,12 @@ ReflectivityControlTest >> testAfterLiteral [
 		control: #after.
 	literalNode link: link.
 	self assert: literalNode hasMetalinkAfter.
-	self assert: (ReflectivityExamples >> #exampleLiteral) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleLiteral) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleLiteral == 2.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleLiteral) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleLiteral) isQuick.
+	self assert: ReflectivityExamples new exampleLiteral identicalTo: 2.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleLiteral) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleLiteral) isQuick
 ]
 
 { #category : #'tests - after' }
@@ -166,12 +196,12 @@ ReflectivityControlTest >> testAfterLiteralArray [
 		control: #after.
 	literalArray link: link.
 	self assert: literalArray hasMetalinkAfter.
-	self assert: (ReflectivityExamples >> #exampleLiteralArray) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleLiteralArray) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleLiteralArray = #(1).
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleLiteralArray) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleLiteralArray) isQuick.
+	self assert: ReflectivityExamples new exampleLiteralArray equals: #(1).
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleLiteralArray) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleLiteralArray) isQuick
 ]
 
 { #category : #'tests - after' }
@@ -184,11 +214,47 @@ ReflectivityControlTest >> testAfterMethod [
 		control: #after.
 	methodNode link: link.
 	self assert: methodNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag = #yes.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: CompiledMethod
+]
+
+{ #category : #'tests - after' }
+ReflectivityControlTest >> testAfterMethod2 [
+	| methodNode instance |
+	methodNode := (ReflectivityExamples >> #exampleMethod2) ast.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec;
+		control: #after.
+	methodNode link: link.
+	self assert: methodNode hasMetalink.
+	self assert: (ReflectivityExamples >> #exampleMethod2) class equals: ReflectiveMethod.
+	self assert: tag isNil.
+	instance := ReflectivityExamples new.
+	self assert: instance exampleMethod2 equals: instance.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleMethod2) class equals: CompiledMethod
+]
+
+{ #category : #'tests - level' }
+ReflectivityControlTest >> testAfterMethodLevel [
+	| methodNode |
+	"check that level is correct in #after on methodNode"
+	methodNode := (ReflectivityExamples >> #exampleMethod) ast.
+	link := MetaLink new
+		metaObject: self;
+		selector: #recordLevel;
+		control: #after;
+		level: 0.
+	methodNode link: link.
+	self assert: methodNode hasMetalink.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag equals: 1.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after' }
@@ -203,11 +269,11 @@ ReflectivityControlTest >> testAfterMethodPrimitive [
 	self assert: (ReflectivityExamples>>#examplePrimitiveMethod) isRealPrimitive.
 	methodNode link: link.
 	self assert: methodNode hasMetalink.
-	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class = CompiledMethod.
+	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class equals: CompiledMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new examplePrimitiveMethod class = ByteString.
-	self assert: tag = #yes.
-	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class = CompiledMethod.
+	self assert: ReflectivityExamples new examplePrimitiveMethod class equals: ByteString.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after' }
@@ -221,24 +287,11 @@ ReflectivityControlTest >> testAfterMethodWithTemps [
 		control: #after.
 	methodNode link: link.
 	self assert: methodNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleAssignment  = 3.
-	self assert: tag = #yes.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = CompiledMethod.
-]
-
-{ #category : #'tests - after' }
-ReflectivityControlTest >> testAfterReturn [
-	| returnNode |
-	returnNode := (ReflectivityExamples >> #exampleMethod) ast statements first.
-	self assert: returnNode isReturn.
-	link := MetaLink new
-		metaObject: self;
-		selector: #tagExec;
-		control: #after.
-	self should: [returnNode link: link] raise: Error.
-	
+	self assert: ReflectivityExamples new exampleAssignment equals: 3.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after' }
@@ -253,11 +306,11 @@ ReflectivityControlTest >> testAfterSend [
 		arguments: #(#node).
 	sendNode link: link.
 	self assert: sendNode hasMetalinkAfter.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag class = RBMessageNode.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag class equals: RBMessageNode.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after' }
@@ -273,12 +326,12 @@ ReflectivityControlTest >> testAfterSendWeak [
 		arguments: #(node).
 	sendNode link: link.
 	self assert: sendNode hasMetalinkAfter.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag class = RBMessageNode.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag class equals: RBMessageNode.
 	self deny: ((ReflectivityExamples >> #exampleMethod) messages includes: #ensure:).
-	self assert: (ReflectivityExamples >> #exampleMethod) class = CompiledMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after' }
@@ -292,11 +345,11 @@ ReflectivityControlTest >> testAfterSequence [
 		control: #after.
 	sequence link: link.
 	self assert: sequence hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag = #yes.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after - variables' }
@@ -319,6 +372,26 @@ ReflectivityControlTest >> testAfterSlot [
 	self assert: tag equals: #ivar
 ]
 
+{ #category : #'tests - after - variables' }
+ReflectivityControlTest >> testAfterSlotWrite [
+	| iVar instance |
+	iVar := ReflectivityExamples slotNamed: #ivar.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec:;
+		control: #after;
+		arguments: #(name).
+	iVar link: link.
+	self assert: iVar hasMetalink.
+	self
+		assert: (ReflectivityExamples >> #exampleAssignmentIvar) class
+		equals: ReflectiveMethod.
+	self assert: tag isNil.
+	instance := ReflectivityExamples new.
+	self assert: instance exampleAssignmentIvar equals: 3.
+	self assert: tag equals: #ivar
+]
+
 { #category : #'tests - after' }
 ReflectivityControlTest >> testAfterVariableNode [
 	| variableNode |
@@ -330,12 +403,29 @@ ReflectivityControlTest >> testAfterVariableNode [
 		control: #after.
 	variableNode link: link.
 	self assert: variableNode hasMetalinkAfter.
-	self assert: (ReflectivityExamples >> #exampleGlobalRead) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleGlobalRead) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleGlobalRead = GlobalForTesting.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleGlobalRead) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleGlobalRead) isQuick.
+	self assert: ReflectivityExamples new exampleGlobalRead equals: GlobalForTesting.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleGlobalRead) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleGlobalRead) isQuick
+]
+
+{ #category : #'tests - before' }
+ReflectivityControlTest >> testBeforeArray [
+	| arrayNode |
+	arrayNode := (ReflectivityExamples >> #exampleArray) ast statements first value.
+	self assert: arrayNode isDynamicArray.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec.
+	arrayNode link: link.
+	self assert: arrayNode hasMetalinkBefore.
+	self assert: (ReflectivityExamples >> #exampleArray) class equals: ReflectiveMethod.
+	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleArray isArray.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleArray) class equals: CompiledMethod
 ]
 
 { #category : #'tests - before' }
@@ -347,11 +437,11 @@ ReflectivityControlTest >> testBeforeAssignment [
 		selector: #tagExec.
 	assignmentNode link: link.
 	self assert: assignmentNode hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleAssignment = 3.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleAssignment equals: 3.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: CompiledMethod
 ]
 
 { #category : #'tests - before' }
@@ -364,11 +454,11 @@ ReflectivityControlTest >> testBeforeBlock [
 		selector: #tagExec.
 	blockNode link: link.
 	self assert: blockNode hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleBlock == 5.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleBlock identicalTo: 5.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: CompiledMethod
 ]
 
 { #category : #'tests - before' }
@@ -381,11 +471,11 @@ ReflectivityControlTest >> testBeforeBlockSequence [
 		selector: #tagExec.
 	sequence link: link.
 	self assert: sequence hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleBlock == 5.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleBlock identicalTo: 5.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: CompiledMethod
 ]
 
 { #category : #'tests - before' }
@@ -398,13 +488,29 @@ ReflectivityControlTest >> testBeforeBlockSequenceNoValue [
 		selector: #tagExec.
 	sequence link: link.
 	self assert: sequence hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleBlockNoValue) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleBlockNoValue) class equals: ReflectiveMethod.
 	self assert: tag isNil.
 	ReflectivityExamples new exampleBlockNoValue.
 	self assert: tag isNil.
 	ReflectivityExamples new exampleBlockNoValue value.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleBlockNoValue) class = CompiledMethod.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleBlockNoValue) class equals: CompiledMethod
+]
+
+{ #category : #'tests - before' }
+ReflectivityControlTest >> testBeforeCascade [
+	| cascadeNode |
+	cascadeNode := (ReflectivityExamples >> #exampleCascade) ast statements first value.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec.
+	cascadeNode link: link.
+	self assert: cascadeNode hasMetalinkBefore.
+	self assert: (ReflectivityExamples >> #exampleCascade) class equals: ReflectiveMethod.
+	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleCascade equals: 1.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleCascade) class equals: CompiledMethod
 ]
 
 { #category : #'tests - before' }
@@ -417,12 +523,12 @@ ReflectivityControlTest >> testBeforeClassVariable [
 		selector: #tagExec.
 	classVar link: link.
 	self assert: classVar hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleClassVarRead) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleClassVarRead) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleClassVarRead = #AClassVar.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleClassVarRead) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleClassVarRead) isQuick.
+	self assert: ReflectivityExamples new exampleClassVarRead equals: #AClassVar.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleClassVarRead) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleClassVarRead) isQuick
 ]
 
 { #category : #'tests - before' }
@@ -435,12 +541,12 @@ ReflectivityControlTest >> testBeforeLiteral [
 		selector: #tagExec.
 	literalNode link: link.
 	self assert: literalNode hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleLiteral) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleLiteral) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleLiteral == 2.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleLiteral) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleLiteral) isQuick.
+	self assert: ReflectivityExamples new exampleLiteral identicalTo: 2.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleLiteral) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleLiteral) isQuick
 ]
 
 { #category : #'tests - before' }
@@ -453,12 +559,12 @@ ReflectivityControlTest >> testBeforeLiteralArray [
 		selector: #tagExec.
 	literalArray link: link.
 	self assert: literalArray hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleLiteralArray) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleLiteralArray) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleLiteralArray = #(1).
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleLiteralArray) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleLiteralArray) isQuick.
+	self assert: ReflectivityExamples new exampleLiteralArray equals: #(1).
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleLiteralArray) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleLiteralArray) isQuick
 ]
 
 { #category : #'tests - before' }
@@ -470,11 +576,11 @@ ReflectivityControlTest >> testBeforeMethod [
 		selector: #tagExec.
 	methodNode link: link.
 	self assert: methodNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag = #yes.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - before' }
@@ -487,15 +593,15 @@ ReflectivityControlTest >> testBeforeMethodPrimitive [
 	self assert: (ReflectivityExamples>>#examplePrimitiveMethod) isRealPrimitive.	
 	methodNode link: link.
 	self assert: methodNode hasMetalink.
-	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class = CompiledMethod.
+	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class equals: CompiledMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new examplePrimitiveMethod class = ByteString.
+	self assert: ReflectivityExamples new examplePrimitiveMethod class equals: ByteString.
 	self deny: (ReflectivityExamples>>#examplePrimitiveMethod) isRealPrimitive.	
-	self assert: tag = #yes.
-	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class = CompiledMethod.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class equals: CompiledMethod.
 	link uninstall.
-	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class = CompiledMethod.
-	self assert: (ReflectivityExamples>>#examplePrimitiveMethod) isRealPrimitive.
+	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class equals: CompiledMethod.
+	self assert: (ReflectivityExamples>>#examplePrimitiveMethod) isRealPrimitive
 ]
 
 { #category : #'tests - before' }
@@ -508,12 +614,12 @@ ReflectivityControlTest >> testBeforeReturn [
 		selector: #tagExec.
 	returnNode link: link.
 	self assert: returnNode hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleLiteral) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleLiteral) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleLiteral == 2.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleLiteral) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleLiteral) isQuick.
+	self assert: ReflectivityExamples new exampleLiteral identicalTo: 2.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleLiteral) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleLiteral) isQuick
 ]
 
 { #category : #'tests - before' }
@@ -526,11 +632,28 @@ ReflectivityControlTest >> testBeforeSend [
 		arguments: #(#node).
 	sendNode link: link.
 	self assert: sendNode hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag class = RBMessageNode.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag class equals: RBMessageNode.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: CompiledMethod
+]
+
+{ #category : #'tests - before' }
+ReflectivityControlTest >> testBeforeSendInCascade [
+	| sendNode |
+	sendNode := (ReflectivityExamples >> #exampleCascade) ast statements first value messages first.
+	self assert: sendNode isMessage.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec.
+	sendNode link: link.
+	self assert: sendNode hasMetalinkBefore.
+	self assert: (ReflectivityExamples >> #exampleCascade) class equals: ReflectiveMethod.
+	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleCascade equals: 1.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleCascade) class equals: CompiledMethod
 ]
 
 { #category : #'tests - before' }
@@ -541,38 +664,68 @@ ReflectivityControlTest >> testBeforeSequence [
 	link := MetaLink new
 		metaObject: self;
 		selector: #tagExec.
-	self assert: (seqNode isKindOf: RBSequenceNode).
 	seqNode link: link.
 	self assert: seqNode hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleAssignment = 3.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = CompiledMethod.
+	self assert: ReflectivityExamples new exampleAssignment equals: 3.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: CompiledMethod
+]
+
+{ #category : #'tests - after - variables' }
+ReflectivityControlTest >> testBeforeSlot [
+	| iVar instance |
+	iVar := ReflectivityExamples slotNamed: #ivar.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec:;
+		control: #before;
+		arguments: #(name).
+	iVar link: link.
+	self assert: iVar hasMetalink.
+	self
+		assert: (ReflectivityExamples >> #exampleIvarRead) class
+		equals: ReflectiveMethod.
+	self assert: tag isNil.
+	instance := ReflectivityExamples new.
+	self assert: instance exampleIvarRead equals: 33.
+	self assert: tag equals: #ivar
+]
+
+{ #category : #'tests - after - variables' }
+ReflectivityControlTest >> testBeforeSlotWrite [
+	| iVar instance |
+	iVar := ReflectivityExamples slotNamed: #ivar.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec:;
+		control: #before;
+		arguments: #(name).
+	iVar link: link.
+	self assert: iVar hasMetalink.
+	self assert: (ReflectivityExamples >> #exampleAssignmentIvar) class equals: ReflectiveMethod.
+	self assert: tag isNil.
+	instance := ReflectivityExamples new.
+	self assert: instance exampleAssignmentIvar equals: 3.
+	self assert: tag equals: #ivar
 ]
 
 { #category : #'tests - before' }
 ReflectivityControlTest >> testBeforeVariable [
 	| variableNode |
-	variableNode := (ReflectivityExamples >> #exampleGlobalRead) ast
-		statements first value.
+	variableNode := (ReflectivityExamples >> #exampleGlobalRead) ast statements first value.
 	self assert: variableNode isVariable.
 	link := MetaLink new
 		metaObject: self;
 		selector: #tagExec.
 	variableNode link: link.
 	self assert: variableNode hasMetalinkBefore.
-	self
-		assert: (ReflectivityExamples >> #exampleGlobalRead) class
-		equals: ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleGlobalRead) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self
-		assert: ReflectivityExamples new exampleGlobalRead
-		equals: GlobalForTesting.
+	self assert: ReflectivityExamples new exampleGlobalRead equals: GlobalForTesting.
 	self assert: tag equals: 'yes'.
-	self
-		assert: (ReflectivityExamples >> #exampleGlobalRead) class
-		equals: CompiledMethod.
+	self assert: (ReflectivityExamples >> #exampleGlobalRead) class equals: CompiledMethod.
 	self deny: (ReflectivityExamples >> #exampleGlobalRead) isQuick
 ]
 
@@ -623,7 +776,7 @@ ReflectivityControlTest >> testConditionDisableEnableNoArguments [
 	self assert: tag isNil.
 	link enable.
 	ReflectivityExamples new exampleMethod.
-	self assert: tag class equals: RBMessageNode.
+	self assert: tag class equals: RBMessageNode
 
 ]
 
@@ -649,8 +802,27 @@ ReflectivityControlTest >> testConditionDisableEnableWithArguments [
 	self assert: tag isNil.
 	link enable.
 	ReflectivityExamples new exampleMethod.
-	self assert: tag class equals: RBMessageNode.
+	self assert: tag class equals: RBMessageNode
+]
 
+{ #category : #'tests - level' }
+ReflectivityControlTest >> testConditionMetaLevel [
+	"check that the condition is evaluated on the same meta level as the link"
+
+	| sendNode |
+	sendNode := (ReflectivityExamples >> #exampleMethod) sendNodes first.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec:;
+		condition: [ self assert: Processor activeProcess level identicalTo: 1.
+			true ];
+		level: 0;
+		arguments: #(#node).
+	sendNode link: link.
+	self assert: sendNode hasMetalinkBefore.
+	self assert: tag isNil.
+	ReflectivityExamples new exampleMethod.
+	self assert: tag class equals: RBMessageNode
 ]
 
 { #category : #'tests - conditions' }
@@ -665,12 +837,12 @@ ReflectivityControlTest >> testConditionWithArgument [
 	sendNode link: link.
 	self assert: sendNode hasMetalinkBefore.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag class = RBMessageNode.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag class equals: RBMessageNode.
 	link condition: [ :node | node == 5 ].
 	tag := nil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag isNil
 ]
 
 { #category : #'tests - conditions' }
@@ -685,12 +857,12 @@ ReflectivityControlTest >> testConditionWithArgument2 [
 	sendNode link: link.
 	self assert: sendNode hasMetalinkBefore.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag class = RBMessageNode.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag class equals: RBMessageNode.
 	link condition: [ :node | node == 5 ].
 	tag := nil.
-	self assert: ReflectivityExamples new exampleMethod = 5.
-	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag isNil
 ]
 
 { #category : #'tests - instead' }
@@ -725,7 +897,7 @@ ReflectivityControlTest >> testFailingDoubleRWInstead [
 	readSites do: [ :readNode | readNode link: readLink ].
 	writeSites do: [ :writeNode | writeNode link: writeLink ].
 	readLink uninstall.
-	writeLink uninstall.
+	writeLink uninstall
 ]
 
 { #category : #'tests - instead' }
@@ -747,7 +919,7 @@ ReflectivityControlTest >> testFailingDoubleRWInsteadSimplified [
 		arguments: #(object).
 			
 	readNode link: readLink.
-	readLink uninstall.
+	readLink uninstall
 
 ]
 
@@ -762,10 +934,10 @@ ReflectivityControlTest >> testInsteadArray [
 		selector: #return3.
 	arrayNode link: link.
 	self assert: arrayNode hasMetalinkInstead.
-	self assert: (ReflectivityExamples >> #exampleArray) class = ReflectiveMethod.
-	self assert: ReflectivityExamples new exampleArray = 3.
-	self assert: (ReflectivityExamples >> #exampleArray) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleArray) isQuick.
+	self assert: (ReflectivityExamples >> #exampleArray) class equals: ReflectiveMethod.
+	self assert: ReflectivityExamples new exampleArray equals: 3.
+	self assert: (ReflectivityExamples >> #exampleArray) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleArray) isQuick
 ]
 
 { #category : #'tests - instead' }
@@ -780,9 +952,9 @@ ReflectivityControlTest >> testInsteadAssign [
 		arguments: #(#name #newValue).
 	assignmentNode link: link.
 	self assert: assignmentNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: ReflectiveMethod.
 	instance := ReflectivityExamples new.
-	self assert: instance exampleAssignment = 3.
+	self assert: instance exampleAssignment equals: 3
 ]
 
 { #category : #'tests - instead' }
@@ -794,12 +966,12 @@ ReflectivityControlTest >> testInsteadBlock [
 		metaObject: self;
 		control: #instead;
 		selector: #return3.
-	self assert: ReflectivityExamples new exampleBlock == 5.
+	self assert: ReflectivityExamples new exampleBlock identicalTo: 5.
 	blockNode link: link.
 	self assert: blockNode hasMetalinkInstead.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = ReflectiveMethod.
-	self assert: ReflectivityExamples new exampleBlock == 3.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = CompiledMethod.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: ReflectiveMethod.
+	self assert: ReflectivityExamples new exampleBlock identicalTo: 3.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: CompiledMethod
 ]
 
 { #category : #'tests - instead' }
@@ -813,11 +985,28 @@ ReflectivityControlTest >> testInsteadBlockSequence [
 		control: #instead.
 	sequence link: link.
 	self assert: sequence hasMetalinkInstead.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: ReflectiveMethod.
 	self assert: tag isNil.
  	ReflectivityExamples new exampleBlock.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleBlock) class = CompiledMethod.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleBlock) class equals: CompiledMethod
+]
+
+{ #category : #'tests - instead' }
+ReflectivityControlTest >> testInsteadCascade [
+	| cascadeNode |
+	cascadeNode := (ReflectivityExamples >> #exampleCascade) ast statements first value.
+	link := MetaLink new
+		metaObject: self;
+		selector: #tagExec;
+		control: #instead.
+	cascadeNode link: link.
+	self assert: cascadeNode hasMetalinkInstead.
+	self assert: (ReflectivityExamples >> #exampleCascade) class equals: ReflectiveMethod.
+	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleCascade equals: self.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleCascade) class equals: CompiledMethod
 ]
 
 { #category : #'tests - after - variables' }
@@ -834,11 +1023,11 @@ ReflectivityControlTest >> testInsteadClassVariable [
 	self
 		assert:
 			(ReflectivityExamples >> #exampleClassVarRead) class
-				= ReflectiveMethod.
+				equals: ReflectiveMethod.
 	self assert: tag isNil.
 	self
-		assert: ReflectivityExamples new exampleClassVarRead = #AClassVar.
-	self assert: tag = 'yes'.
+		assert: ReflectivityExamples new exampleClassVarRead equals: #AClassVar.
+	self assert: tag equals: 'yes'.
 	self
 		assert: (ReflectivityExamples >> #exampleClassVarRead) class
 		equals: CompiledMethod.
@@ -856,10 +1045,10 @@ ReflectivityControlTest >> testInsteadLiteral [
 		selector: #return3.
 	literalNode link: link.
 	self assert: literalNode hasMetalinkInstead.
-	self assert: (ReflectivityExamples >> #exampleLiteral) class = ReflectiveMethod.
-	self assert: ReflectivityExamples new exampleLiteral == 3.
-	self assert: (ReflectivityExamples >> #exampleLiteral) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleLiteral) isQuick.
+	self assert: (ReflectivityExamples >> #exampleLiteral) class equals: ReflectiveMethod.
+	self assert: ReflectivityExamples new exampleLiteral identicalTo: 3.
+	self assert: (ReflectivityExamples >> #exampleLiteral) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleLiteral) isQuick
 ]
 
 { #category : #'tests - instead' }
@@ -873,10 +1062,10 @@ ReflectivityControlTest >> testInsteadLiteralArray [
 		selector: #return3.
 	literalArray link: link.
 	self assert: literalArray hasMetalinkInstead.
-	self assert: (ReflectivityExamples >> #exampleLiteralArray) class = ReflectiveMethod.
-	self assert: ReflectivityExamples new exampleLiteralArray = 3.
-	self assert: (ReflectivityExamples >> #exampleLiteralArray) class = CompiledMethod.
-	self deny: (ReflectivityExamples >> #exampleLiteralArray) isQuick.
+	self assert: (ReflectivityExamples >> #exampleLiteralArray) class equals: ReflectiveMethod.
+	self assert: ReflectivityExamples new exampleLiteralArray equals: 3.
+	self assert: (ReflectivityExamples >> #exampleLiteralArray) class equals: CompiledMethod.
+	self deny: (ReflectivityExamples >> #exampleLiteralArray) isQuick
 ]
 
 { #category : #'tests - instead' }
@@ -889,11 +1078,11 @@ ReflectivityControlTest >> testInsteadMethod [
 		control: #instead.
 	node link: link.
 	self assert: node hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
 	ReflectivityExamples new exampleMethod.
-	self assert: tag = #yes.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = CompiledMethod.
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - instead' }
@@ -907,24 +1096,11 @@ ReflectivityControlTest >> testInsteadPrimitiveMethod [
 		control: #instead.
 	node link: link.
 	self assert: node hasMetalink.
-	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class = CompiledMethod.
+	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class equals: CompiledMethod.
 	self assert: tag isNil.
 	ReflectivityExamples new examplePrimitiveMethod.
-	self assert: tag = #yes.
-	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class = CompiledMethod.
-]
-
-{ #category : #'tests - instead' }
-ReflectivityControlTest >> testInsteadReturn [
-	| returnNode |
-	returnNode := (ReflectivityExamples >> #exampleMethod) ast statements first.
-	self assert: returnNode isReturn.
-	link := MetaLink new
-		metaObject: self;
-		selector: #tagExec;
-		control: #instead.
-	self should: [returnNode link: link] raise: Error.
-	
+	self assert: tag equals: #yes.
+	self assert: (ReflectivityExamples >> #examplePrimitiveMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - instead' }
@@ -938,26 +1114,25 @@ ReflectivityControlTest >> testInsteadSend [
 		arguments: #(#selector #arguments).
 	sendNode link: link.
 	self assert: sendNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethod) class equals: ReflectiveMethod.
 	instance := ReflectivityExamples new.
-	self assert: instance exampleMethod = 5.
+	self assert: instance exampleMethod equals: 5
 ]
 
 { #category : #'tests - instead' }
 ReflectivityControlTest >> testInsteadSendMultipleSites [
 	| sendNodes instance |
-	self skip.
 	sendNodes := (ReflectivityExamples >> #exampleMethodMultipleSites) sendNodes.
 	link := MetaLink new
-		metaObject: [:receiver :selector :arguments | receiver perform: selector withArguments: arguments];
+		metaObject: [ :receiver :selector :arguments | receiver perform: selector withArguments: arguments ];
 		selector: #value:value:value:;
 		control: #instead;
 		arguments: #(#receiver #selector #arguments).
-	sendNodes do: [ :sn | sn link: link].
+	sendNodes do: [ :sn | sn link: link ].
 	self assert: sendNodes anyOne hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleMethodMultipleSites) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleMethodMultipleSites) class equals: ReflectiveMethod.
 	instance := ReflectivityExamples new.
-	self assert: instance exampleMethodMultipleSites= 5.
+	self assert: instance exampleMethodMultipleSites equals: 5
 ]
 
 { #category : #'tests - instead' }
@@ -972,11 +1147,11 @@ ReflectivityControlTest >> testInsteadSequence [
 	self assert: (seqNode isKindOf: RBSequenceNode).
 	seqNode link: link.
 	self assert: seqNode hasMetalinkInstead.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: ReflectiveMethod.
 	self assert: tag isNil.
 	ReflectivityExamples new exampleAssignment.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = CompiledMethod.
+	self assert: tag equals: 'yes'.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: CompiledMethod.
 ]
 
 { #category : #'tests - instead' }
@@ -990,9 +1165,9 @@ ReflectivityControlTest >> testInsteadVariableReadGlobal [
 		arguments: #(#name).
 	varNode link: link.
 	self assert: varNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleGlobalRead) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleGlobalRead) class equals: ReflectiveMethod.
 	instance := ReflectivityExamples new.
-	self assert: instance exampleGlobalRead value = GlobalForTesting.
+	self assert: instance exampleGlobalRead value equals: GlobalForTesting
 ]
 
 { #category : #'tests - instead' }
@@ -1006,10 +1181,10 @@ ReflectivityControlTest >> testInsteadVariableReadIvar [
 		arguments: #(#name).
 	varNode link: link.
 	self assert: varNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleIvarRead) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleIvarRead) class equals: ReflectiveMethod.
 	instance := ReflectivityExamples new.
-	self assert: instance exampleIvarRead value = 33.
-	self deny: (ReflectivityExamples >> #exampleIvarRead) isQuick.	"yes, we changed the method"
+	self assert: instance exampleIvarRead value equals: 33.
+	self deny: (ReflectivityExamples >> #exampleIvarRead) isQuick	"yes, we changed the method"
 ]
 
 { #category : #'tests - instead' }
@@ -1023,9 +1198,9 @@ ReflectivityControlTest >> testInsteadVariableReadTemp [
 		arguments: #(#name).
 	varNode link: link.
 	self assert: varNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: ReflectiveMethod.
 	instance := ReflectivityExamples new.
-	self assert: instance exampleAssignment value = 3.
+	self assert: instance exampleAssignment value equals: 3
 ]
 
 { #category : #'tests - instead' }
@@ -1039,9 +1214,9 @@ ReflectivityControlTest >> testInsteadVariableWrite [
 		arguments: #(#name #newValue).
 	varNode link: link.
 	self assert: varNode hasMetalink.
-	self assert: (ReflectivityExamples >> #exampleAssignment) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples >> #exampleAssignment) class equals: ReflectiveMethod.
 	instance := ReflectivityExamples new.
-	self assert: instance exampleAssignment = 3.
+	self assert: instance exampleAssignment equals: 3
 ]
 
 { #category : #'tests - options' }
@@ -1055,12 +1230,12 @@ ReflectivityControlTest >> testLinkOneShot [
 	sendNode link: link.
 	self assert: sendNode hasMetalink.
 	self assert: tag isNil.
-	self assert: (ReflectivityExamples new exampleMethod = 5).
-	self assert: (tag = #yes).
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag equals: #yes.
 	self deny: sendNode hasMetalink.
 	tag := nil.
-	self assert: (ReflectivityExamples new exampleMethod = 5).
-	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag isNil
 
 ]
 
@@ -1074,11 +1249,11 @@ ReflectivityControlTest >> testLinkOptionDisabledLink [
 		selector: #tagExec.
 	sendNode link: link.
 	self assert: sendNode hasMetalink.
-	self assert: (ReflectivityExamples>>#exampleMethod) class = ReflectiveMethod.
+	self assert: (ReflectivityExamples>>#exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: (ReflectivityExamples new exampleMethod = 5).
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
 	self assert: tag isNil.
-	self assert: (ReflectivityExamples>>#exampleMethod) class = CompiledMethod.
+	self assert: (ReflectivityExamples>>#exampleMethod) class equals: CompiledMethod
 ]
 
 { #category : #'tests - options' }
@@ -1092,22 +1267,22 @@ ReflectivityControlTest >> testLinkoptionInlineCondition [
 		selector: #tagExec.
 	sendNode link: link.
 	self assert: sendNode hasMetalink.
-		self assert: (ReflectivityExamples>>#exampleMethod) class = ReflectiveMethod.
+		self assert: (ReflectivityExamples>>#exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: (ReflectivityExamples new exampleMethod = 5).
-	self assert: (tag = #yes).
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag equals: #yes.
 	"if we now change the meta object, the method should not be invalidated"
 	link condition: [true].
-	self assert: (ReflectivityExamples>>#exampleMethod) class = CompiledMethod.
+	self assert: (ReflectivityExamples>>#exampleMethod) class equals: CompiledMethod.
 	tag := nil.
-	self assert: (ReflectivityExamples new exampleMethod = 5).
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
 	self deny: tag isNil.
 	link condition: [true].
-	self assert: (ReflectivityExamples>>#exampleMethod) class = CompiledMethod.
+	self assert: (ReflectivityExamples>>#exampleMethod) class equals: CompiledMethod.
 	tag := nil.
 	link condition: [false].
-	self assert: (ReflectivityExamples new exampleMethod = 5).
-	self assert: tag isNil.
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag isNil
 ]
 
 { #category : #'tests - options' }
@@ -1120,28 +1295,27 @@ ReflectivityControlTest >> testLinkoptionInlineMetaObject [
 		selector: #tagExec.
 	sendNode link: link.
 	self assert: sendNode hasMetalink.
-		self assert: (ReflectivityExamples>>#exampleMethod) class = ReflectiveMethod.
+		self assert: (ReflectivityExamples>>#exampleMethod) class equals: ReflectiveMethod.
 	self assert: tag isNil.
-	self assert: (ReflectivityExamples new exampleMethod = 5).
-	self assert: (tag = #yes).
+	self assert: ReflectivityExamples new exampleMethod equals: 5.
+	self assert: tag equals: #yes.
 	"if we now change the meta object, the method should not be invalidated"
 	link metaObject: self class new.
-	self assert: (ReflectivityExamples>>#exampleMethod) class = CompiledMethod.
+	self assert: (ReflectivityExamples>>#exampleMethod) class equals: CompiledMethod
 ]
 
-{ #category : #'tests - before' }
-ReflectivityControlTest >> testbeforeArray [
-	| arrayNode |
-	arrayNode := (ReflectivityExamples >> #exampleArray) ast statements first value.
-	self assert: arrayNode isDynamicArray.
+{ #category : #'tests - level' }
+ReflectivityControlTest >> testRecursionStopper [
+	"check that we can break a loop"
+	| methodNode |
+	methodNode := (self class >> #tagExec) ast.
 	link := MetaLink new
 		metaObject: self;
-		selector: #tagExec.
-	arrayNode link: link.
-	self assert: arrayNode hasMetalinkBefore.
-	self assert: (ReflectivityExamples >> #exampleArray) class = ReflectiveMethod.
+		selector: #tagExec;
+		level: 0.
+	methodNode link: link.
+	self assert: methodNode hasMetalinkBefore.
 	self assert: tag isNil.
-	self assert: ReflectivityExamples new exampleArray isArray.
-	self assert: tag = 'yes'.
-	self assert: (ReflectivityExamples >> #exampleArray) class = CompiledMethod.
+	self tagExec.
+	self assert: tag equals: #yes
 ]

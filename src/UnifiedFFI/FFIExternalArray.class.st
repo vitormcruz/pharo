@@ -10,7 +10,7 @@ Class {
 		'type',
 		'size'
 	],
-	#category : #'UnifiedFFI-Types'
+	#category : #'UnifiedFFI-Deprecated'
 }
 
 { #category : #converting }
@@ -146,7 +146,7 @@ FFIExternalArray >> gcpointer [
 
 { #category : #accessing }
 FFIExternalArray >> getHandle [
-	self flag: #todo. "I do not like the name 'getHandle' but I'm looking to unify the 
+	self flag: #pharoTodo. "I do not like the name 'getHandle' but I'm looking to unify the 
 	API with FFI" 
 	^ handle
 ]

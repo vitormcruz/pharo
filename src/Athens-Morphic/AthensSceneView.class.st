@@ -113,7 +113,7 @@ AthensSceneView >> inState: stateName do: aBlock [
 	^ (state at: stateName ifAbsent: nil) ifNotNil: aBlock 
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 AthensSceneView >> initialize [
 
 	super initialize.
@@ -154,7 +154,7 @@ AthensSceneView >> layoutChanged [
 	
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 AthensSceneView >> minimumExtent [
 	^ 300@300
 ]
@@ -307,7 +307,7 @@ AthensSceneView >> startZooming: zoom center: center [
 	self startStepping
 ]
 
-{ #category : #'zoom animation' }
+{ #category : #stepping }
 AthensSceneView >> step [
 
 	self inState: #zooming do: [ :zoomState |
@@ -337,12 +337,12 @@ AthensSceneView >> step [
 
 ]
 
-{ #category : #'zoom animation' }
+{ #category : #stepping }
 AthensSceneView >> stepTime [
 	^ 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #stepping }
 AthensSceneView >> stopStepping [
 	keepRefreshing ifFalse: [
 			^ super stopStepping ]

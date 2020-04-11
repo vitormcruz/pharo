@@ -65,6 +65,11 @@ StringTest >> anotherValue [
 	^ self nonEmpty anyOne
 ]
 
+{ #category : #coverage }
+StringTest >> classToBeTested [
+	^ String
+]
+
 { #category : #'tests - includes' }
 StringTest >> collection [
 	^ 'ghj'
@@ -361,7 +366,7 @@ StringTest >> secondIndex [
 
 { #category : #running }
 StringTest >> setUp [
-	<compilerOptions: #(#- #optionReadOnlyLiterals)>
+	<compilerOptions: #(- #optionReadOnlyLiterals)>
 	super setUp.
 	string := 'Hi, I am a String'.
 	emptyString := ''.
@@ -488,35 +493,23 @@ StringTest >> testAsSignedInteger [
 
 { #category : #'tests - converting' }
 StringTest >> testAsSmalltalkComment [
-
-	| exampleStrings  |
-	exampleStrings := #(
-		''
-		' '
-		'"'
-		'""'
-		'"""'
-		'abc"abc'
-		'abc""abc'
-		'abc"hello"abc'
-		'abc"'
-		'"abc' ).
+	| exampleStrings |
+	exampleStrings := #('' ' ' '"' '""' '"""' 'abc"abc' 'abc""abc' 'abc"hello"abc' 'abc"' '"abc').
 
 	"check that the result of scanning the comment is empty"
-	exampleStrings do: [ :s |
-		| tokens  |
-		tokens := s asComment parseLiterals.
-		self assert: (tokens isEmpty) ].
+	exampleStrings
+		do: [ :s | 
+			| tokens |
+			tokens := s asComment parseLiterals.
+			self assertEmpty: tokens ].
 
 	"check that the result has the same non-quote characters as the original"
-	exampleStrings do: [ :s |
-		self assert: (s copyWithout: $") equals: (s asComment copyWithout: $")].
+	exampleStrings do: [ :s | self assert: (s copyWithout: $") equals: (s asComment copyWithout: $") ].
 
 	"finnaly, test for some common kinds of inputs"
 	self assert: 'abc' asComment equals: '"abc"'.
 	self assert: 'abc"abc' asComment equals: '"abc""abc"'.
-	self assert: 'abc""abc' asComment equals: '"abc""abc"'.
-		
+	self assert: 'abc""abc' asComment equals: '"abc""abc"'
 ]
 
 { #category : #tests }
@@ -532,11 +525,10 @@ StringTest >> testAsString [
 
 { #category : #tests }
 StringTest >> testAsSymbol [
-
-	self assert: 'hel','lo' asSymbol equals: #'hello'.
+	self assert: 'hel' , 'lo' asSymbol equals: #hello.
 	self assert: 'é è à ô ü' asSymbol equals: #'é è à ô ü'.
 	self assert: '' asSymbol equals: #''.
-	self assert: ('test' asSymbol) == #'test' 
+	self assert: 'test' asSymbol identicalTo: #test
 ]
 
 { #category : #tests }
@@ -578,16 +570,15 @@ StringTest >> testBeginsWithEmptyCaseSensitive [
 
 { #category : #'tests - converting' }
 StringTest >> testCapitalized [
-
-	| uc lc empty |		
+	| uc lc empty |
 	uc := 'MElViN'.
 	lc := 'mElViN'.
 	empty := ' '.
 	self assert: lc capitalized equals: uc.
 	self assert: uc capitalized equals: uc.
 	"the string gets copied"
-	self deny: uc capitalized == uc.
-	self deny: empty capitalized == empty.
+	self deny: uc capitalized identicalTo: uc.
+	self deny: empty capitalized identicalTo: empty
 ]
 
 { #category : #tests }
@@ -710,6 +701,22 @@ StringTest >> testCopyReplaceAllWithAsTokens [
 	self assert: ('éèàôü éèàôüt éèàôü' copyReplaceAll: ' ' with:  'ß' asTokens: false) equals: 'éèàôüßéèàôütßéèàôü'.
 ]
 
+{ #category : #'tests - copying' }
+StringTest >> testCopyUpToSubstring [ 
+
+	self assert: ('abcdef' copyUpToSubstring: '') equals: ''.
+	self assert: ('abcdef' copyUpToSubstring: 'a') equals: ''.
+	self assert: ('abcdef' copyUpToSubstring: 'b') equals: 'a'.
+	self assert: ('abcdef' copyUpToSubstring: 'de') equals: 'abc'.
+	self assert: ('abcdef' copyUpToSubstring: 'ef') equals: 'abcd'.
+	self assert: ('abcdef' copyUpToSubstring: 'f') equals: 'abcde'.
+	self assert: ('abcdef' copyUpToSubstring: 'fg') equals: 'abcdef'.
+	self assert: ('' copyUpToSubstring: 'abc') equals: ''.
+	self assert: ('abcdef' copyUpToSubstring: 'g') equals: 'abcdef'.
+	self assert: ('abcdef' copyUpToSubstring: 'gh') equals: 'abcdef'.
+
+]
+
 { #category : #'tests - comparing' }
 StringTest >> testCorrectAgainst [
 
@@ -789,14 +796,15 @@ StringTest >> testEquality [
 StringTest >> testExpandMacros [
 
 	self
-		assert: '<t><n><r>' expandMacros
+		assert: '<t><n><r><l>' expandMacros
 		equals:
 			(String
 				streamContents: [ :stream | 
 					stream
 						nextPut: Character tab;
 						nextPutAll: OSPlatform current lineEnding;
-						nextPut: Character cr ])
+						nextPut: Character cr;
+						nextPut: Character lf ])
 ]
 
 { #category : #'tests - formatting' }
@@ -978,11 +986,10 @@ StringTest >> testFindTokensEscapedBy01 [
 
 { #category : #'tests - tokenizing' }
 StringTest >> testFindTokensEscapedBy02 [
-
 	| tokens |
 	string := ''.
 	tokens := string findTokens: ',' escapedBy: '"'.
-	self assert: tokens isEmpty
+	self assertEmpty: tokens
 ]
 
 { #category : #'tests - tokenizing' }
@@ -1359,7 +1366,7 @@ StringTest >> testIsAllDigits [
 
 { #category : #tests }
 StringTest >> testIsAsciiString [
-	"Non-regression for https://pharo.fogbugz.com/f/cases/15232 "
+	"Non-regression for https://pharo.manuscript.com/f/cases/15232 "
 	
 	self assert: '' isAsciiString equals: true.
 	self assert: 'abcdefGHIJKL 98765,./@#%$' isAsciiString equals: true.
@@ -1577,7 +1584,7 @@ StringTest >> testLinesDoWithCrLfBetween [
 StringTest >> testLoremIpsum [
 	| fillerText |
 	fillerText := String loremIpsum.
-	self deny: fillerText isEmpty.
+	self denyEmpty: fillerText.
 	self assert: (fillerText beginsWith: 'Lorem ipsum').
 	self assert: (fillerText endsWith: 'laborum.').
 	self assert: fillerText lines first equals: fillerText.
@@ -1764,6 +1771,8 @@ StringTest >> testRomanNumber [
 	self assert: 'MDCLXXXVII' romanNumber equals: 1687.
 	self assert: 'MCMXLII' romanNumber equals: 1942.
 	self assert: 'DCLXVI' romanNumber equals: 666.
+	self assert: '-V' romanNumber equals: -5.
+	self assert: '-MDCCCXCV' romanNumber equals: -1895.
 ]
 
 { #category : #'tests - instance creation' }
@@ -1775,6 +1784,11 @@ StringTest >> testSpace [
 	string := String space.
 	self assert: string size equals: 1.
 	self assert: string equals: ' '
+]
+
+{ #category : #tests }
+StringTest >> testStoreOn [
+	self assert: (String streamContents: [ :s | 'Foo''Bar' storeOn: s ]) equals: '''Foo''''Bar'''
 ]
 
 { #category : #'tests - converting' }
@@ -1812,7 +1826,7 @@ StringTest >> testSubstrings [
 
 { #category : #tests }
 StringTest >> testTranslateToLowercase [
-	<compilerOptions: #(#- #optionReadOnlyLiterals)>
+	<compilerOptions: #(- #optionReadOnlyLiterals)>
 	
 	self assert: 'test this string' translateToLowercase equals: 'test this string'.
 	self assert: ' Test THIS sTRing' translateToLowercase equals: ' test this string'.
@@ -1823,7 +1837,7 @@ StringTest >> testTranslateToLowercase [
 
 { #category : #tests }
 StringTest >> testTranslateToUppercase [
-	<compilerOptions: #(#- #optionReadOnlyLiterals)>
+	<compilerOptions: #(- #optionReadOnlyLiterals)>
 
 	self assert: 'test this string' translateToUppercase equals: 'TEST THIS STRING'.
 	self assert: ' Test THIS sTRing' translateToUppercase equals: ' TEST THIS STRING'.
@@ -1889,16 +1903,15 @@ StringTest >> testTrimmed [
 
 { #category : #'tests - converting' }
 StringTest >> testUncapitalized [
-
-	| uc lc empty |		
+	| uc lc empty |
 	uc := 'MElViN'.
 	lc := 'mElViN'.
 	empty := ' '.
-	self assert:  uc uncapitalized equals: lc.
+	self assert: uc uncapitalized equals: lc.
 	self assert: lc uncapitalized equals: lc.
 	"the string gets copied"
-	self deny: lc uncapitalized == lc.
-	self deny: empty uncapitalized == empty.
+	self deny: lc uncapitalized identicalTo: lc.
+	self deny: empty uncapitalized identicalTo: empty
 ]
 
 { #category : #'tests - converting' }
@@ -1930,16 +1943,36 @@ StringTest >> testWithBlanksCondensed [
 
 { #category : #'tests - converting' }
 StringTest >> testWithFirstCharacterDownshifted [
-
-	| uc lc empty |		
+	| uc lc empty |
 	uc := 'MElViN'.
 	lc := 'mElViN'.
 	empty := ' '.
 	self assert: uc uncapitalized equals: lc.
 	self assert: lc uncapitalized equals: lc.
 	"the string gets copied"
-	self deny: lc uncapitalized == lc.
-	self deny: empty uncapitalized == empty.
+	self deny: lc uncapitalized identicalTo: lc.
+	self deny: empty uncapitalized identicalTo: empty
+]
+
+{ #category : #'tests - internet' }
+StringTest >> testWithInternalLineEndings [
+
+	{
+		'abc' -> 'abc'.
+		'abc', String cr -> ('abc', String cr).
+		'abc', String lf -> ('abc', String cr).
+		'abc', String crlf -> ('abc', String cr).
+		String cr, 'abc' -> (String cr, 'abc').
+		String lf, 'abc' -> (String cr, 'abc').
+		String crlf, 'abc' -> (String cr, 'abc').
+		'abc', String cr, String cr, 'abc' -> ('abc', String cr, String cr, 'abc').
+		'abc', String lf, String lf, 'abc' -> ('abc', String cr, String cr, 'abc').
+		'abc', String crlf, String crlf, 'abc' -> ('abc', String cr, String cr, 'abc').
+		String cr, 'abc', String cr, String crlf, 'abc', String lf -> (String cr, 'abc', String cr, String cr, 'abc', String cr).
+		String lf, 'abc', String lf, String crlf, 'abc', String cr -> (String cr, 'abc', String cr, String cr, 'abc', String cr).
+		(WideString with: 403 asCharacter with: Character lf) -> (WideString with: 403 asCharacter with: Character cr).
+	} do: [ :each |
+		self assert: each key withInternalLineEndings equals: each value ]
 ]
 
 { #category : #'tests - internet' }
@@ -1992,28 +2025,9 @@ StringTest >> testWithSeparatorsCompacted [
 ]
 
 { #category : #'tests - internet' }
-StringTest >> testWithSqueakLineEndings [
-
-	{
-		'abc' -> 'abc'.
-		'abc', String cr -> ('abc', String cr).
-		'abc', String lf -> ('abc', String cr).
-		'abc', String crlf -> ('abc', String cr).
-		String cr, 'abc' -> (String cr, 'abc').
-		String lf, 'abc' -> (String cr, 'abc').
-		String crlf, 'abc' -> (String cr, 'abc').
-		'abc', String cr, String cr, 'abc' -> ('abc', String cr, String cr, 'abc').
-		'abc', String lf, String lf, 'abc' -> ('abc', String cr, String cr, 'abc').
-		'abc', String crlf, String crlf, 'abc' -> ('abc', String cr, String cr, 'abc').
-		String cr, 'abc', String cr, String crlf, 'abc', String lf -> (String cr, 'abc', String cr, String cr, 'abc', String cr).
-		String lf, 'abc', String lf, String crlf, 'abc', String cr -> (String cr, 'abc', String cr, String cr, 'abc', String cr).
-	} do: [ :each |
-		self assert: each key withSqueakLineEndings equals: each value ]
-]
-
-{ #category : #'tests - internet' }
 StringTest >> testWithUnixLineEndings [
 
+	| original newString |
 	{
 		'abc' -> 'abc'.
 		'abc', String cr -> ('abc', String lf).
@@ -2027,8 +2041,15 @@ StringTest >> testWithUnixLineEndings [
 		'abc', String crlf, String crlf, 'abc' -> ('abc', String lf, String lf, 'abc').
 		String cr, 'abc', String cr, String crlf, 'abc', String lf -> (String lf, 'abc', String lf, String lf, 'abc', String lf).
 		String lf, 'abc', String lf, String crlf, 'abc', String cr -> (String lf, 'abc', String lf, String lf, 'abc', String lf).
+		(WideString with: 403 asCharacter with: Character cr) -> (WideString with: 403 asCharacter with: Character lf).
 	} do: [ :each |
-		self assert: each key withUnixLineEndings equals: each value ]
+		self assert: each key withUnixLineEndings equals: each value ].
+	
+	original :='asa' , String cr , 'asa'.
+	self assert: (original at: 4) equals: Character cr.
+	newString := original withUnixLineEndings.
+	self assert: (original at: 4) equals: Character cr.
+	self assert: (newString at: 4) equals: Character lf.
 ]
 
 { #category : #'tests - converting' }

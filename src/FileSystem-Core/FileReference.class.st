@@ -44,6 +44,20 @@ FileReference class >> newTempFilePrefix: prefix suffix: suffix [
 	^ tmpDir / fileName
 ]
 
+{ #category : #'instance creation' }
+FileReference class >> primDropRequestFileName: dropIndex [
+	"Primitive. Return the file name for some file that was just dropped onto the application.
+	Fail if dropIndex is out of range or the primitive is not supported."
+	<primitive: 'primitiveDropRequestFileName' module:'DropPlugin'>
+	^ self primitiveFail 
+]
+
+{ #category : #'drag-and-drop' }
+FileReference class >> requestDropReference: anInteger [ 
+	
+	^ (FilePathEncoder decode: (self primDropRequestFileName: anInteger)) asFileReference 
+]
+
 { #category : #navigating }
 FileReference >> , extension [
 	^ self withPath: self path, extension
@@ -66,6 +80,11 @@ FileReference >> absolutePath [
 	^ self path isRelative
 		ifFalse: [ self path ]
 		ifTrue: [ filesystem resolve: self path ]
+]
+
+{ #category : #accessing }
+FileReference >> accessTime [ 
+	^ filesystem accessTimeOf: self path
 ]
 
 { #category : #converting }
@@ -91,15 +110,21 @@ FileReference >> asPath [
 
 { #category : #streams }
 FileReference >> binaryReadStream [
+	"Answer a buffered binary read stream on the receiver"
 	
-	^ filesystem binaryReadStreamOn: self path
+	^ ZnBufferedReadStream on: (filesystem binaryReadStreamOn: self path)
 ]
 
 { #category : #streams }
 FileReference >> binaryWriteStream [
-	"Answer a binary write stream on the receiver"
+	"Answer a buffered binary write stream on the receiver"
 
-	^ ZnBufferedReadWriteStream on: (filesystem binaryWriteStreamOn: self path)
+	^ ZnBufferedWriteStream on: (filesystem binaryWriteStreamOn: self path)
+]
+
+{ #category : #accessing }
+FileReference >> changeTime [ 
+	^ filesystem changeTimeOf: self path
 ]
 
 { #category : #comparing }
@@ -108,10 +133,17 @@ FileReference >> containsReference: aReference [
 ]
 
 { #category : #operations }
-FileReference >> copyTo: aReference [
+FileReference >> copyTo: aFileReference [
+	"Copy the receiver and create the argument, a file reference."
+	
+	"If you want to copy a file from a folder into a given folder, the argument should not be the future parent folder
+	but a file reference of the future location.  
+	Therefore use 
+		(folder1 / 'foo.txt') copyTo: (folder2 / 'bar.txt')"
+		
 	self isDirectory
-		ifTrue: [ aReference ensureCreateDirectory ]
-		ifFalse: [ filesystem copy: path toReference: aReference ]
+		ifTrue: [ aFileReference ensureCreateDirectory ]
+		ifFalse: [ filesystem copy: path toReference: aFileReference ]
 ]
 
 { #category : #copying }
@@ -120,7 +152,9 @@ FileReference >> copyWithPath: newPath [
 ]
 
 { #category : #accessing }
-FileReference >> creationTime [ 
+FileReference >> creationTime [
+	"Answer the receivers creation time.
+	Note that the interpretation varies by platform."
 	^ filesystem creationTimeOf: self path
 ]
 
@@ -139,6 +173,12 @@ FileReference >> deleteIfAbsent: aBlock [
 	self exists 
 		ifTrue: [ self delete ]
 		ifFalse: aBlock
+]
+
+{ #category : #accessing }
+FileReference >> deviceId [
+	"Return the device id of the file at aPath"
+	^ filesystem deviceIdOf: path
 ]
 
 { #category : #operations }
@@ -162,7 +202,34 @@ FileReference >> entry [
 
 { #category : #testing }
 FileReference >> exists [
+	"Answer a boolean indicating whether the receiver exists on the file system"
 	^ filesystem exists: path
+]
+
+{ #category : #versions }
+FileReference >> extractVersionNumberFrom: filename basename: basename extension: extension [
+	"Answer the version number written in filename considering 
+	that it consists of basename and extension.
+	For example filename=basename.10.extension will return 10.
+	filename=basename.extension without number will return 0
+	It returns nil if given file does not satisfy this pattern"
+
+	"ensure prefix basename."
+	| versionStart versionEnd |
+	(filename beginsWith: basename) ifFalse: [^nil].
+	(filename size > basename size and: [(filename at: basename size + 1) = $.]) 
+		ifFalse: [ ^nil ].
+	"ensure suffix .extension"
+	(filename endsWith: extension) ifFalse: [^nil].
+	(filename size > extension size and: [(filename at: filename size - extension size) = $.])
+		 ifFalse: [ ^nil ].
+	
+	versionStart := basename size + 2.
+	versionEnd := filename size - extension size - 1.
+	versionStart to: versionEnd do: [:i | 
+		(filename at: i) isDigit ifFalse: [ ^nil ] ].
+	versionStart > versionEnd ifTrue: [ ^0]. "means pattern baseline.extension"
+	^(filename copyFrom: versionStart to: versionEnd) asNumber
 ]
 
 { #category : #accessing }
@@ -180,6 +247,12 @@ FileReference >> fullName [
 { #category : #accessing }
 FileReference >> fullPath [
 	^ self path
+]
+
+{ #category : #accessing }
+FileReference >> gid [
+	"Return the gid of the file at aPath"
+	^ filesystem gidOf: path
 ]
 
 { #category : #testing }
@@ -211,14 +284,44 @@ FileReference >> hash [
 	^ path hash bitXor: filesystem hash
 ]
 
+{ #category : #accessing }
+FileReference >> inode [
+	"Return the inode of the file at aPath"
+	^ filesystem inodeOf: path
+]
+
 { #category : #testing }
 FileReference >> isAbsolute [
 	^ path isAbsolute
 ]
 
 { #category : #testing }
+FileReference >> isBlock [
+	"Return a boolean indicating whether the File described by aPath is a block device"
+	^ filesystem isBlock: path
+]
+
+{ #category : #testing }
+FileReference >> isCharacter [
+	"Return a boolean indicating whether the File described by aPath is character based"
+	^ filesystem isCharacter: path
+]
+
+{ #category : #testing }
 FileReference >> isDirectory [
 	^ filesystem isDirectory: path
+]
+
+{ #category : #testing }
+FileReference >> isExecutable [
+	"Answer a boolean indicating whether the receiver has the executable flag set"
+	^ filesystem isExecutable: path
+]
+
+{ #category : #testing }
+FileReference >> isFIFO [
+	"Return a boolean indicating whether the File described by aPath is FIFO (i.e. a pipe)"
+	^ filesystem isFIFO: path
 ]
 
 { #category : #testing }
@@ -232,6 +335,12 @@ FileReference >> isReadable [
 ]
 
 { #category : #testing }
+FileReference >> isRegular [
+	"Return a boolean indicating whether the File described by aPath is a regular file"
+	^ filesystem isRegular: path
+]
+
+{ #category : #testing }
 FileReference >> isRelative [
 	^ path isRelative
 ]
@@ -242,7 +351,14 @@ FileReference >> isRoot [
 ]
 
 { #category : #testing }
-FileReference >> isSymlink [ 
+FileReference >> isSocket [
+	"Return a boolean indicating whether the File described by aPath is a socket"
+	^ filesystem isSocket: path
+]
+
+{ #category : #testing }
+FileReference >> isSymlink [
+	"Answer a boolean indicating whether the receiver is a symlink"
 	^ filesystem isSymlink: path
 ]
 
@@ -253,24 +369,22 @@ FileReference >> isWritable [
 
 { #category : #utilities }
 FileReference >> lastFileFor: baseFileName extension: extension [
-  "Assumes a file is named using a version number encoded as '.' followed by digits
+	"Assumes a file is named using a version number encoded as '.' followed by digits
   preceding the file extension, e.g., games.22.ston
   Answer the file name with the largest number.
   If a version number is not found, raises an error"
 
-  "FileSystem workingDirectory lastFileFor: 'games' extension: 'ston'"
+	"FileSystem workingDirectory lastFileFor: 'games' extension: 'ston'"
 
-    | files |
-    files := self childrenMatching: baseFileName , '.*.' , extension.
-    files ifEmpty: [ ^ self error: 'No file with number pattern' ].
-    ^ (files asSortedCollection: [ :a :b | a basename < b basename ]) last
+	| version |
 
-]
+	version := self versionNumberFor: baseFileName extension: extension.
+	^(version
+		ifNil: [ self error: 'No file with number pattern' ]
+		ifNotNil: [ version = 0
+			ifTrue: [ baseFileName, '.', extension ]
+			ifFalse: [ baseFileName , '.' , version asString , '.' , extension ] ]) asFileReference 
 
-{ #category : #accessing }
-FileReference >> mimeTypes [
-	"Return the possible mime types for the given path."
-	^ filesystem mimeTypesAt: path
 ]
 
 { #category : #accessing }
@@ -281,6 +395,13 @@ FileReference >> modificationTime [
 
 { #category : #operations }
 FileReference >> moveTo: aReference [
+	"Move the receiver in the location passed as argument.
+	
+	(FileSystem disk workingDirectory / 'paf' ) ensureCreateFile.
+	(FileSystem disk workingDirectory / 'fooFolder') ensureCreateDirectory. 
+	(FileSystem disk workingDirectory / 'paf' ) moveTo: (FileSystem disk workingDirectory / 'fooFolder' / 'paf')
+	
+	Note that the receiver is modified to point to the new location."
 	
 	| result |
 	result := self fileSystem 
@@ -299,17 +420,12 @@ FileReference >> nextNameFor: baseFileName extension: extension [
 
 	"(FileSystem workingDirectory nextNameFor: 'games' extension: 'ston') asFileReference ensureCreateFile"
 
-	| files splits version |
-	files := self childrenMatching: baseFileName , '.*.' , extension.
-	files ifEmpty: [ ^ baseFileName , '.1.' , extension ].
-	splits := files
-		collect: [ :filename | filename basename splitOn: $. ]
-		thenSelect: [ :split | (split at: 1) = baseFileName and: [ split size = 3 ] ].
-	splits := splits asSortedCollection: [ :a :b | (a at: 2) < (b at: 2) ].
-	version := splits isEmpty
-		ifTrue: [ 1 ]
-		ifFalse: [ (splits last at: 2) asNumber + 1 ].
-	^ baseFileName , '.' , version asString , '.' , extension
+	| version |
+
+	version := self versionNumberFor: baseFileName extension: extension.
+	^version
+		ifNil: [ baseFileName, '.1.', extension ]
+		ifNotNil: [ baseFileName , '.' , (version+1) asString , '.' , extension ]
 ]
 
 { #category : #utilities }
@@ -318,24 +434,30 @@ FileReference >> nextVersion [
 	preceding the file extension.  Increment the version number and answer the new file name.
 	If a version number is not found, return just the file"
 
-	| parent version versionNumbers nameWithoutExtension |
-	
+	| parent basename nameWithoutExtension extension max index |
+
 	self exists
 		ifFalse: [ ^ self ].
-	
+
 	parent := self parent.
-	nameWithoutExtension := self basename copyUpTo: $..
-	
-	versionNumbers := parent children 
-				select: [ :f| 
-					(f basename beginsWith: nameWithoutExtension) ]
-				thenCollect: [ :f| 
-					Number squeezeNumberOutOfString: (f basename last: (f basename size - nameWithoutExtension size))   ifFail: [ 0 ]].
-	
-	versionNumbers ifEmpty: [ ^self ].
-	
-	version := versionNumbers max + 1.
-	^ parent / (nameWithoutExtension , '.', version asString) , self extension
+	extension := self extension.
+	basename := self basename.
+	nameWithoutExtension := basename copyFrom: 1 to: (basename size - extension size - 1).
+	"At this stage nameWithoutExtension may still include a version number.  Remove it if necessary"
+	index := nameWithoutExtension size.
+	[ index > 0 and: [ (nameWithoutExtension at: index) isDigit ] ] whileTrue:
+		[ index := index - 1 ].
+	((index between: 1 and: nameWithoutExtension size - 1) and: [ (nameWithoutExtension at: index) = $. ]) ifTrue: 
+		[ nameWithoutExtension := nameWithoutExtension copyFrom: 1 to: index-1 ].
+
+	max := parent versionNumberFor: nameWithoutExtension extension: extension.
+	^ parent / (nameWithoutExtension, '.', (max+1) asString) , self extension
+]
+
+{ #category : #accessing }
+FileReference >> numberOfHardLinks [
+	"Return the number of hard links to the File described by aPath"
+	^ filesystem numberOfHardLinks: path
 ]
 
 { #category : #streams }
@@ -359,6 +481,13 @@ FileReference >> pathString [
 { #category : #accessing }
 FileReference >> permissions [
 	^ filesystem permissions: self path
+]
+
+{ #category : #operations }
+FileReference >> permissions: permissions [
+	"Set the receivers mode to anInteger (as defined by chmod())"
+
+	^filesystem file: self path posixPermissions: permissions posixPermission
 ]
 
 { #category : #printing }
@@ -414,7 +543,7 @@ FileReference >> resolveString: aString [
 	^ filesystem referenceTo: (path resolve: thePath)
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 FileReference >> setFileSystem: aFilesystem path: aPath [
 	filesystem := aFilesystem.
 	path := aPath
@@ -423,6 +552,64 @@ FileReference >> setFileSystem: aFilesystem path: aPath [
 { #category : #accessing }
 FileReference >> size [
 	^ filesystem sizeOf: path
+]
+
+{ #category : #accessing }
+FileReference >> symlinkEntry [
+	"Return the symlink entry (meta data) describing the receiver."
+	^ filesystem symlinkEntryAt: path
+]
+
+{ #category : #accessing }
+FileReference >> symlinkUid: uid gid: gid [
+	"Set the owner and group of the receiver by numeric id.
+	An id of nil leaves it unchanged."
+
+	^filesystem file: self path symlinkUid: uid gid: gid.
+]
+
+{ #category : #accessing }
+FileReference >> targetPath [
+	"Return the target file of the File described by aPath.  For a regular file, this is itself, for a symbolic link, it is the file pointed to by the symbolic link"
+	^ self class fileSystem: filesystem path: (filesystem targetPath: path)
+]
+
+{ #category : #accessing }
+FileReference >> uid [
+	"Return the gid of the file at aPath"
+	^ filesystem uidOf: path
+]
+
+{ #category : #accessing }
+FileReference >> uid: uid gid: gid [
+	"Set the owner and group of the receiver by numeric id.
+	An id of nil leaves it unchanged."
+
+	^filesystem file: self path uid: uid gid: gid
+]
+
+{ #category : #streams }
+FileReference >> unbufferedBinaryWriteStream [
+	"Answer a binary read/write stream on the receiver"
+
+	^ filesystem binaryWriteStreamOn: self path
+]
+
+{ #category : #versions }
+FileReference >> versionNumberFor: basename extension: extension [
+	"Answer the latest (largest) version number for the specified file.
+	0 = basename.extension exists, but nothing later.
+	nil = no file exists"
+	| maxVersion |
+	maxVersion := 0.
+	self fileSystem childNamesAt: self path do: [ :child | | childVersion |
+		childVersion := self extractVersionNumberFrom: child basename: basename extension: extension.
+		childVersion ifNotNil: [ maxVersion := maxVersion max: childVersion ]].
+	^maxVersion = 0
+		ifTrue: [ (self / (basename, '.', extension)) asFileReference exists 
+			ifTrue: [ 0 ]
+			ifFalse: [ nil ] ]
+		ifFalse: [ maxVersion ]
 ]
 
 { #category : #streams }

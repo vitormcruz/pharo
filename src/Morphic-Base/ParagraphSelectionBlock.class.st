@@ -1,3 +1,6 @@
+"
+A selection block in a text paragraph 
+"
 Class {
 	#name : #ParagraphSelectionBlock,
 	#superclass : #Object,
@@ -37,7 +40,7 @@ ParagraphSelectionBlock >> first [
 	^ first
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 ParagraphSelectionBlock >> first: firstCharBlock last: lastCharBlock color: aColor [
 	first := firstCharBlock.
 	last := lastCharBlock.

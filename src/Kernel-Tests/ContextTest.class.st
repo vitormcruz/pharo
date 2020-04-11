@@ -7,7 +7,7 @@ aReceiver         - just some arbitrary object, ""Rectangle origin: 100@100 corn
 aSender           - just some arbitrary object, thisContext
 aCompiledMethod - just some arbitrary method, ""Rectangle rightCenter"".
 aMethodContext   - just some arbitray context ...  
-
+nonActiveBlockContext  - the Context of a block whose home context is not in its sender chain (because the method that created this block already returned)
 
 "
 Class {
@@ -18,9 +18,11 @@ Class {
 		'aReceiver',
 		'aMethodContext',
 		'aSender',
-		'instVarForTestLookupSymbol'
+		'instVarForTestLookupSymbol',
+		'nonActiveBlockContext'
 	],
 	#classVars : [
+		'Block',
 		'classVarForTestLookupSymbol'
 	],
 	#category : #'Kernel-Tests-Methods'
@@ -34,55 +36,76 @@ ContextTest class >> contextWithTempForTesting [
 
 ]
 
+{ #category : #helper }
+ContextTest class >> createBlock [
+	^ [ thisContext ].
+]
+
+{ #category : #helper }
+ContextTest class >> returnNonActiveContextOfBlock [
+	Block := self createBlock.
+	^ Block value
+]
+
 { #category : #private }
 ContextTest >> privRestartArgBlockTest [
 	"This tests may loop endlessly if incorrect, so call it from another method testing it does not time out"
-	|firstTimeThrough |
-	firstTimeThrough := true.
-	
-	self assert: 30 equals: ([:a | |b| 
-		self assert: 10 = a .
-		self assert: nil == b.
-		b := a + 20. 
-		firstTimeThrough ifTrue: [
-			firstTimeThrough := false.
-			thisContext restart.].
-		b] value: 10)
 
+	| firstTimeThrough |
+	firstTimeThrough := true.
+
+	self
+		assert: 30
+		equals:
+			([ :a | 
+			| b |
+			self assert: 10 equals: a.
+			self assert: nil identicalTo: b.
+			b := a + 20.
+			firstTimeThrough
+				ifTrue: [ firstTimeThrough := false.
+					thisContext restart ].
+			b ] value: 10)
 ]
 
 { #category : #private }
 ContextTest >> privRestartBlockArgsNoRemoteTempsTest [
 	"This tests may loop endlessly if incorrect, so call it from another method testing it does not time out"
-	
-	self assert: 30 equals: ([:a :first | |b| 
-		self assert: 10 = a .
-		self assert: nil == b.
-		b := a + 20. 
-		first ifTrue: [
-			"Cheat and modify one of the args so we will not loop endlessly"
-			 thisContext tempAt: 2 put: false.
-			thisContext restart.].
-		b] value: 10 value: true)
 
+	self
+		assert: 30
+		equals:
+			([ :a :first | 
+			| b |
+			self assert: 10 equals: a.
+			self assert: nil identicalTo: b.
+			b := a + 20.
+			first
+				ifTrue: [ "Cheat and modify one of the args so we will not loop endlessly"
+					thisContext tempAt: 2 put: false.
+					thisContext restart ].
+			b ] value: 10 value: true)
 ]
 
 { #category : #private }
 ContextTest >> privRestartBlockTest [
 	"This tests may loop endlessly if incorrect, so call it from another method testing it does not time out"
-	|a firstTimeThrough |
+
+	| a firstTimeThrough |
 	firstTimeThrough := true.
 	a := 10.
-	
-	self assert: 30 equals: [|b| 
-		self assert: 10 = a .
-		self assert: nil == b.
-		b := a + 20. 
-		firstTimeThrough ifTrue: [
-			firstTimeThrough := false.
-			thisContext restart.].
-		b] value
 
+	self
+		assert: 30
+		equals:
+			[ | b |
+			self assert: 10 equals: a.
+			self assert: nil identicalTo: b.
+			b := a + 20.
+			firstTimeThrough
+				ifTrue: [ firstTimeThrough := false.
+					thisContext restart ].
+			b ] value
 ]
 
 { #category : #running }
@@ -96,54 +119,26 @@ ContextTest >> setUp [
 
 { #category : #tests }
 ContextTest >> testActivateReturnValue [
-	self assert:  ((aSender activateReturn: aMethodContext value: #()) isKindOf: Context).
-	self assert:  ((aSender activateReturn: aMethodContext value: #()) receiver = aMethodContext).
+	self assert: ((aSender activateReturn: aMethodContext value: #()) isKindOf: Context).
+	self assert: (aSender activateReturn: aMethodContext value: #()) receiver equals: aMethodContext
 ]
 
 { #category : #tests }
-ContextTest >> testCannotReturn [
-	| context p |
-	p := [context := thisContext] fork.
-	[p isTerminated] whileFalse: [ 10 milliSeconds wait ].
-
-	[ context resume: #result.
-	self assert: false description: 'ContextCannotReturn should be signaled' ]
-		 on: ContextCannotReturn do: [ :err |
-			self assert: err result equals: #result.
-			self assert: err target equals: context]
+ContextTest >> testActiveBlockContextHomeAndActiveHome [
+	[ self assert: thisContext home identicalTo:  thisContext activeHome.] value
 ]
 
-{ #category : #tests }
-ContextTest >> testClosureRestart [
-	"Test that various combinations of closures are restarted with the expected values"
-	"no args, no remote temps blocks are not tested, as I don't know how to do that programatically without ending up looping endlessly"
-	self should: [self privRestartBlockTest] notTakeMoreThan: 0.1 second.
-	self should: [self privRestartArgBlockTest] notTakeMoreThan: 0.1 second.
-	"self should: [self privRestartBlockArgsNoRemoteTempsTest] notTakeMoreThan: 0.1 second" "FAILING!"
+{ #category : #private }
+ContextTest >> testActiveHomeMethodContext [
+	self
+		assert: aMethodContext activeHome identicalTo: aMethodContext;
+		assert: aMethodContext activeHome identicalTo: aMethodContext home
 ]
 
 { #category : #tests }
 ContextTest >> testFindContextSuchThat [
-	self assert: (aMethodContext findContextSuchThat: [:each| true]) printString = aMethodContext printString.
-	self assert: (aMethodContext hasContext: aMethodContext). 
-]
-
-{ #category : #tests }
-ContextTest >> testJump [
-	#(exampleClosure exampleSend exampleStore) do: [ :selector |
-		self verifyJumpWithSelector: selector ]
-]
-
-{ #category : #tests }
-ContextTest >> testLookupSymbol [
-	|localVar|
-	localVar := 2.
-	instVarForTestLookupSymbol := 3.
-	classVarForTestLookupSymbol := 4.
-	self assert: (thisContext lookupSymbol: #localVar) equals: 2.
-	self assert: (thisContext lookupSymbol: #instVarForTestLookupSymbol) equals: 3.
-	self assert: (thisContext lookupSymbol: #classVarForTestLookupSymbol) equals: 4.
-	self assert: (thisContext lookupSymbol: #Smalltalk) equals: Smalltalk.
+	self assert: (aMethodContext findContextSuchThat: [ :each | true ]) printString equals: aMethodContext printString.
+	self assert: (aMethodContext hasContext: aMethodContext)
 ]
 
 { #category : #tests }
@@ -156,45 +151,45 @@ ContextTest >> testMethodContext [
 
 { #category : #tests }
 ContextTest >> testMethodIsBottomContext [
-	self assert: aMethodContext bottomContext = aSender.
-	self assert: aMethodContext secondFromBottom = aMethodContext.
+	self
+		assert: aMethodContext bottomContext equals: aSender;
+		assert: aMethodContext secondFromBottom equals: aMethodContext
+]
+
+{ #category : #tests }
+ContextTest >> testNonActiveBlockContextActiveHome [
+	nonActiveBlockContext := self class returnNonActiveContextOfBlock.
+	self assert: (nonActiveBlockContext activeHome) isNil.
+]
+
+{ #category : #tests }
+ContextTest >> testNonActiveBlockContextHome [
+	nonActiveBlockContext := self class returnNonActiveContextOfBlock.
+	self assert: (nonActiveBlockContext home) isNotNil.
 ]
 
 { #category : #tests }
 ContextTest >> testReturn [
 	"Why am I overriding setUp? Because sender must be thisContext, i.e, testReturn, not setUp."
-	aMethodContext := Context sender: thisContext receiver: aReceiver method: aCompiledMethod arguments: #(). 
-	self assert: (aMethodContext return: 5) = 5.
+
+	aMethodContext := Context
+		sender: thisContext
+		receiver: aReceiver
+		method: aCompiledMethod
+		arguments: #().
+	self assert: (aMethodContext return: 5) equals: 5
 ]
 
 { #category : #tests }
 ContextTest >> testSetUp [
 	"Note: In addition to verifying that the setUp worked the way it was expected to, testSetUp is used to illustrate the meaning of the simple access methods, methods that are not normally otherwise 'tested'"
-	
+
 	self deny: aMethodContext isDead.
-	self assert: aMethodContext home = aMethodContext.
-	self assert: aMethodContext receiver = aReceiver.
+	self assert: aMethodContext home equals: aMethodContext.
+	self assert: aMethodContext receiver equals: aReceiver.
 	self assert: (aMethodContext method isKindOf: CompiledMethod).
-	self assert: aMethodContext method = aCompiledMethod. 
-	self assert: aMethodContext client printString = 'ContextTest>>#testSetUp'.
-
-]
-
-{ #category : #'tests - ast mapping' }
-ContextTest >> testSourceNodeExecuted [
-	| sourceNode |
-	
-	sourceNode := thisContext sender sender sourceNodeExecuted.
-	self assert: sourceNode selector = #performTest.
-]
-
-{ #category : #'tests - ast mapping' }
-ContextTest >> testSourceNodeExecutedWhenContextIsJustAtStartpc [
-	| sourceNode context |
-	
-	context := Context sender: thisContext receiver: self method: self class >> testSelector arguments: #().
-	sourceNode := context sourceNodeExecuted.
-	self assert: sourceNode equals: (self class >> testSelector) ast sendNodes first receiver
+	self assert: aMethodContext method equals: aCompiledMethod.
+	self assert: aMethodContext client printString equals: 'ContextTest>>#testSetUp'
 ]
 
 { #category : #tests }
@@ -204,8 +199,7 @@ ContextTest >> verifyJumpWithSelector: selector [
 	normalStackp := (guineaPig perform: selector) stackPtr.
 	guineaPig beReadOnlyObject.
 	[ readOnlyStackp := (guineaPig perform: selector) stackPtr ]
-		on: ModificationForbidden 
+		on: ModificationForbidden
 		do: [ :ex | ex resumeUnchecked: nil ].
-	self assert: normalStackp = readOnlyStackp.
-	
+	self assert: normalStackp equals: readOnlyStackp
 ]

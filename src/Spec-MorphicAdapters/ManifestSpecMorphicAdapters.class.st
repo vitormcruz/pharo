@@ -1,8 +1,18 @@
+"
+Morphic specific spec adapters
+"
 Class {
 	#name : #ManifestSpecMorphicAdapters,
 	#superclass : #PackageManifest,
-	#category : #'Spec-MorphicAdapters'
+	#category : #'Spec-MorphicAdapters-Manifest'
 }
+
+{ #category : #deprecation }
+ManifestSpecMorphicAdapters class >> isDeprecated [
+	"Spec should be replaced by Spec 2"
+
+	^ true
+]
 
 { #category : #'code-critics' }
 ManifestSpecMorphicAdapters class >> ruleGTExampleNotDefinedRuleV1FalsePositive [

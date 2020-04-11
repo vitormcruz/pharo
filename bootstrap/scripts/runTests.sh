@@ -9,22 +9,25 @@ set -o xtrace
 # The first parameter is the architecture
 # The second parameter is the stage name
 
-# Next line is for debugging purpose. We suspect that multiple slaves uses the same dinectory.
-touch ${2}
-
 CACHE="${BOOTSTRAP_CACHE:-bootstrap-cache}"
 
 find ${CACHE}
 
-# Since there is random failure during tests execution we print the content of the current directory to find potential problems
-bootstrap/scripts/printFolderContent.sh
+# I will use the name of the image to determine the vm version (because file name is in the format Pharo7.0.0-rc1)
+#
+# WARNING: I'm assuming CACHE=bootstrap-cache
+# WARNING: If you change this, you will need to change "runKernelTests.sh" too
+#
+TEST_NAME_PREFIX=$(find ${CACHE} -name "Pharo*.zip" | head -n 1 | cut -d'/' -f 2 | cut -d'-' -f 1-2)
+#TEST_VM_VERSION=$(echo "${TEST_NAME_PREFIX}" | cut -d'-' -f 1| cut -c 6- | cut -d'.' -f 1-2 | sed 's/\.//')
+TEST_VM_VERSION="70"
 
-bootstrap/scripts/getPharoVM.sh 70 vm ${1}
-					
-IMAGE_ARCHIVE=$(find ${CACHE} -name Pharo7.0-${1}bit-*.zip)
+${BOOTSTRAP_REPOSITORY:-.}/bootstrap/scripts/getPharoVM.sh ${TEST_VM_VERSION} vm ${1}
+
+IMAGE_ARCHIVE=$(find ${CACHE} -name ${TEST_NAME_PREFIX}-${1}bit-*.zip)
 unzip $IMAGE_ARCHIVE
-IMAGE_FILE=$(find . -name Pharo7.0-${1}bit-*.image)
-CHANGES_FILE=$(find . -name Pharo7.0-${1}bit-*.changes)
+IMAGE_FILE=$(find . -name Pharo*-${1}bit-*.image)
+CHANGES_FILE=$(find . -name Pharo*-${1}bit-*.changes)
 				
 cp ${CACHE}/*.sources .
 mv $IMAGE_FILE Pharo.image
@@ -32,10 +35,4 @@ mv $CHANGES_FILE Pharo.changes
 
 export PHARO_CI_TESTING_ENVIRONMENT=1
 
-# Since there is random failure during tests execution we print the content of the current directory to find potential problems
-bootstrap/scripts/printFolderContent.sh
-					
 ./pharo Pharo.image test --junit-xml-output --stage-name=${2} '.*'
-
-# Since there is random failure during tests execution we print the content of the current directory to find potential problems
-bootstrap/scripts/printFolderContent.sh

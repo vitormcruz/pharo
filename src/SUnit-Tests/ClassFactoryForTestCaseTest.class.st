@@ -3,7 +3,7 @@ SUnit tests for ClassFactoryForTestCase
 "
 Class {
 	#name : #ClassFactoryForTestCaseTest,
-	#superclass : #TestCase,
+	#superclass : #AbstractEnvironmentTestCase,
 	#instVars : [
 		'factory'
 	],
@@ -75,7 +75,7 @@ ClassFactoryForTestCaseTest >> testDefaultCategoryCleanUp [
 	self assert: (factory createdTraits allSatisfy: [:trait| trait isObsolete]). 
 	
 	allClasses := SystemNavigation new allClasses.
-	allTraits := Smalltalk globals allTraits.
+	allTraits := testingEnvironment allTraits.
 	
 	self assert: (factory createdClasses noneSatisfy: [:class| allClasses includes: class]).
 	self assert: (factory createdTraits noneSatisfy: [:trait| allTraits includes: trait]).
@@ -103,73 +103,65 @@ ClassFactoryForTestCaseTest >> testDuplicateClassWithNewName [
 
 { #category : #testing }
 ClassFactoryForTestCaseTest >> testMultipleClassCreation [
-	5 timesRepeat: [
-		factory newClass].
+	5 timesRepeat: [ factory newClass ].
 	self assert: (SystemNavigation new allClasses includesAll: factory createdClasses).
-	self assert: factory createdClassNames asSet size = 5.
-	self assert: (SystemOrganization listAtCategoryNamed: factory defaultCategory) asSet = factory createdClassNames asSet
+	self assert: factory createdClassNames asSet size equals: 5.
+	self assert: (SystemOrganization listAtCategoryNamed: factory defaultCategory) asSet equals: factory createdClassNames asSet
 ]
 
 { #category : #testing }
 ClassFactoryForTestCaseTest >> testPackageCleanUp [
 	| createdClassNames allClasses |
-	3 timesRepeat: [
-		factory newClassInCategory: #One].
-	2 timesRepeat: [
-		factory newClassInCategory: #Two].
+	3 timesRepeat: [ factory newClassInCategory: #One ].
+	2 timesRepeat: [ factory newClassInCategory: #Two ].
 	createdClassNames := factory createdClassNames.
-	factory cleanUp.	
-	self assert: (factory createdClasses allSatisfy: [:class| class isObsolete]). 
+	factory cleanUp.
+	self assert: (factory createdClasses allSatisfy: [ :class | class isObsolete ]).
 	allClasses := SystemNavigation new allClasses.
-	self assert: (factory createdClasses noneSatisfy: [:class| allClasses includes: class]).
-	self assert: (SystemOrganization categoriesMatching: factory packageName, '*') isEmpty. 
-	self class environment at: #ChangeSet ifPresent: [:changeSet |
-		self deny: (changeSet current changedClassNames includesAnyOf: createdClassNames) ].
-
+	self assert: (factory createdClasses noneSatisfy: [ :class | allClasses includes: class ]).
+	self assertEmpty: (SystemOrganization categoriesMatching: factory packageName , '*').
+	self class environment at: #ChangeSet ifPresent: [ :changeSet | self deny: (changeSet current changedClassNames includesAnyOf: createdClassNames) ]
 ]
 
 { #category : #testing }
 ClassFactoryForTestCaseTest >> testSingleClassCreation [
-	|class elementsInCategoryForTest |
-	class := factory 
-		newSubclassOf: Object 
-		instanceVariableNames: 'a b c' 
-		classVariableNames: 'X Y'.
+	| class elementsInCategoryForTest |
+	class := factory newSubclassOf: Object instanceVariableNames: 'a b c' classVariableNames: 'X Y'.
 	self assert: (SystemNavigation new allClasses includes: class).
-	elementsInCategoryForTest := SystemOrganization listAtCategoryNamed: factory defaultCategory. 
-	self assert: elementsInCategoryForTest = {class name}.
-	self assert: class instVarNames = #(a b c).
-	self assert: class classPool keys asSet = #(X Y) asSet
+	elementsInCategoryForTest := SystemOrganization listAtCategoryNamed: factory defaultCategory.
+	self assert: elementsInCategoryForTest equals: {class name}.
+	self assert: class instVarNames equals: #(a b c).
+	self assert: class classPool keys asSet equals: #(X Y) asSet
 ]
 
 { #category : #testing }
 ClassFactoryForTestCaseTest >> testSingleClassFastCreation [
-	|class elementsInCategoryForTest |
+	| class elementsInCategoryForTest |
 	class := factory newClass.
 	self assert: (SystemNavigation new allClasses includes: class).
-	elementsInCategoryForTest := SystemOrganization listAtCategoryNamed: factory defaultCategory. 
-	self assert: elementsInCategoryForTest = {class name}.
-	self assert: class instVarNames isEmpty.
-	self assert: class classPool isEmpty
+	elementsInCategoryForTest := SystemOrganization listAtCategoryNamed: factory defaultCategory.
+	self assert: elementsInCategoryForTest equals: {class name}.
+	self assertEmpty: class instVarNames.
+	self assertEmpty: class classPool
 ]
 
 { #category : #testing }
 ClassFactoryForTestCaseTest >> testSingleTraitCreation [
 	| trait |
 	trait := factory newTrait.
-	self assert: (Smalltalk globals allTraits includes: trait).
-	self assert: trait traitUsers size = 0.
-	self assert: trait traits size = 0
+	self assert: (testingEnvironment allTraits includes: trait).
+	self assert: trait traitUsers size equals: 0.
+	self assert: trait traits size equals: 0
 ]
 
 { #category : #testing }
 ClassFactoryForTestCaseTest >> testTraitCreationInDifferentCategories [
 	| firstThreeTraits lastTwoTraits |
 	3 timesRepeat: [
-		factory newTraitInCategory: #One].
+		factory newTraitInTag: #One].
 	firstThreeTraits := factory createdTraits copy.
 	2 timesRepeat: [
-		factory newTraitInCategory: #Two].
+		factory newTraitInTag: #Two].
 	lastTwoTraits := factory createdTraits copyWithoutAll: firstThreeTraits.
 	self assert: (firstThreeTraits allSatisfy: [:trait| trait category = (factory packageName, '-', #One) asSymbol]).
 	self assert: (lastTwoTraits allSatisfy: [:trait| trait category = (factory packageName, '-', #Two) asSymbol]).

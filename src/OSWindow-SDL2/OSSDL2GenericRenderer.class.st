@@ -10,7 +10,7 @@ Class {
 	#pools : [
 		'SDL2Constants'
 	],
-	#category : #'OSWindow-SDL2'
+	#category : #'OSWindow-SDL2-Rendering'
 }
 
 { #category : #rendering }
@@ -30,7 +30,7 @@ OSSDL2GenericRenderer >> color: aColor [
 
 { #category : #initialization }
 OSSDL2GenericRenderer >> createSDL2Renderer [
-	renderer := window handle createDefaultRenderer.
+	renderer := backendWindow sdl2Window createDefaultRenderer.
 ]
 
 { #category : #deleting }

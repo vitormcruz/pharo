@@ -11,12 +11,12 @@ Class {
 	#category : #'Morphic-Base-Widgets'
 }
 
-{ #category : #initialize }
+{ #category : #iterating }
 HandleMorph >> forEachPointDo: aBlock [
 	pointBlock := aBlock
 ]
 
-{ #category : #initialize }
+{ #category : #iterating }
 HandleMorph >> forEachPointDo: aBlock lastPointDo: otherBlock [
 	pointBlock := aBlock.
 	lastPointBlock := otherBlock
@@ -25,59 +25,52 @@ HandleMorph >> forEachPointDo: aBlock lastPointDo: otherBlock [
 { #category : #initialization }
 HandleMorph >> initialize [
 	"initialize the state of the receiver"
+	
 	super initialize.
-	""
-	self extent: 8 @ 8.
+	self extent: 8 @ 8
 	
 ]
 
 { #category : #'dropping/grabbing' }
 HandleMorph >> justDroppedInto: aMorph event: anEvent [
 	"So that when the hand drops me (into the world) I go away"
-	self removeHalo.
-	lastPointBlock ifNotNil: [lastPointBlock value: self center].
-	self flag: #arNote. "Probably unnecessary"
-	anEvent hand releaseKeyboardFocus: self.
-	self changed.
-	self delete.
 
+	self removeHalo.
+	lastPointBlock ifNotNil: [ lastPointBlock value: self center ].	"Probably unnecessary"
+	anEvent hand releaseKeyboardFocus: self.
+	self
+		changed;
+		delete
 ]
 
 { #category : #'event handling' }
 HandleMorph >> keyStroke: evt [
 	"Check for cursor keys"
+
 	| keyValue |
-	owner isHandMorph ifFalse:[^self].
+	owner isHandMorph ifFalse: [ ^ self ].
 	keyValue := evt keyValue.
-	keyValue = 28 ifTrue:[^self position: self position - (1@0)].
-	keyValue = 29 ifTrue:[^self position: self position + (1@0)].
-	keyValue = 30 ifTrue:[^self position: self position - (0@1)].
-	keyValue = 31 ifTrue:[^self position: self position + (0@1)].
+	keyValue = 28 ifTrue: [ ^ self position: self position - (1 @ 0) ].
+	keyValue = 29 ifTrue: [ ^ self position: self position + (1 @ 0) ].
+	keyValue = 30 ifTrue: [ ^ self position: self position - (0 @ 1) ].
+	keyValue = 31 ifTrue: [ ^ self position: self position + (0 @ 1) ].
 	"Special case for return"
-	keyValue = 13 ifTrue:[
-		"Drop the receiver and be done"
-	self flag: #arNote. "Probably unnecessary"
-		owner releaseKeyboardFocus: self.
-		self delete].
-
+	keyValue = 13
+		ifTrue: [ "Drop the receiver and be done"
+			"Probably unnecessary"
+			owner releaseKeyboardFocus: self.
+			self delete ]
 ]
 
-{ #category : #'stepping and presenter' }
-HandleMorph >> startStepping [
-	"Make the receiver the keyboard focus for editing"
-	super startStepping.
-	"owner isHandMorph ifTrue:[owner newKeyboardFocus: self]."
-self flag: #arNote. "make me #handleKeyboard:"
-]
-
-{ #category : #'stepping and presenter' }
+{ #category : #stepping }
 HandleMorph >> step [
 	pointBlock value: self center
 ]
 
-{ #category : #testing }
+{ #category : #stepping }
 HandleMorph >> stepTime [
 	"Update every hundredth of a second."
+	
 	^ 10
 
 ]

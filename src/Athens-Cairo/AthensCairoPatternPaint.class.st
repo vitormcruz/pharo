@@ -6,14 +6,8 @@ Class {
 	#superclass : #FFIExternalObject,
 	#traits : 'TCairoLibrary',
 	#classTraits : 'TCairoLibrary classTrait',
-	#instVars : [
-		'surface',
-		'origin',
-		'direction',
-		'extent'
-	],
 	#pools : [
-		'AthensCairoDefs'
+		'AthensCairoDefinitions'
 	],
 	#category : #'Athens-Cairo-Paints'
 }
@@ -26,9 +20,7 @@ AthensCairoPatternPaint class >> finalizeResourceData: handle [
 
 { #category : #private }
 AthensCairoPatternPaint class >> primDestroyPattern: aHandle [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	
-	self nbCall: #(void cairo_pattern_destroy (ulong aHandle) )
+	^ self ffiCall: #(void cairo_pattern_destroy (ulong aHandle) )
  
 ]
 
@@ -84,7 +76,7 @@ AthensCairoPatternPaint >> athensLoadOn: anAthensCanvas [
 
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 AthensCairoPatternPaint >> defaultExtend [
 "The default extend mode is CAIRO_EXTEND_NONE for surface patterns and CAIRO_EXTEND_PAD for gradient patterns.
 "
@@ -92,7 +84,7 @@ AthensCairoPatternPaint >> defaultExtend [
 	^  CAIRO_EXTEND_NONE
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 AthensCairoPatternPaint >> initialize [
 	handle value = 0 
 		ifTrue: [ self error: 'Error creating new paint' ].
@@ -129,9 +121,7 @@ AthensCairoPatternPaint >> maskOn: anAthensCanvas [
 "
 A drawing operator that paints the current source using the alpha channel of pattern as a mask. (Opaque areas of pattern are painted with the source, transparent areas are not painted.)
 "
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin>
-	
-	^ self nbCall: #(void cairo_mask(cairo_t anAthensCanvas, self))
+	^ self ffiCall: #(void cairo_mask(cairo_t anAthensCanvas, self))
 ]
 
 { #category : #accessing }
@@ -142,19 +132,14 @@ AthensCairoPatternPaint >> noRepeat [
 
 { #category : #primitives }
 AthensCairoPatternPaint >> primSetExtend: extend [
-
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	
-	^ self nbCall:#(
+	^ self ffiCall:#(
 		void cairo_pattern_set_extend ( self , ulong extend) )
 		
 ]
 
 { #category : #primitives }
 AthensCairoPatternPaint >> primSetSourceOn: aCanvas [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin>
-	
-	^ self nbCall: #(void cairo_set_source ( cairo_t  aCanvas,  self))
+	^ self ffiCall: #(void cairo_set_source ( cairo_t  aCanvas,  self))
 ]
 
 { #category : #accessing }
@@ -188,10 +173,7 @@ AthensCairoPatternPaint >> setExtend: aSymbol [
 
 { #category : #accessing }
 AthensCairoPatternPaint >> setMatrix: m [
-
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	
-	self nbCall: #( 
+	^ self ffiCall: #( 
 		void
 			cairo_pattern_set_matrix ( self, AthensCairoMatrix * m)
 		)
@@ -200,8 +182,6 @@ AthensCairoPatternPaint >> setMatrix: m [
 
 { #category : #accessing }
 AthensCairoPatternPaint >> status [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin>
-	
-	^ self nbCall: #(int cairo_pattern_status (cairo_pattern_t  self))
+	^ self ffiCall: #(int cairo_pattern_status (cairo_pattern_t  self))
 		
 ]

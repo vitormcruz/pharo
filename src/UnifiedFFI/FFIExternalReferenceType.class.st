@@ -26,8 +26,24 @@ FFIExternalReferenceType class >> objectClass: aClass [
 	^ self new objectClass: aClass
 ]
 
+{ #category : #comparing }
+FFIExternalReferenceType >> = anExternalReferenceType [
+
+	^ (anExternalReferenceType isKindOf: self species)
+		and: [ objectClass = anExternalReferenceType objectClass ]
+]
+
 { #category : #'emitting code' }
 FFIExternalReferenceType >> basicEmitArgument: aBuilder context: aContext [
+ 	self loader
+		emitArgument: aBuilder 
+		context: aContext 
+		objectClass: self objectClass	
+		instVarName: self instanceVariableName
+]
+
+{ #category : #'emitting code' }
+FFIExternalReferenceType >> basicEmitArgument: aBuilder context: aContext inCallout: aCallout [
  	self loader
 		emitArgument: aBuilder 
 		context: aContext 
@@ -46,6 +62,12 @@ FFIExternalReferenceType >> basicHandle: aHandle at: index put: value [
 		ifFalse: [ self error: 'value needs to be an ExternalAddress' ].
 	^ aHandle pointerAt: index put: value getHandle
 
+]
+
+{ #category : #accessing }
+FFIExternalReferenceType >> defaultReturnOnError [
+
+	^ ExternalAddress null
 ]
 
 { #category : #'emitting code' }
@@ -92,6 +114,12 @@ FFIExternalReferenceType >> externalTypeAlignment [
 FFIExternalReferenceType >> externalTypeSize [
 	"this is always a pointer"
 	^ self pointerSize
+]
+
+{ #category : #comparing }
+FFIExternalReferenceType >> hash [
+
+	^ objectClass hash
 ]
 
 { #category : #accessing }

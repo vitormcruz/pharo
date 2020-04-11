@@ -22,6 +22,7 @@ GTUrlProvider class >> settingsOn: aBuilder [
 	(aBuilder setting: #stringUrlProvider)
 		parent: #gt;
 		target: self;
+		default: 'http://ws.stfx.eu/';
 		description: 'The url for the script sharing service like the one from http://ws.stfx.eu';
 		label: 'The url for the script sharing service'
 
@@ -81,7 +82,7 @@ GTUrlProvider >> urlProvider [
 	^ urlProvider ifNil: [ urlProvider := self class urlProvider ]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 GTUrlProvider >> urlProvider: anUrlObject [
 	urlProvider := anUrlObject asZnUrl 
 ]

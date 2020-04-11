@@ -77,14 +77,14 @@ SimpleTestResourceTestCase >> setUp [
 		description: 'This test uses a resource but it was not set up'
 ]
 
-{ #category : #running }
+{ #category : #tests }
 SimpleTestResourceTestCase >> testDebugTestWithResource [
 	"The debug will raise an error if the resource is not set up properly."
 	
 	self clearOuterResourceStateDuring: [(self class selector: #setRun) debug]
 ]
 
-{ #category : #running }
+{ #category : #tests }
 SimpleTestResourceTestCase >> testResourceCollection [
 	self assert: self class buildSuiteFromSelectors resources size = self resources size
 		description: 'The suite should have the same number of resources as its test'.
@@ -94,7 +94,7 @@ SimpleTestResourceTestCase >> testResourceCollection [
 			description: each name , ':  I have this resource but my suite does not'].
 ]
 
-{ #category : #'not categorized' }
+{ #category : #tests }
 SimpleTestResourceTestCase >> testResourceInitRelease [
 	| suite error failure |
 	suite := self classForTestSuite new.
@@ -105,7 +105,7 @@ SimpleTestResourceTestCase >> testResourceInitRelease [
 	self assert: resource hasSetup
 ]
 
-{ #category : #running }
+{ #category : #tests }
 SimpleTestResourceTestCase >> testRunSuiteWithResource [
 	| suite |
 	suite :=  self classForTestSuite new.
@@ -114,15 +114,15 @@ SimpleTestResourceTestCase >> testRunSuiteWithResource [
 	suite addTest: (self class selector: #dummy).
 	self clearOuterResourceStateDuring:
 		[self
-			assert: suite run printString = '3 run, 1 passes, 0 skipped, 0 expected failures, 1 failures, 1 errors, 0 unexpected passes'
+			assert: suite run printString = '3 ran, 1 passed, 0 skipped, 0 expected failures, 1 failure, 1 error, 0 passed unexpected'
 			description: 'A suite of tests needing SimpleTestResource did not run as expected'].
 ]
 
-{ #category : #running }
+{ #category : #tests }
 SimpleTestResourceTestCase >> testRunTestWithResource [
 	self clearOuterResourceStateDuring:
 		[self
 			assert: (self class selector: #dummy) run printString =
-							'1 run, 1 passes, 0 skipped, 0 expected failures, 0 failures, 0 errors, 0 unexpected passes'
+							'1 ran, 1 passed, 0 skipped, 0 expected failures, 0 failures, 0 errors, 0 passed unexpected'
 			description: 'A dummy test that needed a resource did not pass']
 ]

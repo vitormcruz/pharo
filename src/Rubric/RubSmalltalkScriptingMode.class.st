@@ -22,7 +22,24 @@ RubSmalltalkScriptingMode class >> label [
 	^ 'Smalltalk script'
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #testing }
+RubSmalltalkScriptingMode >> isScripting [
+	^ true
+]
+
+{ #category : #parsing }
+RubSmalltalkScriptingMode >> parseSource: aString [
+
+	^RBParser parseFaultyExpression: aString
+]
+
+{ #category : #shout }
+RubSmalltalkScriptingMode >> updateStyler [
+	super updateStyler.
+	self textArea shoutStyler beForSmalltalkScripting
+]
+
+{ #category : #update }
 RubSmalltalkScriptingMode >> updateTextAreaWhenPlugged [
 	super updateTextAreaWhenPlugged.
 	self textArea shoutStyler beForSmalltalkScripting

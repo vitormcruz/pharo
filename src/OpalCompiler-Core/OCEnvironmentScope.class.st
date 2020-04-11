@@ -16,6 +16,11 @@ OCEnvironmentScope class >> for: anEnvironment [
 ]
 
 { #category : #accessing }
+OCEnvironmentScope >> environment [
+	^environment
+]
+
+{ #category : #accessing }
 OCEnvironmentScope >> environment: aCollection [ 
 	environment := aCollection
 ]
@@ -30,13 +35,6 @@ OCEnvironmentScope >> lookupVar: name [
 			scope: self; 
 			yourself]
 
-]
-
-{ #category : #lookup }
-OCEnvironmentScope >> lookupVar: name inContext: aContext [
-	"I'll lookup a variable in the (global) environment. The context does not play any role in here because variables in classes are statically defined"
-
-	^ self lookupVar: name
 ]
 
 { #category : #creation }

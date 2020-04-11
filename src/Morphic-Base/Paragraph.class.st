@@ -217,7 +217,7 @@ Paragraph >> caretRect [
 
 { #category : #access }
 Paragraph >> caretWidth [
-	^ Editor dumbbellCursor		
+	^ TextEditor dumbbellCursor		
 			ifTrue: [ 2 ]		
 			ifFalse: [ 0 ]
 ]
@@ -261,7 +261,7 @@ Paragraph >> click: anEvent for: model controller: editor [
 		(attribute actOnClick: anEvent for: target in: self editor: editor) == true 	
 			ifTrue: [ ^ true ]].
 	
-	(action and: [ Cursor currentCursor == Cursor webLink]) 
+	(action and: [ self currentWorld currentCursor == Cursor webLink]) 
 		ifTrue:[ Cursor normal show ].
 	
 	^ action
@@ -622,7 +622,7 @@ Paragraph >> lineIndexOfCharacterIndex: characterIndex [
 
 { #category : #private }
 Paragraph >> lines [
-	^ lines
+	^ lines ifNil: [ ^ Array new ]
 ]
 
 { #category : #access }
@@ -645,7 +645,7 @@ Paragraph >> move: anEvent for: model controller: editor [
 		(attribute actOnMove: anEvent for: target in: self editor: editor) == true 	
 			ifTrue: [ ^ true ]].
 	
-	(action and: [ Cursor currentCursor == Cursor webLink]) 
+	(action and: [ self currentWorld currentCursor == Cursor webLink]) 
 		ifTrue:[ Cursor normal show ].
 	
 	^ action

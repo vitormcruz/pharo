@@ -12,6 +12,12 @@ Collection class >> empty [
 	^ self new
 ]
 
+{ #category : #testing }
+Collection class >> isAbstract [
+
+	^self name = #Collection
+]
+
 { #category : #'instance creation' }
 Collection class >> with: anObject [ 
 	"Answer an instance of me containing anObject."
@@ -92,16 +98,24 @@ Collection class >> withAll: aCollection [
 
 { #category : #enumerating }
 Collection >> & aCollection [
+	"#(1 2 3 4) & #(1 2 4 6 7) >>> #(1 2 4)"
+	
 	^ self intersection: aCollection
 ]
 
 { #category : #copying }
 Collection >> , aCollection [
+	"Concatenate the receiver with the argument."
+	"#(1 2 3) , #(4 5 6) >>> #(1 2 3 4 5 6)"
+	
 	^self copy addAll: aCollection; yourself
 ]
 
 { #category : #enumerating }
 Collection >> \ aCollection [
+	"Return all the elements in self that are not in aCollection"
+	"'abc' \ 'cbe' >>> 'a'."
+	
 	^ self difference: aCollection
 ]
 
@@ -171,6 +185,8 @@ Collection >> allSatisfy: aBlock [
 	"Evaluate aBlock with the elements of the receiver.
 	If aBlock returns false for any element return false.
 	Otherwise return true."
+	"#(1 2) allSatisfy: [ :each | each even ] >>> false"
+	"#(2 4) allSatisfy: [ :each | each even ] >>> true"
 
 	self do: [:each | (aBlock value: each) ifFalse: [^ false]].
 	^ true
@@ -193,6 +209,8 @@ Collection >> anySatisfy: aBlock [
 	"Evaluate aBlock with the elements of the receiver.
 	If aBlock returns true for any element return true.
 	Otherwise return false."
+	"#(1 3) anySatisfy: [ :each | each even ] >>> false"
+	"#(1 2) anySatisfy: [ :each | each even ] >>> true"
 
 	self do: [:each | (aBlock value: each) ifTrue: [^ true]].
 	^ false
@@ -243,18 +261,18 @@ Collection >> asCharacterSet [
 
 { #category : #printing }
 Collection >> asCommaString [
-	"Return collection printed as 'a, b, c' "
-
-	^String streamContents: [:s | self asStringOn: s delimiter: ', ']
-		
+    "Return collection printed as 'a, b, c' "
+    "#( 'a' 'b' 'c') asCommaString >>> 'a, b, c'"
+    
+    ^String streamContents: [:s | self asStringOn: s delimiter: ', ']
 ]
 
 { #category : #printing }
 Collection >> asCommaStringAnd [
 	"Return collection printed as 'a, b and c' "
+	"#( 'a' 'b' 'c') asCommaStringAnd >>> 'a, b and c'"
 
 	^String streamContents: [:s | self asStringOn: s delimiter: ', ' last: ' and ']
-		
 ]
 
 { #category : #converting }
@@ -407,7 +425,7 @@ Collection >> collect: collectBlock thenSelect: selectBlock [
 
 { #category : #testing }
 Collection >> contains: aBlock [
-	"VW compatibility"
+	"For compatibility, please use #anySatisfy: instead!"
 	^self anySatisfy: aBlock
 ]
 
@@ -442,13 +460,11 @@ Collection >> copyWithDependent: newElement [
 Collection >> copyWithout: oldElement [ 
 	"Answer a copy of the receiver that does not contain any
 	elements equal to oldElement."
-
+	"('fred the bear' copyWithout: $e) >>> 'frd th bar'"
+	"(#(2 3 4 5 5 6) copyWithout: 5) >>> #(2 3 4 6)"
+	
+	
 	^ self reject: [:each | each = oldElement]
-
-"Examples:
-	'fred the bear' copyWithout: $e
-	#(2 3 4 5 5 6) copyWithout: 5
-"
 ]
 
 { #category : #copying }
@@ -459,10 +475,20 @@ Collection >> copyWithoutAll: aCollection [
 	^ self reject: [:each | aCollection includes: each]
 ]
 
+{ #category : #copying }
+Collection >> copyWithoutDuplicates [
+	"Answer a copy of the receiver without any duplicated elements"
+	"(#(2 3 4 4  5 6) copyWithoutDuplicates)  >>> #(2 3 4 5 6)"
+	"(#('do' 'la' 'si' 'do' 'la') copyWithoutDuplicates) >>> #('la' 'do' 'si')"
+	"(#(#do #la #si #do #la) copyWithoutDuplicates) >>> #(#la #do #si)"
+	^ self asSet asArray
+]
+
 { #category : #enumerating }
 Collection >> count: aBlock [ 
 	"Evaluate aBlock with each of the receiver's elements as the argument.  
 	Answer the number of elements that answered true."
+	"#(1 2 3 4) count: [ :each | each even ] >>> true"
 
 	| sum |
 	sum := 0.
@@ -474,6 +500,7 @@ Collection >> count: aBlock [
 Collection >> detect: aBlock [ 
 	"Evaluate aBlock with each of the receiver's elements as the argument. 
 	Answer the first element for which aBlock evaluates to true."
+	"(#(1 2 3 4) detect: [ :each | each even ]) >>> 2"
 
 	^ self detect: aBlock ifNone: [self errorNotFound: aBlock]
 ]
@@ -485,6 +512,8 @@ Collection >> detect: aBlock ifFound: foundBlock [
 	foundBlock. 
 	If no element matches the criteria then do nothing.
 	Always returns self to avoid misuse and a potential isNil check on the sender."
+	"(#(1 2) detect: [ :each | each even ] ifFound: [ ^'yay!' ]) >>> 'yay'"
+	"(#(1 3) detect: [ :each | each even ] ifFound: [ ^'yay!' ]) >>> #(1 3)"
 
 	self
 		detect: aBlock
@@ -573,12 +602,15 @@ Collection >> detectSum: aBlock [
 { #category : #enumerating }
 Collection >> difference: aCollection [
 	"Answer the set theoretic difference of two collections. Pay attention that the difference is not commutative, hence the order is important."
+
 	"(#(a b c d e f) difference:  #(a b z k))>>> #(#f #d #e #c)"
+
 	"(#(a b z k) difference: #(a b c d e f)) >>> #(#k #z)"
 
 	| set |
-	set := self asSet.
-	aCollection do: [ :each | set remove: each ifAbsent: [  ] ].
+	set := self asSet
+		removeAllFoundIn: aCollection;
+		yourself.
 	^ self species withAll: set asArray
 ]
 
@@ -613,6 +645,13 @@ Collection >> do: aBlock without: anItem [
 	^ self do: [:each | anItem = each ifFalse: [aBlock value: each]]
 ]
 
+{ #category : #enumerating }
+Collection >> doWithIndex: elementAndIndexBlock [
+	"Use the new version with consistent naming"
+
+	^ self withIndexDo: elementAndIndexBlock
+]
+
 { #category : #private }
 Collection >> emptyCheck [
 
@@ -631,13 +670,6 @@ Collection >> errorNotFound: anObject [
 	"Raise a NotFound exception."
 
 	NotFound signalFor: anObject
-]
-
-{ #category : #private }
-Collection >> errorNotKeyed [
-
-	self error: ('Instances of {1} do not respond to keyed accessing messages.' format: {self class name})
-
 ]
 
 { #category : #private }
@@ -685,11 +717,11 @@ Collection >> flatCollect: aBlock as: aCollectionClass [
 	"Evaluate aBlock for each of the receiver's elements and answer the
 	list of all resulting values flatten one level. Assumes that aBlock returns some kind
 	of collection for each element. Equivalent to the lisp's mapcan"
+
 	| col |
-	col := aCollectionClass new: self size. 	
-	self do: [ :each |
-		col addAll: (aBlock value: each) ].
-	^col
+	col := OrderedCollection new: self size.
+	self do: [ :each | col addAll: (aBlock value: each) ].
+	^ aCollectionClass withAll: col 
 ]
 
 { #category : #enumerating }
@@ -738,7 +770,7 @@ Collection >> groupedBy: aBlock [
 	"Answer a dictionary whose keys are the result of evaluating aBlock for all my elements, and the value for each key is the selection of my elements that evaluated to that key. Uses species."
 	
 	| groups |
-	groups := PluggableDictionary integerDictionary.
+	groups := OrderedDictionary new.
 	self do: [ :each |
 		(groups at: (aBlock value: each) ifAbsentPut: [ OrderedCollection new ]) add: each ].
 	self species ~~ OrderedCollection ifTrue: [
@@ -782,10 +814,10 @@ Collection >> identityIncludes: anObject [
 { #category : #testing }
 Collection >> ifEmpty: aBlock [
 	"Evaluate the given block, answering its value if the receiver is empty, otherwise answer the receiver."
-	
+
 	"Note that the fact that this method returns its receiver in case the receiver is not empty allows one to write expressions like the following ones: self classifyMethodAs: (myProtocol ifEmpty: ['As yet unclassified'])"
 
-	^ self isEmpty 
+	^ self isEmpty
 		ifTrue: [ aBlock value ]
 		ifFalse: [ self ]
 ]
@@ -793,10 +825,11 @@ Collection >> ifEmpty: aBlock [
 { #category : #testing }
 Collection >> ifEmpty: emptyBlock ifNotEmpty: notEmptyBlock [
 	"Evaluate emptyBlock if I'm empty, notEmptyBlock otherwise"
-	" If the notEmptyBlock has an argument, eval with the receiver as its argument"
+	"If the notEmptyBlock has an argument, eval with the receiver as its argument"
 
-	self isEmpty ifTrue: [ ^emptyBlock value ].
-	^notEmptyBlock cull: self
+	^ self isEmpty
+		ifTrue: [ emptyBlock value ]
+		ifFalse: [ notEmptyBlock cull: self ]
 ]
 
 { #category : #testing }
@@ -804,10 +837,9 @@ Collection >> ifNotEmpty: aBlock [
 	"Evaluate the given block with the receiver as argument, answering its value
     unless the receiver is empty, in which case answer the receiver."
 
-    ^self isEmpty
-          ifTrue: [self]
-          ifFalse: [aBlock cull: self] 
-
+	^ self isEmpty
+		ifTrue: [ self ]
+		ifFalse: [ aBlock cull: self ]
 ]
 
 { #category : #testing }
@@ -815,8 +847,9 @@ Collection >> ifNotEmpty: notEmptyBlock ifEmpty: emptyBlock [
 	"Evaluate emptyBlock if I'm empty, notEmptyBlock otherwise
 	 If the notEmptyBlock has an argument, eval with the receiver as its argument"
 
-	self isEmpty ifFalse: [ ^notEmptyBlock cull: self ].
-	^emptyBlock value
+	^ self isEmpty
+		ifTrue: [ emptyBlock value ]
+		ifFalse: [ notEmptyBlock cull: self ]
 ]
 
 { #category : #testing }
@@ -892,17 +925,12 @@ Collection >> intersection: aCollection [
 	"Answer the set theoretic intersection of two collections."
 
 	"(#(1 2 3 4) intersection: #(3 4 5)) >>> #(3 4)"
+
 	"(#(1 2 3 4) intersection: #()) >>> #()"
+
 	"(#() intersection: #(1 2 3 4)) >>> #()"
 
-	| set outputSet |
-	set := self asSet.
-	outputSet := Set new.
-	aCollection 
-		do: [ :each | 
-			((set includes: each) and: [ (outputSet includes: each) not ])
-				ifTrue: [ outputSet add: each ] ].
-	^ self species withAll: outputSet asArray
+	^ self species withAll: (self asSet intersection: aCollection) asArray
 ]
 
 { #category : #testing }
@@ -939,6 +967,9 @@ Collection >> isSequenceable [
 
 { #category : #'math functions' }
 Collection >> median [
+	"Return the middle element, or as close as we can get."
+	"{1 . 2 . 3 . 4 . 5} median >>> 3"
+	
 	^ self asSortedCollection median
 ]
 
@@ -958,7 +989,7 @@ Collection >> notEmpty [
 	^ self isEmpty not
 ]
 
-{ #category : #testing }
+{ #category : #enumerating }
 Collection >> occurrencesOf: anObject [ 
 	"Answer how many of the receiver's elements are equal to anObject."
 
@@ -966,40 +997,6 @@ Collection >> occurrencesOf: anObject [
 	tally := 0.
 	self do: [:each | anObject = each ifTrue: [tally := tally + 1]].
 	^tally
-]
-
-{ #category : #enumerating }
-Collection >> piecesCutWhere: binaryBlock [
-	"Answer substrings of the receiver derived from cutting the receiver at points where binaryBlock answers true for adjacent elements."
-	"( #(1 2 3 1 6 1 2 3 4) piecesCutWhere: [ :a :b | a = 1 and: [ b = 2]]) asArray >>> #(#(1) #(2 3 1 6 1) #(2 3 4))"
-	| pieces |
-	pieces := OrderedCollection new.
-	self 
-		piecesCutWhere: binaryBlock
-		do: [ :piece | pieces add: piece ].
-	^pieces
-
-   "'Now is the time for all good people to come to the aid of the cause of world peace.  It is just fine, even desirable, to love your country, if that means wanting it to play a beneficial role in the course of world events and be the best possible example of a good society.  But if it means wanting dominion over the rest of the world, it is not love but defensiveness or self-glorification, and will lead only to oblivion.'  piecesCutWhere: [:a :b| a = $. and: [b isSeparator]]"
-]
-
-{ #category : #enumerating }
-Collection >> piecesCutWhere: binaryBlock do: pieceBlock [
-	"Evaluate pieceBlock with substrings of the receiver derived from cutting the receiver at points where binaryBlock answers true for adjacent elements."
-
-	| size lastCut this next |
-	(size := self size) <= 1 ifTrue:
-		 [size = 1 ifTrue: [pieceBlock value: self].
-		^self].
-	lastCut := 1.
-	this := self at: 1.
-	2 to: size do:
-		[:i|
-		next := self at: i.
-		(binaryBlock value: this value: next) ifTrue:
-			[pieceBlock value: (self copyFrom: lastCut to: i - 1).
-			lastCut := i].
-		this := next].
-	pieceBlock value: (self copyFrom: lastCut to: size)
 ]
 
 { #category : #printing }
@@ -1080,8 +1077,12 @@ Collection >> reject: rejectBlock thenCollect: collectBlock [
 
 { #category : #enumerating }
 Collection >> reject: rejectBlock thenDo: doBlock [ 
-	"Utility method to improve readability."
-	(self reject: rejectBlock) do: doBlock
+	"Utility method to improve readability.
+	Do not create the intermediate collection."
+	
+	self do: [ :each |
+		(rejectBlock value: each)
+			ifFalse: [ doBlock value: each ] ].
 ]
 
 { #category : #removing }
@@ -1204,18 +1205,6 @@ comparison."
 	^self asArray sort: aSortBlockOrNil
 ]
 
-{ #category : #'math functions' }
-Collection >> stdev [
-	| avg sample sum |
-	"In statistics, the standard deviation is a measure that is used to quantify the amount of variation or dispersion of a set of data values.
-	For details about implementation see comment in self sum."
-	avg := self average.
-	sample := self anyOne.
-	sum := self inject: sample into: [ :accum :each | accum + (each - avg) squared ].
-	sum := sum - sample.
-	^ (sum / (self size - 1)) sqrt
-]
-
 { #category : #printing }
 Collection >> storeOn: aStream [ 
 	"Refer to the comment in Object|storeOn:."
@@ -1288,12 +1277,29 @@ Collection >> union: aCollection [
 	^ self species withAll: set asArray
 ]
 
-{ #category : #'filter streaming' }
-Collection >> write: anObject [ 
+{ #category : #enumerating }
+Collection >> withIndexDo: elementAndIndexBlock [
+	"Just like do: except that the iteration index supplies the second argument to the block"
+	"Support collection enumeration with a counter, even though not ordered"
+	| index |
+	index := 0.
+	self do: [:item | elementAndIndexBlock value: item value: (index := index+1)]
+]
+
+{ #category : #deprecated }
+Collection >> write: anObject [
+
+	self
+		deprecated: 'Please use #add: instead'
+		transformWith: '`@receiver write: `@statements1' 
+						-> '`@receiver add: `@statements1'.
 	^ self add: anObject
 ]
 
 { #category : #enumerating }
 Collection >> | aCollection [
+	"Return all the elements that appear in self or in aCollection"
+	"'abc' | 'cbe' >>> 'bcea'"
+	
 	^ self union: aCollection
 ]

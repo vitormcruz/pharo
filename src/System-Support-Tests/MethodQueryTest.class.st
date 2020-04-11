@@ -1,3 +1,6 @@
+"
+Unit tests for queries on methods
+"
 Class {
 	#name : #MethodQueryTest,
 	#superclass : #TestCase,
@@ -7,12 +10,9 @@ Class {
 { #category : #tests }
 MethodQueryTest >> testReferencedClasses [
 	| refs |
-	
-	refs := (CompiledMethod>>#referencedClasses) referencedClasses.
-	self assert: refs isEmpty.
-	
+	refs := (CompiledMethod >> #referencedClasses) referencedClasses.
+	self assertEmpty: refs.
+
 	refs := thisContext method referencedClasses.
-	self assert: refs equals: { CompiledMethod }.
-	
-	
+	self assert: refs equals: {CompiledMethod}
 ]

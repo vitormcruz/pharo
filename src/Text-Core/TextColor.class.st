@@ -7,7 +7,7 @@ Class {
 	#instVars : [
 		'color'
 	],
-	#category : #'Text-Core'
+	#category : #'Text-Core-Attributes'
 }
 
 { #category : #constants }
@@ -81,6 +81,12 @@ TextColor >> = other [
 		and: [other color = color]
 ]
 
+{ #category : #converting }
+TextColor >> asColor [ 
+
+	^ color
+]
+
 { #category : #accessing }
 TextColor >> color [
 	^ color
@@ -93,6 +99,7 @@ TextColor >> color: aColor [
 
 { #category : #scanning }
 TextColor >> dominates: other [
+"Only one color attribute on a same portion of text."
 	^ other class == self class
 ]
 
@@ -105,18 +112,4 @@ TextColor >> hash [
 TextColor >> printOn: aStream [
 	super printOn: aStream.
 	aStream nextPutAll: ' code: '; print: color
-]
-
-{ #category : #scanning }
-TextColor >> writeScanOn: strm [
-	"Two formats.  c125000255 or cblue;"
-
-	| nn |
-	strm nextPut: $c.
-	(nn := color name) ifNotNil: [
-		(self class respondsTo: nn) ifTrue: [
-			^ strm nextPutAll: nn; nextPut: $;]].
-	(Array with: color red with: color green with: color blue) do: [:float | | str |
-		str := '000', (float * 255) asInteger printString.
-		strm nextPutAll: (str copyFrom: str size-2 to: str size)]
 ]

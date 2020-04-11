@@ -10,13 +10,6 @@ Trait {
 }
 
 { #category : #asserting }
-TAssertable >> assert: aBoolean [
-	"We check for true explicitly to make the assertion fail for non booleans"
-	aBoolean == true ifFalse: [self signalFailure: 'Assertion failed']
-			
-]
-
-{ #category : #asserting }
 TAssertable >> assert: actualNumber closeTo: expectedNumber [
 	^ self
 		assert: (actualNumber closeTo: expectedNumber)
@@ -83,6 +76,11 @@ TAssertable >> assertCollection: actual hasSameElements: expected [
 				nextPutAll: 'Given Collections do not match!'; lf;
 				tab; nextPutAll: 'additions : '; print: additionalElements asArray; lf;
 				tab; nextPutAll: 'missing: '; print: missingElements asArray; lf ])
+]
+
+{ #category : #asserting }
+TAssertable >> assertEmpty: aCollection [
+	^ self assert: aCollection isEmpty description: aCollection asString , ' should have been empty'
 ]
 
 { #category : #asserting }
@@ -194,6 +192,20 @@ TAssertable >> denyCollection: actual equals: expected [
 	^ self
 		deny: expected = actual
 		description: [ self unexpectedEqualityStringBetween: actual and: expected ]
+]
+
+{ #category : #asserting }
+TAssertable >> denyCollection: actual hasSameElements: expected [
+	"Deny that a collection contains the same elements as the given collection. Order is not checked, only the presence/absence of elements."
+
+	self
+		deny: ((actual difference: expected) isEmpty and: [ (expected difference: actual) isEmpty ])
+		description: 'Given collections match!'
+]
+
+{ #category : #asserting }
+TAssertable >> denyEmpty: aCollection [
+	^ self assert: aCollection isNotEmpty description: aCollection asString , ' should not have been empty'
 ]
 
 { #category : #asserting }

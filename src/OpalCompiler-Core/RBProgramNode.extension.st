@@ -38,8 +38,9 @@ RBProgramNode >> doSemanticAnalysis [
 ]
 
 { #category : #'*opalcompiler-core' }
-RBProgramNode >> enclosingMethodOrBlockNode [
-	^ self methodOrBlockNode 
+RBProgramNode >> doSemanticAnalysisIn: aClass [
+	self methodNode ifNil: [ ^self ].
+	^ self methodNode doSemanticAnalysisIn: aClass
 ]
 
 { #category : #'*opalcompiler-core' }
@@ -50,11 +51,6 @@ RBProgramNode >> irInstruction [
 { #category : #'*opalcompiler-core' }
 RBProgramNode >> isClean [
 	^ self children allSatisfy: [ :child | child isClean ]
-]
-
-{ #category : #'*opalcompiler-core' }
-RBProgramNode >> methodOrBlockNode [
-	^ parent ifNotNil: [ parent methodOrBlockNode ]
 ]
 
 { #category : #'*opalcompiler-core' }

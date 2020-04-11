@@ -1,10 +1,9 @@
 mcPackages := #(
  'ScriptingExtensions'
- 'Text-Core'
  'System-FileRegistry'
  'FileSystem-Memory'
  'Regex-Core'
- 'Ring-Deprecated-Core-Containers'
+ 'Ring-Definitions-Containers'
  'StartupPreferences'
  'ConfigurationCommandLineHandler-Core'
  'PragmaCollector'
@@ -55,3 +54,7 @@ MCGitHubRepository initialize.
 MCGitBasedNetworkRepository initialize.
 
 SystemAnnouncer restoreAllNotifications.
+
+ZnMimeType initialize.
+
+MCMethodDefinition initializersEnabled: true.

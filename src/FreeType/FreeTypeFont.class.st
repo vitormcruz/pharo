@@ -14,7 +14,8 @@ Class {
 		'cachedAscent',
 		'cachedDescent',
 		'subPixelPositioned',
-		'symbolFont'
+		'symbolFont',
+		'mutex'
 	],
 	#pools : [
 		'FT2Constants',
@@ -321,7 +322,7 @@ FreeTypeFont >> getLinearWidthOf: aCharacter [
 	face validate.
 	face setPixelWidth: em height: em.
 	[face loadCharacter: charCode flags: (LoadNoBitmap bitOr: (LoadIgnoreTransform bitOr: "FreeTypeSettings current hintingFlags" 2 "no hinting"))]
-		on: FT2Error do:[:e |
+		on: FT2Error , PrimitiveFailed do:[:e |
 			face loadGlyph: 0 flags: (LoadNoBitmap bitOr: (LoadIgnoreTransform bitOr: FreeTypeSettings current hintingFlags "no hinting")) ].
 	glyph := face glyph.
 	la := glyph linearHorizontalAdvance.
@@ -363,7 +364,7 @@ FreeTypeFont >> getWidthOf: aCharacter [
 	hintingFlags := FreeTypeSettings current hintingFlags.
 	flags :=  LoadNoBitmap bitOr:( LoadIgnoreTransform bitOr: hintingFlags). 
 	[face loadCharacter: charCode flags: flags.
-	] on:FT2Error do:[:e | "character not in map?"^0]. 
+	] on:FT2Error, PrimitiveFailed do:[:e | "character not in map?"^0]. 
 	glyph := face glyph.
 	"When not hinting FreeType sets the advance to the truncated linearAdvance.
 	The characters appear squashed together. Rounding is probably better, so we 
@@ -377,7 +378,6 @@ FreeTypeFont >> getWidthOf: aCharacter [
 { #category : #'glyph lookup' }
 FreeTypeFont >> glyphOf: aCharacter colorValue: aColorValue mono: monoBoolean subpixelPosition: sub [
 
-	| |
 	^FreeTypeCache current
 		atFont: self
 		charCode: aCharacter asUnicode asInteger
@@ -389,7 +389,6 @@ FreeTypeFont >> glyphOf: aCharacter colorValue: aColorValue mono: monoBoolean su
 				mono: monoBoolean 
 				subpixelPosition: sub 
 				font: self]
-
 
 ]
 
@@ -502,7 +501,7 @@ FreeTypeFont >> hintedWidthOf: aCharacter [
 
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 FreeTypeFont >> initialize: aFont [
 
 	self face: aFont face.
@@ -674,6 +673,12 @@ FreeTypeFont >> mode41GlyphOf: aCharacter colorValue: aColorValue mono: monoBool
 
 ]
 
+{ #category : #accessing }
+FreeTypeFont >> mutex [
+
+	^ mutex ifNil: [ mutex := Semaphore forMutualExclusion ]
+]
+
 { #category : #measuring }
 FreeTypeFont >> pixelSize [
 	^pixelSize ifNil:[pixelSize := super pixelSize rounded]
@@ -717,7 +722,7 @@ FreeTypeFont >> printOn: aStream [
 		nextPut: $)
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 FreeTypeFont >> releaseCachedState [
 	face releaseCachedState.
 	FreeTypeCache current removeAllForFont: self.
@@ -784,12 +789,11 @@ FreeTypeFont >> simulatedItalicSlant [
 { #category : #'glyph lookup' }
 FreeTypeFont >> subGlyphOf: aCharacter colorValue: aColorValue mono: monoBoolean subpixelPosition: sub [
 
-	| |
 	^FreeTypeCache current
 		atFont: self
 		charCode: aCharacter asUnicode asInteger
 		type: FreeTypeCacheGlyphLCD + sub
-		ifAbsentPut: [
+		ifAbsentPut: [ 
 			FreeTypeGlyphRenderer current
 				subGlyphOf: aCharacter 
 				colorValue: aColorValue 

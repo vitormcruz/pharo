@@ -8,6 +8,12 @@ ExternalAddress >> adoptAddress: anExternalAddress [
 ]
 
 { #category : #'*UnifiedFFI' }
+ExternalAddress >> asExternalAddress [
+
+	^ self
+]
+
+{ #category : #'*UnifiedFFI' }
 ExternalAddress >> autoRelease [
 	^ self class finalizationRegistry add: self
 ]
@@ -53,6 +59,12 @@ ExternalAddress >> gcpointer [
 ]
 
 { #category : #'*UnifiedFFI' }
+ExternalAddress >> getHandle [
+	
+	^ self
+]
+
+{ #category : #'*UnifiedFFI' }
 ExternalAddress class >> loadSymbol: moduleSymbol [
 	"Load global symbol (one that you can find in current VM binary)"
 	^ self 
@@ -64,7 +76,7 @@ ExternalAddress class >> loadSymbol: moduleSymbol [
 ExternalAddress class >> loadSymbol: moduleSymbol from: moduleNameOrClass [ 
 	^ self 
 		loadSymbol: moduleSymbol 
-		module: moduleNameOrClass asFFILibrary moduleName.
+		module: moduleNameOrClass asFFILibrary libraryName.
 	
 ]
 
@@ -134,6 +146,36 @@ ExternalAddress >> pointerAutoRelease [
 	^ self pointer autoRelease
 ]
 
+{ #category : #'*UnifiedFFI' }
+ExternalAddress >> readArrayOf: aType until: aBlock [
+	"Reads an array of aType until aBlock returns true.
+	 this is an util to extract arrays from answers style char ** or int*, etc. 
+	 Example: 
+	
+		someAddress readArrayOf: #uint32 until: [ :each | each isZero ].
+		someAddress readArrayOf: #'void *' until: [ :each | each isNull ].
+	"
+
+	| externalType |
+	"resolve type if needed"
+	externalType := aType isString
+		ifTrue: [ FFIExternalType resolveType: aType ]
+		ifFalse: [ aType ].
+
+	"then build the array"
+	^ Array
+		streamContents: [ :array | 
+			| address last count |
+			address := self.
+			count := 0.
+			[ address isNull
+				or: [ last := externalType handle: address at: 1.
+					count := count + 1.
+					aBlock cull: last cull: count ] ]
+				whileFalse: [ array nextPut: last.
+					address := address + externalType typeSize ] ]
+]
+
 { #category : #'*UnifiedFFI-Deprecated50' }
 ExternalAddress >> registerAsExternalResource [
 	self deprecated: 'Use #autoRelease instead.' on: '2016-01-22' in: #Pharo5.  
@@ -144,7 +186,7 @@ ExternalAddress >> registerAsExternalResource [
 ExternalAddress >> replaceFrom: start to: stop with: replacement startingAt: repStart [ 
 	| dstAddress srcAddress repSize |
 	
-	self flag: #todo. "Maybe replace it with a primitive (like the one at Alien)?"
+	self flag: #pharoTodo. "Maybe replace it with a primitive (like the one at Alien)?"
 	repSize := stop - start + 1.
 	dstAddress := start = 1 
 		ifTrue: [ self ] 

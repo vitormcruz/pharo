@@ -1,15 +1,5 @@
 Extension { #name : #RBBlockNode }
 
-{ #category : #'*opalcompiler-core' }
-RBBlockNode >> enclosingMethodOrBlockNode [
-	^ parent ifNotNil: [ parent methodOrBlockNode ]
-]
-
-{ #category : #'*opalcompiler-core' }
-RBBlockNode >> hasBlockReturn [
-	^ self body lastIsReturn
-]
-
 { #category : #'*OpalCompiler-Core' }
 RBBlockNode >> ir [
 
@@ -59,27 +49,9 @@ RBBlockNode >> isInlinedLoop [
 ]
 
 { #category : #'*opalcompiler-core' }
-RBBlockNode >> lastIsReturn [
-	^ false
-]
-
-{ #category : #'*opalcompiler-core' }
-RBBlockNode >> methodOrBlockNode [
-	"^ self"
-]
-
-{ #category : #'*opalcompiler-core' }
 RBBlockNode >> owningScope [
 
 	^ self scope ifNil: ["inlined" ^ parent owningScope]
-]
-
-{ #category : #'*OpalCompiler-Core' }
-RBBlockNode >> sourceNodeExecutedForPC: anInteger [
-	self methodNode ir.
-	(self hasProperty: #ir) ifTrue: [ "FullBlockClosure"
-		^(self ir fullBlockInstructionForPC: anInteger) sourceNodeExecuted ].
-	^ self methodNode sourceNodeExecutedForPC: anInteger
 ]
 
 { #category : #'*OpalCompiler-Core' }

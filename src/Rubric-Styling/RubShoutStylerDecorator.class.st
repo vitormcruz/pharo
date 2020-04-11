@@ -6,7 +6,6 @@ Class {
 	#superclass : #RubParagraphDecorator,
 	#instVars : [
 		'styler',
-		'shoutIsAvailable',
 		'text',
 		'replaceStart',
 		'replaceStop'
@@ -38,6 +37,7 @@ RubShoutStylerDecorator class >> rubricSettingsOn: aBuilder [
 	(aBuilder setting: #minTextSizeForStylingInBackground)
 		target: self;
 		parent: #Rubric;
+		default: 4000;
 		description: 'Set the minimum text size imposed to allow background styling';
 		label: 'Min text size for background styling'
 ]
@@ -140,7 +140,7 @@ RubShoutStylerDecorator >> style: aText [
 	[ ^ self styler style: aText ]
 		on: Error
 		do: [ :ex | 
-			ex logCr.
+			ex traceCr.
 			^ aText ]
 ]
 

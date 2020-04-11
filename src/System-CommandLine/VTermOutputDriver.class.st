@@ -25,11 +25,7 @@ Class {
 		'light',
 		'blink'
 	],
-	#classInstVars : [
-		'stdoutTerminalInstance',
-		'stderrTerminalInstance'
-	],
-	#category : #'System-CommandLine'
+	#category : #'System-CommandLine-VTerm-Driver'
 }
 
 { #category : #'instance creation' }
@@ -358,7 +354,7 @@ VTermOutputDriver >> red: aString [
 	self red; << aString; flush; clear.
 ]
 
-{ #category : #coloring }
+{ #category : #initialization }
 VTermOutputDriver >> reset [
 	currentColor := 0.
 	currentBackground := 0.

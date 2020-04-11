@@ -18,7 +18,7 @@ MalCircuitSpanningEdges >> doUnvisitedEdges: aBlock [
 
 ]
 
-{ #category : #accessing }
+{ #category : #configuration }
 MalCircuitSpanningEdges >> edgeClass [
 
 	^ MalCseEdge 
@@ -58,7 +58,7 @@ MalCircuitSpanningEdges >> findIndirectCircuits [
 		]
 ]
 
-{ #category : #accessing }
+{ #category : #initialization }
 MalCircuitSpanningEdges >> initialize [ 
 
 	super initialize.
@@ -67,7 +67,7 @@ MalCircuitSpanningEdges >> initialize [
 
 ]
 
-{ #category : #accessing }
+{ #category : #configuration }
 MalCircuitSpanningEdges >> nodeClass [
 
 	^ MalDijkstraNode
@@ -75,9 +75,7 @@ MalCircuitSpanningEdges >> nodeClass [
 
 { #category : #running }
 MalCircuitSpanningEdges >> run [
-
-	self flag: #todo.	"for stability, we should sort edges by their label"
+	self flag: #pharoTodo.	"for stability, we should sort edges by their label"
 	self findDirectCircuits.
 	self findIndirectCircuits
-
 ]

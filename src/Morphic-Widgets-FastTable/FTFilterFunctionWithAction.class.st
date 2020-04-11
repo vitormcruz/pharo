@@ -48,11 +48,11 @@ FTFilterFunctionWithAction >> action: aBlockClosure named: aString [
 ]
 
 { #category : #accessing }
-FTFilterFunctionWithAction >> beExplicite [
-	super beExplicite.
+FTFilterFunctionWithAction >> beExplicit [
+	super beExplicit.
 	table addMorph: actionButton.
-	table selectedRowIndex = 0
-		ifTrue: [ table selectRowIndex: 1 ]
+	table selectedIndex = 0
+		ifTrue: [ table selectIndex: 1 ]
 ]
 
 { #category : #execute }
@@ -61,8 +61,8 @@ FTFilterFunctionWithAction >> execute [
 		cull: table dataSource
 		cull: field getTextFromModel asString
 		cull:
-			(table selectedRowIndex = 0
-				ifFalse: [ table dataSource realElementAt: table selectedRowIndex ]
+			(table selectedIndex = 0
+				ifFalse: [ table dataSource realElementAt: table selectedIndex ]
 				ifTrue: [ nil ])
 ]
 
@@ -78,19 +78,19 @@ FTFilterFunctionWithAction >> initializeActionButtonNamed: aString [
 { #category : #private }
 FTFilterFunctionWithAction >> resizeButton [
 	| topLeft bottomRight |
-	self flag: #TODO.	"Maybe it could be cool to let the user choose if the field need to be at the top or the bottom."
-	bottomRight := (table bounds right - table verticalScrollBarWidth) @ table bottom.
-	topLeft := (bottomRight x - actionButton width) @ (table bounds bottom - self fieldHeigh).
+	self flag: #pharoTodo.	"Maybe it could be cool to let the user choose if the field need to be at the top or the bottom."
+	bottomRight := (table bounds right - table verticalScrollBarWidth) @ (table bottom - table horizontalScrollBarHeight).
+	topLeft := (bottomRight x - actionButton width) @ (table bounds bottom - self fieldHeigh - table horizontalScrollBarHeight).
 	actionButton bounds: (topLeft corner: bottomRight)
 ]
 
 { #category : #private }
 FTFilterFunctionWithAction >> resizeField [
 	| topLeft bottomRight |
-	self flag: #TODO.	"Maybe it could be cool to let the user choose if the field need to be at the top or the bottom."
-	topLeft := table bounds left @ (table bounds bottom - self fieldHeigh).
+	self flag: #pharoTodo.	"Maybe it could be cool to let the user choose if the field need to be at the top or the bottom."
+	topLeft := table bounds left @ (table bounds bottom - self fieldHeigh - table horizontalScrollBarHeight).
 	bottomRight := (table bounds right - table verticalScrollBarWidth - (actionButton width + 5))
-		@ table bottom.
+		@ (table bottom - table horizontalScrollBarHeight).
 	field bounds: (topLeft corner: bottomRight)
 ]
 
@@ -104,6 +104,5 @@ FTFilterFunctionWithAction >> resizeWidget [
 FTFilterFunctionWithAction >> showWidget [
 	super showWidget.
 	table addMorph: actionButton.
-	table selectedRowIndex = 0
-		ifTrue: [ table selectRowIndex: 1 ]
+	table selectedIndex = 0 ifTrue: [ table selectIndex: 1 ]
 ]

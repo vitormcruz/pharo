@@ -18,7 +18,7 @@ Class {
 	#instVars : [
 		'method',
 		'arguments',
-		'keyword'
+		'selector'
 	],
 	#category : #'Kernel-Pragmas'
 }
@@ -26,14 +26,18 @@ Class {
 { #category : #finding }
 Pragma class >> allNamed: aSymbol from: aSubClass to: aSuperClass [
 	"Answer a collection of all pragmas found in methods of all classes between aSubClass and aSuperClass (inclusive) whose keyword is aSymbol."
-	
-	^ Array streamContents: [ :stream |
-		aSubClass withAllSuperclassesDo: [ :class |
-			self withPragmasIn: class do:  [ :pragma |
-				pragma keyword = aSymbol
-					ifTrue: [ stream nextPut: pragma ] ].
-			aSuperClass = class
-				ifTrue: [ ^ stream contents ] ] ].
+
+	^ Array
+		streamContents: [ :stream | 
+			aSubClass
+				withAllSuperclassesDo: [ :class | 
+					self
+						withPragmasIn: class
+						do: [ :pragma | 
+							pragma selector = aSymbol
+								ifTrue: [ stream nextPut: pragma ] ].
+					aSuperClass = class
+						ifTrue: [ ^ stream contents ] ] ]
 ]
 
 { #category : #finding }
@@ -52,11 +56,11 @@ Pragma class >> allNamed: aSymbol from: aSubClass to: aSuperClass sortedUsing: a
 
 { #category : #finding }
 Pragma class >> allNamed: aSymbol in: aClass [
-	"Answer a collection of all pragmas found in methods of aClass whose keyword is aSymbol."
+	"Answer a collection of all pragmas found in methods of aClass whose selector is aSymbol."
 	
 	^ Array streamContents: [ :stream |
 		self withPragmasIn: aClass do: [ :pragma |
-			pragma keyword = aSymbol
+			pragma selector = aSymbol
 				ifTrue: [ stream nextPut: pragma ] ] ].
 ]
 
@@ -77,18 +81,18 @@ Pragma class >> allNamed: aSymbol in: aClass sortedUsing: aSortBlock [
 { #category : #'instance creation' }
 Pragma class >> for: aMethod selector: aSelector arguments: anArray [
 	^self new
-		setMethod: aMethod;
-		setKeyword: aSelector;
-		setArguments: anArray;
+		method: aMethod;
+		selector: aSelector;
+		arguments: anArray;
 		yourself
 ]
 
 { #category : #private }
-Pragma class >> keyword: aSymbol arguments: anArray [
+Pragma class >> selector: aSymbol arguments: anArray [
 	^ self new
-		setKeyword: aSymbol;
-		setArguments: anArray;
-		yourself.
+		selector: aSymbol;
+		arguments: anArray;
+		yourself
 ]
 
 { #category : #private }
@@ -103,7 +107,8 @@ Pragma >> = aPragma [
 	self species == aPragma species ifFalse: [^false].
 
 	self method = aPragma method ifFalse: [^false].
-	self keyword = aPragma keyword ifFalse: [^false].
+	self method selector = aPragma method selector ifFalse: [ ^false ].
+	self selector = aPragma selector ifFalse: [^false].
 	self arguments = aPragma arguments ifFalse: [^false].
 
 	^true.
@@ -112,7 +117,7 @@ Pragma >> = aPragma [
 { #category : #comparing }
 Pragma >> analogousCodeTo: anObject [ 
 	^self class == anObject class
-	  and: [keyword == anObject keyword
+	  and: [self selector == anObject selector
 	  and: [arguments = anObject arguments]]
 ]
 
@@ -124,15 +129,41 @@ Pragma >> argumentAt: anInteger [
 ]
 
 { #category : #'accessing-pragma' }
+Pragma >> argumentNamed: aSymbol [
+	"Answer the argument of the pragma after the keyword given as parameter.
+	If none, raise an error."
+
+	^ self argumentNamed: aSymbol ifNone: [ self error: 'No argument of this name.' ]
+]
+
+{ #category : #'accessing-pragma' }
+Pragma >> argumentNamed: aSymbol ifNone: aBlockClosure [
+	"Answer the argument of the pragma after the keyword given as parameter.
+	If none, return the result of the block given as parameter.
+	
+	I am more readable than #argumentAt: but also slower."
+
+	^ self argumentAt:
+		(self selector keywords
+			indexOf: aSymbol asMutator
+			ifAbsent: [ ^ aBlockClosure value])
+]
+
+{ #category : #'accessing-pragma' }
 Pragma >> arguments [
 	"Answer the arguments of the receiving pragma. For a pragma defined as <key1: val1 key2: val2> this will answer #(val1 val2)."
 	
 	^ arguments
 ]
 
+{ #category : #initialization }
+Pragma >> arguments: anArray [
+	arguments := anArray
+]
+
 { #category : #testing }
 Pragma >> hasLiteral: aLiteral [
-	^keyword == aLiteral 
+	^self selector == aLiteral 
 	   or: [arguments hasLiteral: aLiteral]
 ]
 
@@ -140,7 +171,7 @@ Pragma >> hasLiteral: aLiteral [
 Pragma >> hasLiteralSuchThat: aBlock [
 	"Answer true if litBlock returns true for any literal in the receiver, even if embedded in further array structure.
 	 This method is only intended for private use by CompiledMethod hasLiteralSuchThat:"
-	^(aBlock value: keyword)
+	^(aBlock value: self selector)
 	   or: [arguments hasLiteralSuchThat: aBlock]
 ]
 
@@ -149,7 +180,7 @@ Pragma >> hash [
 
 	| hash |
 
-	hash := self method hash bitXor: self keyword hash.
+	hash := self method hash bitXor: self selector hash.
 	1 to: self basicSize do: [:index | hash := hash bitXor: (self basicAt: index) hash].
 
 	^hash.
@@ -159,22 +190,14 @@ Pragma >> hash [
 Pragma >> key [
 	"Answer the keyword of the pragma (the selector of its message pattern).
 	 This accessor provides polymorphism with Associations used for properties."
-	^keyword
-]
-
-{ #category : #accessing }
-Pragma >> keyword [
-	"Answer the keyword of the pragma (the selector of its message pattern).
-	 For a pragma defined as <key1: val1 key2: val2> this will answer #key1:key2:."
-	
-	^ keyword
+	^self selector
 ]
 
 { #category : #accessing }
 Pragma >> message [
 	"Answer the message of the receiving pragma."
 	
-	^ Message selector: self keyword arguments: self arguments. 
+	^ Message selector: self selector arguments: self arguments. 
 ]
 
 { #category : #'accessing-method' }
@@ -182,6 +205,11 @@ Pragma >> method [
 	"Answer the compiled-method containing the pragma."
 	
 	^ method
+]
+
+{ #category : #initialization }
+Pragma >> method: aCompiledMethod [
+	method := aCompiledMethod
 ]
 
 { #category : #'accessing-method' }
@@ -209,35 +237,33 @@ Pragma >> numArgs [
 { #category : #printing }
 Pragma >> printOn: aStream [
 	aStream nextPut: $<.
-	self keyword precedence = 1
-		ifTrue: [ aStream nextPutAll: self keyword ]
+	self selector precedence = 1
+		ifTrue: [ aStream nextPutAll: self selector ]
 		ifFalse: [
-			self keyword keywords with: self arguments do: [ :key :arg |
+			self selector keywords with: self arguments do: [ :key :arg |
 				aStream nextPutAll: key; space; print: arg; space ].
 			aStream skip: -1 ].
 	aStream nextPut: $>.
+]
+
+{ #category : #accessing }
+Pragma >> selector [
+	"Answer the selector of the pragma.
+	 For a pragma defined as <key1: val1 key2: val2> this will answer #key1:key2:."
+	
+	^ selector
+]
+
+{ #category : #initialization }
+Pragma >> selector: aSymbol [
+	selector := aSymbol
 ]
 
 { #category : #sending }
 Pragma >> sendTo: anObject [
 	"Send the pragma keyword together with its arguments to anObject and answer the result."
 	
-	^ anObject perform: self keyword withArguments: self arguments
-]
-
-{ #category : #initialization }
-Pragma >> setArguments: anArray [
-	arguments := anArray
-]
-
-{ #category : #initialization }
-Pragma >> setKeyword: aSymbol [
-	keyword := aSymbol
-]
-
-{ #category : #initialization }
-Pragma >> setMethod: aCompiledMethod [
-	method := aCompiledMethod
+	^ anObject perform: self selector withArguments: self arguments
 ]
 
 { #category : #processing }

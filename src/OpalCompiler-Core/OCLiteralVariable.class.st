@@ -48,7 +48,7 @@ OCLiteralVariable >> isClassVariable [
 { #category : #testing }
 OCLiteralVariable >> isFromSharedPool [
 	| sharedPools |
-	sharedPools := scope getClass baseClass sharedPools.
+	sharedPools := scope getClass instanceSide sharedPools.
 	^ sharedPools 
 		detect: [ :pool | pool classVarNames includes: assoc key ]
 		ifFound: [ true ]
@@ -89,6 +89,11 @@ OCLiteralVariable >> isWritable [
 OCLiteralVariable >> name [
 
 	^ assoc name
+]
+
+{ #category : #reading }
+OCLiteralVariable >> read [
+	^ assoc read 
 ]
 
 { #category : #accessing }

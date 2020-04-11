@@ -17,10 +17,7 @@ AthensCairoPath class >> finalizeResourceData: aHandle [
 
 { #category : #'instance creation' }
 AthensCairoPath class >> primDestroyPath: aHandle [
-
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	
-	^ self nbCall: #(void cairo_path_destroy ( ulong aHandle ))
+	^ self ffiCall: #(void cairo_path_destroy ( ulong aHandle ))
 
 ]
 
@@ -30,7 +27,7 @@ AthensCairoPath >> asAthensShapeOn: anAthensCanvas [
 	^ self
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 AthensCairoPath >> initialize [ 
 	handle value = 0 ifTrue: [ 
 		self error: 'Error creating new path' ].
@@ -47,9 +44,6 @@ AthensCairoPath >> paintFillsUsing: aPaint on: anAthensCanvas [
 
 { #category : #'instance creation' }
 AthensCairoPath >> primDestroyPath: aHandle [
-
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	
-	^ self nbCall: #(void cairo_path_destroy ( ulong aHandle ))
+	^ self ffiCall: #(void cairo_path_destroy ( ulong aHandle ))
 
 ]

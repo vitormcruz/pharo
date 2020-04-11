@@ -18,7 +18,7 @@ RBNotEnvironment >> definesClass: aClass [
 
 { #category : #testing }
 RBNotEnvironment >> includesCategory: aCategory [ 
-	^(self classNamesFor: aCategory) isEmpty not
+	^(self classNamesFor: aCategory) isNotEmpty
 ]
 
 { #category : #testing }
@@ -33,10 +33,11 @@ RBNotEnvironment >> includesPackage: aRPackage [
 ]
 
 { #category : #testing }
-RBNotEnvironment >> includesProtocol: aProtocol in: aClass [ 
-	^(aClass organization protocolOrganizer getProtocolNamed: aProtocol ifNone: [ ^ false ])
-		methods anySatisfy: [ :selector | 
-			self includesSelector: selector in: aClass ]
+RBNotEnvironment >> includesProtocol: aProtocol in: aClass [
+	^ (aClass organization protocolOrganizer
+		getProtocolNamed: aProtocol
+		ifNone: [ ^ false ]) methodSelectors
+		anySatisfy: [ :selector | self includesSelector: selector in: aClass ]
 ]
 
 { #category : #testing }

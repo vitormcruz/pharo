@@ -43,7 +43,7 @@ Class {
 		'Zs',
 		'nonCharacters'
 	],
-	#category : #'Multilingual-Encodings'
+	#category : #'Multilingual-Encodings-CharSets'
 }
 
 { #category : #comments }
@@ -569,6 +569,7 @@ Unicode class >> isDigit: char [
 
 { #category : #'character classification' }
 Unicode class >> isEnclosingMark: char [
+	
 	^ self is: char inCategory: Me
 ]
 
@@ -880,7 +881,5 @@ Unicode class >> ucsTable [
 { #category : #'instance creation' }
 Unicode class >> value: code [
 
-	code < 256 ifTrue: [^ Character value: code].
-	"Old code. LeadingChar should from now on be always 0, so we can remove it afterwards"
-	^ Character leadingChar: 0 code: code
+	^ Character value: code
 ]

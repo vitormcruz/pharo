@@ -28,12 +28,13 @@ UnsafeAlien class >> ensureInSpecialObjectsArray [
 	 So check if the specialObjectsArray is of the expected size before recreating
 	 and slam UnsafeAlien in if the specialObjectsArray is already large enough."
 
-	| index |
+	| index env|
+	env := self environment.
 	self ~~ UnsafeAlien ifTrue: [^self].
 
 	index := 55.
-	((Smalltalk includesKey: #VMObjectIndices)
-	 and: [((Smalltalk at: #VMObjectIndices) classPool at: #ClassUnsafeAlien ifAbsent: []) ~= (index - 1)]) ifTrue:
+	((env includesKey: #VMObjectIndices)
+	 and: [((env at: #VMObjectIndices) classPool at: #ClassUnsafeAlien ifAbsent: []) ~= (index - 1)]) ifTrue:
 		[self error: 'index probably wrong'].
 
 	Smalltalk specialObjectsArray size < index ifTrue:
@@ -73,6 +74,12 @@ UnsafeAlien class >> forPointerTo: anObject [
 UnsafeAlien class >> initialize [
 	"UnsafeAlien initialize"
 	self ensureInSpecialObjectsArray
+]
+
+{ #category : #accessing }
+UnsafeAlien >> nonPointerObject: anObject [
+
+	nonPointerObject := anObject
 ]
 
 { #category : #accessing }

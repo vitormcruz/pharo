@@ -10,6 +10,9 @@ Class {
 	#superclass : #GLMCompositePresentation,
 	#traits : 'GTBrowsingActions',
 	#classTraits : 'GTBrowsingActions classTrait',
+	#instVars : [
+		'originalSession'
+	],
 	#classVars : [
 		'EnableDebuggerWindowDistinctColor',
 		'EnableStackColoring'
@@ -97,7 +100,7 @@ GTMoldableDebugger class >> openOn: aDebugSession withFullView: aBool andNotific
 				"Use a custom extension"
 				aDebugger on: (aDebugger spanNewSessionFrom: aDebugSession) ].
 	
-	aBool | self alwaysOpenFullDebugger
+	aBool | aString isNil "In case the string is nil it means we should show the full debugger and not a notification"
 		ifTrue: [ debugger openWithFullView ]
 		ifFalse: [ debugger openWithNotification: aString]
 ]
@@ -313,6 +316,16 @@ GTMoldableDebugger >> openOn: anObject [
 		extent: self initialExtent;
 		title: self session name;
 		yourself
+]
+
+{ #category : #accessing }
+GTMoldableDebugger >> originalSession [
+	^ originalSession
+]
+
+{ #category : #accessing }
+GTMoldableDebugger >> originalSession: aDebugSession [
+	originalSession := aDebugSession
 ]
 
 { #category : #building }

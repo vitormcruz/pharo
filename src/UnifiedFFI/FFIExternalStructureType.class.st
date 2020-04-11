@@ -25,14 +25,20 @@ FFIExternalStructureType class >> objectClass: aClass [
 
 { #category : #private }
 FFIExternalStructureType >> basicHandle: aHandle at: index [
+
 	^ self objectClass fromHandle: (aHandle referenceStructAt: index length: self externalTypeSize)
 
 ]
 
 { #category : #private }
 FFIExternalStructureType >> basicHandle: aHandle at: index put: value [
-	^ LibC memCopy: value getHandle to: aHandle size: self externalTypeSize
+	^ LibC memCopy: value getHandle to: aHandle + (index - 1) size: self externalTypeSize
+]
 
+{ #category : #callbacks }
+FFIExternalStructureType >> callbackReturnOn: callbackContext for: anObject [
+
+	^ self error: 'Cannot return an external structure by copy. It is not yet implemented'
 ]
 
 { #category : #accessing }
@@ -64,10 +70,22 @@ FFIExternalStructureType >> externalTypeSize [
 	^ self objectClass structureSize
 ]
 
+{ #category : #extracting }
+FFIExternalStructureType >> extractFromCallbackOn: aCallbackArgumentReader [ 
+
+	aCallbackArgumentReader extractStructType: self
+]
+
 { #category : #initialization }
 FFIExternalStructureType >> initializeObjectClass: aClass [
 	objectClass := aClass.
 	self initialize
+]
+
+{ #category : #testing }
+FFIExternalStructureType >> isExternalStructure [
+
+	^ true
 ]
 
 { #category : #accessing }

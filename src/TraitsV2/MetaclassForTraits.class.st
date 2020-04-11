@@ -8,7 +8,7 @@ Class {
 	#instVars : [
 		'users'
 	],
-	#category : #TraitsV2
+	#category : #'TraitsV2-Base'
 }
 
 { #category : #operations }
@@ -41,16 +41,19 @@ MetaclassForTraits >> asTraitComposition [
 	^ TaClassCompositionElement for: self
 ]
 
-{ #category : #'fileIn/Out' }
+{ #category : #'file in/out' }
 MetaclassForTraits >> definition [
 	^ String streamContents: [ :s | 
-		s 
-			nextPutAll: self instanceSide name;
+		s nextPutAll: self instanceSide name;
 			nextPutAll: ' classTrait';
 			cr; tab;
 			nextPutAll: 'uses: ';
 			nextPutAll: composition traitCompositionExpression.
-	]
+			
+		self localSlots ifNotEmpty: [ 
+				s crtab;
+					nextPutAll: 'slots: ';
+					nextPutAll: self slotDefinitionString]]
 ]
 
 { #category : #testing }
@@ -76,11 +79,20 @@ MetaclassForTraits >> isTrait [
 	^ true
 ]
 
+{ #category : #testing }
+MetaclassForTraits >> isTraitAlias [
+	^ false
+]
+
+{ #category : #testing }
+MetaclassForTraits >> isTraitExclusion [
+	^ false
+]
+
 { #category : #accessing }
 MetaclassForTraits >> name [
-	^ thisClass isNil
-		ifTrue: [ 'a MetaclassForTraits' ]
-		ifFalse: [ thisClass name asString, ' classTrait' ]
+
+	^ thisClass ifNil: [ 'a MetaclassForTraits' ] ifNotNil: [ thisClass name asString , ' classTrait' ]
 ]
 
 { #category : #'organization updating' }

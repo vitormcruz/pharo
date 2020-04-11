@@ -18,7 +18,7 @@ TraitTest >> createClassUsing: aTrait [
 { #category : #utilities }
 TraitTest >> createTrait [
 	| trait |
-	trait := Trait named: #ATraitForTests uses: {} category: 'AAA'.
+	trait := Trait named: #ATraitForTests uses: {} package: 'AAA'.
 	trait compile: 'm1 ^1' classified: 'test'.
 	^ trait
 ]
@@ -34,7 +34,7 @@ TraitTest >> testAddAndRemoveMethodsFromSubtraits [
 	self deny: aC2 foo.
 	self t1 compile: 'm51 ^self'.
 	aC2 m51.
-	self assert: aC2 m51 == aC2
+	self assert: aC2 m51 identicalTo: aC2
 ]
 
 { #category : #testing }
@@ -43,7 +43,7 @@ TraitTest >> testAddAndRemoveMethodsInClassOrTrait [
 	aC2 := self c2 new.
 	self assert: aC2 m51.
 	self c2 compile: 'm51 ^123'.
-	self assert: aC2 m51 = 123.
+	self assert: aC2 m51 equals: 123.
 	self c2 removeSelector: #m51.
 	aC2 m51.
 	self assert: aC2 m51.
@@ -52,9 +52,8 @@ TraitTest >> testAddAndRemoveMethodsInClassOrTrait [
 ]
 
 { #category : #testing }
-TraitTest >> testAllClassVarNames [	
-	
-	self assert: self t1 allClassVarNames isEmpty
+TraitTest >> testAllClassVarNames [
+	self assertEmpty: self t1 allClassVarNames
 ]
 
 { #category : #testing }
@@ -70,18 +69,14 @@ TraitTest >> testComposedBy [
 { #category : #testing }
 TraitTest >> testCompositionCopy [
  
-	| t6compositionCopyFirst |
 	self assert: (self t1 + self t2) allTraits 
 				equals: (self t1 + self t2) copyTraitExpression allTraits.
 	self assert: (self t1 classTrait + self t2 classTrait) allTraits 
 				equals: (self t1 classTrait + self t2 classTrait) copyTraitExpression allTraits.
 	self assert: self t6 traitComposition allTraits 
 				equals: self t6 traitComposition copyTraitExpression allTraits.
-	self 
-		assert: (self t6 asTraitComposition copyTraitExpression allTraits includesAll: { (self t1). (self t2). (self t6) }).
-	"make no undue sharing happens of exclusions and aliases after an expression copy"
-	t6compositionCopyFirst := self t6 traitComposition copyTraitExpression.
-
+	self assert: (self t6 asTraitComposition copyTraitExpression allTraits 
+				includesAll: { (self t1). (self t2). (self t6) }).
 ]
 
 { #category : #testing }
@@ -89,7 +84,7 @@ TraitTest >> testErrorClassCreation [
     | tmpCategory trait aSubclass aClass |
 	
     tmpCategory := 'TemporaryGeneratedClasses'.
-    trait := Trait named: #TMyTrait uses: {} category: tmpCategory.
+    trait := Trait named: #TMyTrait uses: {} package: tmpCategory.
     
     [ aClass := nil
         subclass: #AClass
@@ -119,19 +114,18 @@ TraitTest >> testErrorClassCreation [
 
     ] ensure: [
         #(AClass AClass2 TMyTrait) do: [ :aClassName |
-            Smalltalk globals at: aClassName ifPresent: [ :v | v removeFromSystem ]]]
+            testingEnvironment at: aClassName ifPresent: [ :v | v removeFromSystem ]]]
 ]
 
 { #category : #testing }
 TraitTest >> testExplicitRequirement [
-
 	self t1 compile: 'm self explicitRequirement'.
 	self t2 compile: 'm ^true'.
-	self deny: self t4 >> #m == (self t2 >> #m).
+	self deny: self t4 >> #m identicalTo: self t2 >> #m.
 	self assert: self c2 new m.
 	self t2 removeSelector: #m.
-	self deny: self t5 >> #m == (self t1 >> #m).
-	self should: [self c2 new m] raise: Error
+	self deny: self t5 >> #m identicalTo: self t1 >> #m.
+	self should: [ self c2 new m ] raise: Error
 ]
 
 { #category : #testing }
@@ -241,11 +235,9 @@ TraitTest >> testExplicitRequirementWithSuperclassImplementatiosAlwaysReturnsThe
 
 { #category : #testing }
 TraitTest >> testForbidInstantiation [
-
-   | tmpCategory trait |
-tmpCategory := 'TemporaryGeneratedClasses'.
-   trait := Trait named: #TMyTrait uses: {} category: tmpCategory.
-    
+	| tmpCategory trait |
+	tmpCategory := 'TemporaryGeneratedClasses'.
+	trait := Trait named: #TMyTrait uses: {} package: tmpCategory.
 	self should: [ trait basicNew ] raise: Error 
 ]
 
@@ -267,26 +259,23 @@ TraitTest >> testIsUsed [
 TraitTest >> testLocalMethodWithSameCodeInTrait [
 	"Test whether there are no unintentional overridden traits methods"
 
-	SystemNavigation new allBehaviorsDo: [ :each |
-		each hasTraitComposition ifTrue: [
-			each selectorsDo: [ :selector |
-				(each includesLocalSelector: selector) ifTrue: [
-					(each traitComposition traitDefining: selector ifNone: [nil] ) ifNotNil: [ :trait |
-						(trait selectors includes: selector) ifTrue: [
-							self deny: ((trait compiledMethodAt: selector) = (each >> selector)) ] ] ] ] ] ]
+	SystemNavigation new
+		allBehaviorsDo: [ :each | 
+			each hasTraitComposition
+				ifTrue: [ each
+						selectorsDo: [ :selector | 
+							(each includesLocalSelector: selector)
+								ifTrue: [ (each traitComposition traitDefining: selector ifNone: [ nil ])
+										ifNotNil: [ :trait | (trait selectors includes: selector) ifTrue: [ self deny: (trait compiledMethodAt: selector) equals: each >> selector ] ] ] ] ] ]
 ]
 
 { #category : #testing }
 TraitTest >> testMarkerMethods [
-	
 	self t1 compile: 'm1 self foo bar'.
 	self assert: (self t1 >> #m1) markerOrNil isNil.
 
-	self t1 compile: 'm2 self requirement'.
-	self assert: (self t1 >> #m2) markerOrNil == #requirement.
-	
-	self t1 compile: 'm3 ^self requirement'.
-	self assert: (self t1 >> #m3) markerOrNil == #requirement.
+	self t1 compile: 'm2 self explicitRequirement'.
+	self assert: (self t1 >> #m2) markerOrNil identicalTo: #explicitRequirement
 ]
 
 { #category : #testing }
@@ -295,25 +284,25 @@ TraitTest >> testOrigin [
 	tr1 := self createTraitNamed: #TTT1 uses: {}.
 	tr2 := self createTraitNamed: #TTT2 uses: {tr1}.
 	tr3 := self createTraitNamed: #TTT3 uses: {tr1}.
-	tr23 := self createTraitNamed: #TTT23 uses: {tr3 + tr2}.
-	
+	tr23 := self createTraitNamed: #TTT23 uses: {(tr3 + tr2)}.
+
 	tr1 compile: 'foo ^ 4'.
-	self assert: (tr1 >> #foo) origin == tr1.
-	self assert: (tr2 >> #foo) origin == tr1.
-	self assert: (tr3 >> #foo) origin == tr1.
-	
+	self assert: (tr1 >> #foo) origin identicalTo: tr1.
+	self assert: (tr2 >> #foo) origin identicalTo: tr1.
+	self assert: (tr3 >> #foo) origin identicalTo: tr1.
+
 	"-----------"
 	"For TR2"
-			
-	self assert: (tr2 traitComposition traitDefining: #foo) innerClass == tr1.
-	self assert: (tr2 >> #foo) origin == tr1.
+
+	self assert: (tr2 traitComposition traitDefining: #foo) innerClass identicalTo: tr1.
+	self assert: (tr2 >> #foo) origin identicalTo: tr1.
 	"-----------"
-	
+
 	"-----------"
 	"For TR23"
-		
-	self assert: (tr23 traitComposition traitDefining: #foo) innerClass == tr1.
-	self assert: (tr23 >> #foo) origin == tr1.
+
+	self assert: (tr23 traitComposition traitDefining: #foo) innerClass identicalTo: tr1.
+	self assert: (tr23 >> #foo) origin identicalTo: tr1
 	"----------"
 ]
 
@@ -321,12 +310,12 @@ TraitTest >> testOrigin [
 TraitTest >> testOriginWithRequiredMethod [
 	| tr1 c1 |
 	tr1 := self createTraitNamed: #TTT1 uses: {}.
-	
+
 	tr1 compile: 'foo ^ self explicitRequirement'.
-	self assert: (tr1 >> #foo) origin == tr1.
-	
+	self assert: (tr1 >> #foo) origin identicalTo: tr1.
+
 	c1 := self createClassNamed: #CTT1 superclass: Object uses: tr1.
-	self assert: (c1 >> #foo) origin == tr1.
+	self assert: (c1 >> #foo) origin identicalTo: tr1
 ]
 
 { #category : #testing }
@@ -338,17 +327,18 @@ origin of Tr2>>foo is Tr1"
 	| tr1 tr2 |
 	tr1 := self createTraitNamed: #TTT1 uses: {}.
 	tr1 compile: 'foo ^ self explicitRequirement'.
-	self assert: (tr1 >> #foo) origin == tr1.
+	self assert: (tr1 >> #foo) origin identicalTo: tr1.
 	tr2 := self createTraitNamed: #TTT2 uses: {tr1}.
-	self assert: (tr2 >> #foo) origin == tr1
+	self assert: (tr2 >> #foo) origin identicalTo: tr1
 ]
 
 { #category : #testing }
 TraitTest >> testPrinting [
+
 	self assertPrints: self t6 definition
 		like: 'Trait named: #T6
 	uses: T1 + (T2 @ {#m22Alias->#m22})
-	category: ''Tests-Traits'''
+	package: ''Tests-Traits'''
 ]
 
 { #category : #testing }
@@ -361,7 +351,6 @@ TraitTest >> testPrintingClassSide [
 
 { #category : #testing }
 TraitTest >> testRemoveFromSystem [
-	self flag: #fix.	"It has to be refactored when Mariano's ClassBuilder for testCase is integrated :)"
 	SystemAnnouncer uniqueInstance
 		suspendAllWhile: [ 
 			| aClass aTrait |
@@ -375,16 +364,6 @@ TraitTest >> testRemoveFromSystem [
 ]
 
 { #category : #testing }
-TraitTest >> testRequirement [
-	
-	self t1 compile: 'm self requirement'.
-	self t2 compile: 'm ^true'.
-	self assert: self c2 new m.
-	self t2 removeSelector: #m.
-	self should: [self c2 new m] raise: Error
-]
-
-{ #category : #testing }
 TraitTest >> testTraitCompositionRespectsParenthesis [
 	self t1 compile: 'method ^1234'.
 	self t2 compile: 'method ^4'.
@@ -392,33 +371,29 @@ TraitTest >> testTraitCompositionRespectsParenthesis [
 	self should: [ self c1 new method ] raise: MessageNotUnderstood.
 	self c1 setTraitComposition: self t1 + (self t2 - #method).
 	self c1 new method.
-	self assert: self c1 new method = 1234
+	self assert: self c1 new method equals: 1234
 ]
 
 { #category : #testing }
 TraitTest >> testTraitRemoval [
-	self flag: #fix.	"It has to be refactored when Mariano's ClassBuilder for testCase is integrated :)"
 	SystemAnnouncer uniqueInstance
-		suspendAllWhile: [ 
-			| aClass aTrait |
-			[ 
-			aTrait := self createTrait.
+		suspendAllWhile: [ | aClass aTrait |
+			[ aTrait := self createTrait.
 			aClass := self createClassUsing: aTrait.
-			self assert: aClass localSelectors isEmpty.
+			self assertEmpty: aClass localSelectors.
 			aClass removeFromComposition: aTrait.
-			self assert: aClass localSelectors isEmpty.
-			self assert: aClass organization allMethodSelectors isEmpty.
+			self assertEmpty: aClass localSelectors.
+			self assertEmpty: aClass organization allMethodSelectors.
 			self deny: aClass hasTraitComposition.
-			self deny: (aTrait traitUsers includes: aClass). ]
-				ensure: [ 
-					aClass removeFromSystem: false.
+			self deny: (aTrait traitUsers includes: aClass) ]
+				ensure: [ aClass removeFromSystem: false.
 					aTrait removeFromSystem: false ] ]
 ]
 
 { #category : #testing }
 TraitTest >> testTraitsMethodClassSanity [
 		
-	(Smalltalk globals allTraits flatCollect: #traitUsers) asSet do: [ :each |
+	(testingEnvironment allTraits flatCollect: #traitUsers) asSet do: [ :each |
 		each selectorsDo: [ :selector |
 			self should: [ (each >> selector) methodClass == each ] ] ]
 ]
@@ -436,40 +411,41 @@ TraitTest >> testTraitsUsersSanity [
 
 { #category : #testing }
 TraitTest >> testUsers [
-	self assert: self t1 traitUsers size = 3.
-	self assert: (self t1 traitUsers includesAll: {self t4. self t5. self t6 }).
-	self assert: self t3 traitUsers isEmpty.
-	self assert: self t5 traitUsers size = 1.
-	self assert: self t5 traitUsers anyOne = self c2.
+	self assert: self t1 traitUsers size equals: 3.
+	self assert: (self t1 traitUsers includesAll: {self t4 . self t5 . self t6}).
+	self assertEmpty: self t3 traitUsers.
+	self assert: self t5 traitUsers size equals: 1.
+	self assert: self t5 traitUsers anyOne equals: self c2.
 	self c2 setTraitComposition: self t1 + self t5.
-	self assert: self t5 traitUsers size = 1.
-	self assert: self t5 traitUsers anyOne = self c2.
+	self assert: self t5 traitUsers size equals: 1.
+	self assert: self t5 traitUsers anyOne equals: self c2.
 	self c2 setTraitComposition: self t2 asTraitComposition.
-	self assert: self t5 traitUsers isEmpty
+	self assertEmpty: self t5 traitUsers
 ]
 
 { #category : #testing }
 TraitTest >> testUsersWithClassChanges [
 	"This documents bug http://code.google.com/p/pharo/issues/detail?id=443"
+
 	"self debug: #testUsersWithClassChanges"
-	
+
 	self c2 setTraitComposition: self t5 asTraitComposition.
-	self assert: self t5 traitUsers size = 1.
-	self assert: self t5 classSide traitUsers size = 1.
-	self assert: self c2 traits size = 1.
-	self assert: self c2 class traits size = 1.
-	
+	self assert: self t5 traitUsers size equals: 1.
+	self assert: self t5 classSide traitUsers size equals: 1.
+	self assert: self c2 traits size equals: 1.
+	self assert: self c2 class traits size equals: 1.
+
 	"Change class definition"
 	self c2 addInstVarNamed: 'foo'.
-	self assert: self t5 traitUsers size = 1.
-	self assert: self t5 classSide traitUsers size = 1.
-	self assert: self c2 traits size = 1.
-	self assert: self c2 class traits size = 1.
-	
+	self assert: self t5 traitUsers size equals: 1.
+	self assert: self t5 classSide traitUsers size equals: 1.
+	self assert: self c2 traits size equals: 1.
+	self assert: self c2 class traits size equals: 1.
+
 	"Change metaclass definition"
 	self c2 class instanceVariableNames: 'bar'.
-	self assert: self t5 traitUsers size = 1.
-	self assert: self t5 classSide traitUsers size = 1.
-	self assert: self c2 traits size = 1.
-	self assert: self c2 class traits size = 1.
+	self assert: self t5 traitUsers size equals: 1.
+	self assert: self t5 classSide traitUsers size equals: 1.
+	self assert: self c2 traits size equals: 1.
+	self assert: self c2 class traits size equals: 1
 ]

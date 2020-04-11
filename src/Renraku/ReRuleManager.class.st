@@ -12,10 +12,12 @@ Class {
 	#instVars : [
 		'rules'
 	],
+	#classVars : [
+		'RulesProfile'
+	],
 	#classInstVars : [
-		'uniqueInstance',
-		'managers',
-		'default'
+		'default',
+		'managers'
 	],
 	#category : #'Renraku-Utility'
 }
@@ -70,8 +72,8 @@ ReRuleManager class >> defaultRules [
 
 { #category : #helpers }
 ReRuleManager class >> excludedRuleNames [
-
-	^ #(RBImplementedNotSentRule)
+	"here rules can be excluded, but it is better to implement #enabled on the rule to return false to disable it. Do not forget to call #reset on this class after changing this method!"
+	^ #()
 ]
 
 { #category : #'class initialization' }
@@ -135,7 +137,7 @@ ReRuleManager class >> removeManagerFor: anRPackage [
 	
 ]
 
-{ #category : #utilities }
+{ #category : #initialization }
 ReRuleManager class >> reset [
 	<script>
 	managers := nil.
@@ -147,6 +149,20 @@ ReRuleManager class >> resetWithInform [
 
 	self reset.
 	self inform: 'Cache of the Renraku rule manager has been reset'
+]
+
+{ #category : #acccessing }
+ReRuleManager class >> ruleProfileSettingsOn: aBuilder [ 
+	<systemsettings>
+	(aBuilder pickOne: #rulesProfile)
+		order: 1;
+		label: 'Select a quality rules profile ';
+		description: 'Select a profile according to your experience with Pharo. This will allow the QualityAssistant to show the rules that are appropiate to your level.';
+		parent: #qualityAssistant;
+		target: self;
+		default: #setDefaultProfile;
+		domainValues: {'Default' translated -> #setDefaultProfile . 
+							'Beginner' translated -> #setBeginnerProfile }
 ]
 
 { #category : #settings }
@@ -172,8 +188,40 @@ ReRuleManager class >> ruleToggleSettingsOn: aBuilder [
 					(aBuilder setting: rule enabledSettingID)
 					selector: #enabled;
 					target: rule;
+					default: true;
 					label: inst name;
 					description: inst rationale ] ]
+]
+
+{ #category : #acccessing }
+ReRuleManager class >> rulesProfile [
+
+	^ RulesProfile ifNil: [ RulesProfile := #setDefaultProfile ]
+]
+
+{ #category : #acccessing }
+ReRuleManager class >> rulesProfile: aSelector [
+
+	RulesProfile := aSelector.
+	self perform: RulesProfile 
+]
+
+{ #category : #acccessing }
+ReRuleManager class >> setBeginnerProfile [
+
+	self visibleRuleClasses 
+		select: [ :rule | rule inheritsFrom: ReAbstractRule ] "because lint rules don't have #enabled"
+		thenDo: [ :rule | rule enabled: rule isBeginnerRule ].
+	self reset
+]
+
+{ #category : #acccessing }
+ReRuleManager class >> setDefaultProfile [
+
+	self visibleRuleClasses 
+		select: [ :rule | rule inheritsFrom: ReAbstractRule ] "because lint rules don't have #enabled"
+		thenDo: [ :rule | rule enabled: rule isDefaultRule ].
+	self reset
 ]
 
 { #category : #'event subscriptions' }

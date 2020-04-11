@@ -5,7 +5,7 @@ MenuItemMorph class >> gtExampleMenuItemMorphWithSubitems [
 	<gtExample>
 	<label: 'Menu item with subitems'>
 	
-	^ World worldMenu items 
+	^ self currentWorld worldMenu items 
 		detect: [ :each | each contents = 'System' ]
 ]
 
@@ -14,20 +14,13 @@ MenuItemMorph class >> gtExampleMenuItemMorphWithoutSubitems [
 	<gtExample>
 	<label: 'Menu item without subitems'>
 	
-	^ World worldMenu items 
+	^ self currentWorld worldMenu items 
 		detect: [ :each | each contents = 'System Browser' ]
 ]
 
 { #category : #'*GT-SpotterExtensions-Core' }
 MenuItemMorph >> spotterActDefault [
 	self doButtonAction
-]
-
-{ #category : #'*GT-SpotterExtensions-Core' }
-MenuItemMorph >> spotterItemsFor: aStep [
-	<spotterOrder: 10>
-	self hasSubMenu ifTrue: [ 
-		self subMenu spotterItemsFor: aStep ]
 ]
 
 { #category : #'*GT-SpotterExtensions-Core' }

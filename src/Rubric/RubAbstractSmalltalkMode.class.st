@@ -14,6 +14,23 @@ RubAbstractSmalltalkMode >> editorClass [
 ]
 
 { #category : #testing }
-RubAbstractSmalltalkMode >> isCodeCompletionAllowed [
+RubAbstractSmalltalkMode >> isCompletionEnabled [
 	^ true
+]
+
+{ #category : #testing }
+RubAbstractSmalltalkMode >> isScripting [
+	^ false
+]
+
+{ #category : #parsing }
+RubAbstractSmalltalkMode >> parseExpression: aString [
+
+	self subclassResponsibility
+]
+
+{ #category : #parsing }
+RubAbstractSmalltalkMode >> parseSource: aString [
+
+	self subclassResponsibility
 ]

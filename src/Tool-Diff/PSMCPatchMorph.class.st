@@ -20,6 +20,7 @@ PSMCPatchMorph class >> defaultDiffToolsSettingOn: aBuilder [
 	<systemsettings>  
 	(aBuilder setting: #polymorphDiffToolsUsedByDefault)
 		label: 'Use Polymorph difference tools';
+		default: true;
 		description: 'When enabled the Polymorph diff tools will be used with Monticello. When disabled, the original tools are used.';
 		parent: #differator;
 		target: PSMCPatchMorph;
@@ -163,7 +164,7 @@ PSMCPatchMorph >> changesMenu: m [
 		enablementSelector: #selectionHasActualClass.
 	menu lastItem
 		font: self theme menuFont;
-		icon: Smalltalk tools browser taskbarIcon;
+		icon: (self iconNamed: #smallWindowIcon);
 		keyText: 'Cmd+b'.
 	menu addLine.
 	menu
@@ -375,16 +376,20 @@ PSMCPatchMorph >> update: aspect [
 
 { #category : #private }
 PSMCPatchMorph >> updateSource [
+
 	"Update the source difference morph."
 
-	|sel|
+	| sel |
+
 	sel := self selectedChange.
-	sel isNil
-		ifTrue: [self diffMorph
-				from: ''
-				to: '']
-		ifFalse: [self diffMorph
-					from: sel diffFromSource
-					to: sel diffToSource
-					contextClass: (sel isClassPatch ifTrue: [nil] ifFalse: [sel targetClass])]
+	sel
+		ifNil: [ self diffMorph from: '' to: '' ]
+		ifNotNil: [ self diffMorph
+				from: sel diffFromSource
+				to: sel diffToSource
+				contextClass:
+					( sel isClassPatch
+						ifTrue: [ nil ]
+						ifFalse: [ sel targetClass ] )
+			]
 ]

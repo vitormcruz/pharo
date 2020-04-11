@@ -66,7 +66,7 @@ RBCreateCascadeRefactoring >> combineMessages [
 
 { #category : #transforming }
 RBCreateCascadeRefactoring >> compileCode [
-	class compileTree: (RBParseTreeRewriter
+	class compileTree: (self parseTreeRewriterClass
 		replaceStatements: sequenceNode formattedCode
 		with: transformedNode formattedCode
 		in: self parseTree
@@ -90,7 +90,7 @@ RBCreateCascadeRefactoring >> findReceiverNode [
 RBCreateCascadeRefactoring >> findSequenceNode [
 	"Find the sequence to be combined."
 
-	sequenceNode := RBParser
+	sequenceNode := self parserClass
 		parseExpression: self selectedSource
 		onError: [ :msg :pos | self refactoringFailure: 'Invalid source to rewrite' ].
 	(sequenceNode isSequence and: [ sequenceNode statements size > 1 ])
@@ -115,10 +115,11 @@ RBCreateCascadeRefactoring >> findStatementNodes [
 
 { #category : #accessing }
 RBCreateCascadeRefactoring >> parseTree [
-	parseTree isNil ifTrue: [
-		parseTree := class parseTreeFor: selector.
-		parseTree isNil
-			ifTrue: [ self refactoringFailure: 'Could not parse sources' ] ].
+
+	parseTree
+		ifNil: [ parseTree := class parseTreeFor: selector.
+			parseTree ifNil: [ self refactoringFailure: 'Could not parse sources' ]
+			].
 	^ parseTree
 ]
 

@@ -11,21 +11,11 @@ Class {
 	#name : #OSWindowWorldMorph,
 	#superclass : #WorldMorph,
 	#instVars : [
-		'display',
 		'closeCallback',
 		'isResizeable'
 	],
 	#category : #'OSWindow-Core-Morphic'
 }
-
-{ #category : #accessing }
-OSWindowWorldMorph >> actualScreenSize [
-
-	^ [ self osWindow extent ]
-		on: Error do: [ :e | 
-			"if window was destroyed, we will have an error."
-			0@0 ]
-]
 
 { #category : #adding }
 OSWindowWorldMorph >> addMorph: aMorph frame: rectangle [
@@ -50,14 +40,8 @@ OSWindowWorldMorph >> closeCallback: anObject [
 OSWindowWorldMorph >> delete [
 	closeCallback value.
 	self class removeExtraWorld: self.
-	osWindow destroy.
+	worldState worldRenderer deactivate.
 	super delete
-]
-
-{ #category : #accessing }
-OSWindowWorldMorph >> display [
-	self updateDisplay.
-	^ display
 ]
 
 { #category : #initialization }
@@ -66,7 +50,6 @@ OSWindowWorldMorph >> initialize [
 	self color: Color veryLightGray.
 	isResizeable := true.
 	self extent: 640@480.
-	worldState := OSWindowWorldState new.
 	self addHand: HandMorph new.
 	
 ]
@@ -83,57 +66,23 @@ OSWindowWorldMorph >> isResizeable: anObject [
 
 { #category : #'instance creation' }
 OSWindowWorldMorph >> open [
-	self osWindow.
+	self worldState worldRenderer: ((OSWorldRenderer forWorld: self)
+		windowCloseAction: [self osWindowCloseButtonPressed]).
 	self changed.
 	self class addExtraWorld: self.
 ]
 
-{ #category : #'instance creation' }
+{ #category : #display }
 OSWindowWorldMorph >> openInWorld [
 	^ self open
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #events }
 OSWindowWorldMorph >> osWindowCloseButtonPressed [
 	self delete
 ]
 
 { #category : #accessing }
-OSWindowWorldMorph >> osWindowRenderer [
-	^ self osWindow renderer ifNil: [
-		self osWindow newFormRenderer: self display.
-		self osWindow renderer
-	].
-	
-]
-
-{ #category : #'session management' }
-OSWindowWorldMorph >> recreateOSWindow [
-	| attributes driver |
-	session := Smalltalk session.
-	attributes := OSWindowAttributes new.
-	attributes
-		extent: self extent;
-		title: Smalltalk shortImageName;
-		icon: (self iconNamed: #pharoIcon);
-		resizable: isResizeable.
-	self updateDisplay.
-	driver := self pickMostSuitableWindowDriver.
-	attributes preferableDriver: driver.
-	osWindow := OSWindow createWithAttributes: attributes.
-	osWindow newFormRenderer: display.
-	osWindow eventHandler: (OSWindowMorphicEventHandler for: self)
-]
-
-{ #category : #accessing }
 OSWindowWorldMorph >> title: aTitle [
-	self flag: 'ToDo'
-]
-
-{ #category : #'as yet unclassified' }
-OSWindowWorldMorph >> updateDisplay [
-	display isNil ifTrue: [
-		display := Form extent: self extent depth: 32.
-		worldState display: display
-	]
+	"self flag: 'ToDo'"
 ]

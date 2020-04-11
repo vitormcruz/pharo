@@ -19,8 +19,8 @@ MCGitHubRepository class >> cacheDirectory [
   "use class var to survive upgrade when MCGitHubRepository moved to subclass of MCGitBasedRepository"
 
   self resetCacheDirectoryIfInvalid.
-  CacheDirectory ifNil: [ CacheDirectory := self defaultCacheDirectory ].
-  ^ CacheDirectory
+  ^ CacheDirectory ifNil: [ self defaultCacheDirectory ].
+ 
 ]
 
 { #category : #private }
@@ -35,6 +35,11 @@ MCGitHubRepository class >> cacheDirectoryPath [
   <preference: 'GitHub Cache' category: 'Metacello' description: '' type:
     #'String'>
   ^ super cacheDirectoryPath
+]
+
+{ #category : #'instance creation' }
+MCGitHubRepository class >> createRepositoryFromSpec: aRepositorySpec on: aPlatform [
+	^ aPlatform createGithubRepository: aRepositorySpec
 ]
 
 { #category : #accessing }
@@ -72,14 +77,14 @@ MCGitHubRepository class >> flushETagsCache [
 ]
 
 { #category : #testing }
+MCGitHubRepository class >> isAvailableFor: type [
+	^ type = 'github'
+]
+
+{ #category : #testing }
 MCGitHubRepository class >> isEnabled [
 
 	^true
-]
-
-{ #category : #private }
-MCGitHubRepository class >> projectTagsUrlFor: projectPath [
-  ^ 'https://api.github.com/repos/' , projectPath , '/tags'
 ]
 
 { #category : #private }
@@ -134,4 +139,9 @@ MCGitHubRepository >> normalizeTagsData: jsonObject [
       commit := tagObject at: 'commit'.
       tagDict at: tag put: (commit at: 'sha') ].
   ^ tagDict
+]
+
+{ #category : #private }
+MCGitHubRepository >> projectTagsUrlFor: projectPath2 [
+  ^ 'https://api.github.com/repos/' , projectPath2 , '/tags'
 ]

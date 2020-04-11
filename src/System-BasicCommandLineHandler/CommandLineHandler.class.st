@@ -25,7 +25,7 @@ Class {
 		'stdout',
 		'stderr'
 	],
-	#category : #'System-BasicCommandLineHandler'
+	#category : #'System-BasicCommandLineHandler-Base'
 }
 
 { #category : #'instance creation' }
@@ -226,13 +226,13 @@ CommandLineHandler >> initialize [
 	
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 CommandLineHandler >> initializeStderr [
 	"install the line end conversion and initialize the converter"
 	stderr := VTermOutputDriver stderr.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 CommandLineHandler >> initializeStdout [
 	"install the line end conversion and initialize the converter"
 	stdout := VTermOutputDriver stdout.

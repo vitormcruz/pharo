@@ -1,5 +1,10 @@
 "
-I read and write BMP files.
+I am BMPReadWriter.
+I am a concrete ImageReadWriter.
+
+I read and write the BMP image file format.
+
+	https://en.wikipedia.org/wiki/BMP_file_format
 
 Example to save and load a screenshot of the world in a .bmp file:
 
@@ -217,10 +222,10 @@ BMPReadWriter >> readColorMap [
 
 { #category : #reading }
 BMPReadWriter >> readHeader [
-	| reserved |
+ 
 	bfType := self nextLittleEndianNumber: 2.
 	bfSize := self nextLittleEndianNumber: 4.
-	reserved := self nextLittleEndianNumber: 4.
+	self nextLittleEndianNumber: 4. "reserved, do nothing with it"
 	bfOffBits := self nextLittleEndianNumber: 4.
 	biSize := self nextLittleEndianNumber: 4.
 	biWidth := self nextLittleEndianNumber: 4.

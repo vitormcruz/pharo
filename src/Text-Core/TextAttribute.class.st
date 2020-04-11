@@ -1,6 +1,19 @@
 "
-Tells a piece of text to be a certain way.
+I am an abstract class to represent a text attribute, the way a portion of text is graphically represented.
+My sub-classes specify these representations:
+- colouring (TextColor), 
+- bold, italic, underlined, 
+- narrow, strike out (TextEmphasis), 
+- alignment (TextAlignment),
+- indentation (TextIndent),
+- font change (TextFontChange),
+- kerning (TextKern),
+- url and related action (TextAction hierarchy).
+- morph (TextAnchor)
 
+My instances are stored in the Text instance runs variable (a RunArray).
+
+------------8<-----------------------------------------------------------------------------------------
 Select text, press Command-6, choose a attribute.  If selected text is of the form 
 	Hi There<Smalltalk beep>
 the part in angle brackets is saved for action, and the Hi There appears in the paragraph.  If selection has no angle brackets, use the whole thing as both the text and the action.
@@ -22,7 +35,7 @@ See RunArray class scanFrom: where decoding is done.
 Class {
 	#name : #TextAttribute,
 	#superclass : #Object,
-	#category : #'Text-Core'
+	#category : #'Text-Core-Attributes'
 }
 
 { #category : #accessing }
@@ -77,14 +90,7 @@ TextAttribute >> mayHaveExternalReferences [
 	^ false
 ]
 
-{ #category : #styling }
-TextAttribute >> oldEmphasisCode: default [
-	"Allows running thorugh possibly multiple attributes
-	and getting the emphasis out of any that has an emphasis (font number)"
-	^ default
-]
-
-{ #category : #accessing }
+{ #category : #initialization }
 TextAttribute >> reset [
 	"Allow subclasses to prepare themselves for merging attributes"
 ]

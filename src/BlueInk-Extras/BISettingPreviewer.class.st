@@ -47,10 +47,10 @@ BISettingPreviewer class >> defaultSpec [
 
 { #category : #settings }
 BISettingPreviewer class >> dialogOpenBIPreviewer [
-	^ Smalltalk ui theme
-		newRowIn: World
+	^ self theme
+		newRowIn: self
 		for:
-			{(Smalltalk ui theme buttonLabelForText: 'Open Blue Ink Setting Previewer ').
+			{(self theme buttonLabelForText: 'Open Blue Ink Setting Previewer ').
 			self buildOpenBIInspectorButton}
 ]
 
@@ -159,7 +159,7 @@ BISettingPreviewer >> compiledMethodFromSearchFields [
 BISettingPreviewer >> displayNodeFor: aNode [
 	| nodeMorphLeft nodeMorphRight |
 	nodeMorphLeft := StringMorph contents: aNode item label.
-	nodeMorphRight := (self theme newRowIn: World for: {aNode settingDeclaration inputWidget})
+	nodeMorphRight := (self theme newRowIn: self for: {aNode settingDeclaration inputWidget})
 		clipSubmorphs: true;
 		cellInset: 0;
 		width: 570;
@@ -169,7 +169,7 @@ BISettingPreviewer >> displayNodeFor: aNode [
 		addAllMorphs:
 			{nodeMorphLeft.
 			nodeMorphRight}; 
-		color: Smalltalk ui theme lightBackgroundColor;
+		color: self theme lightBackgroundColor;
 		hResizing: #shrinkWrap;
 		yourself
 ]
@@ -179,8 +179,7 @@ BISettingPreviewer >> formatSourceCode [
 	| source tree formatted |
 	source := self compiledMethodFromSearchFields sourceCode.
 	tree := RBParser parseMethod: source onError: [ :msg :pos | ^ self ].
-	formatted := tree
-		formattedCodeWithMaxLineLength: (self window value window value width / 9) integerPart asInteger.	"It is a bit tricky but I get the width of the sourceCodePane like this..."
+	formatted := tree formattedCode.
 	sourceCodePane text: formatted
 ]
 

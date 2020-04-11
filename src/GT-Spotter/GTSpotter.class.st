@@ -45,54 +45,12 @@ GTSpotter class >> dontShowPreview [
 ]
 
 { #category : #example }
-GTSpotter class >> exampleInWindow [
-	<sampleInstance>
-	
-	^ GTSpotterMorph new
-		extent: 400@500;
-		doLayout;
-		spotterModel: self new;
-		openInWindow
-]
-
-{ #category : #example }
-GTSpotter class >> exampleMC [
-	"self exampleMC"
-	<sampleInstance>
-	^ GTSpotterMorph new
-		extent: 400@500;
-		doLayout;
-		spotterModel: (self on: MCWorkingCopy allManagers);
-		openCenteredInWorld
-]
-
-{ #category : #example }
 GTSpotter class >> exampleSpotterWithoutMorph [
 	<sampleInstance>
 	<gtExample>
 	<label: 'A GTSpotter without UI'>
 	
 	^ self new
-]
-
-{ #category : #example }
-GTSpotter class >> exampleWithPreview [
-	<sampleInstance>
-	^ GTSpotterMorph new
-		extent: (World width / 2.5 @ (World height / 1.5)) asIntegerPoint;
-		spotterModel: self new;
-		showPreview;
-		openCenteredInWorld
-]
-
-{ #category : #example }
-GTSpotter class >> exampleWorldMenu [
-	<sampleInstance>
-	^ GTSpotterMorph new
-		extent: 400@500;
-		doLayout;
-		spotterModel: (self on: World worldMenu);
-		openCenteredInWorld
 ]
 
 { #category : #accessing }
@@ -128,22 +86,22 @@ GTSpotter class >> markOpened [
 	wasOpened := true
 ]
 
-{ #category : #'world menu' }
-GTSpotter class >> menuCommandOn: aBuilder [
-	<worldMenu>
-	(aBuilder item: #Spotter)
-		action: [ GTSpotterGlobalShortcut openGlobalSpotter ];
-		keyText: 'Shift + Enter';
-		order: 50;
-		parent: #Tools;
-		help: 'Search tool to explore Pharo system effectively.';
-		iconName: #smallFindIcon
-]
-
 { #category : #'instance creation' }
 GTSpotter class >> on: anObject [
 	
 	^ self new foundationOrigin: anObject
+]
+
+{ #category : #accessing }
+GTSpotter class >> previewVisible [
+
+	^ self isPreviewVisible 
+]
+
+{ #category : #accessing }
+GTSpotter class >> previewVisible: aValue [
+
+	isPreviewVisible := aValue
 ]
 
 { #category : #accessing }
@@ -152,6 +110,22 @@ GTSpotter class >> resetHistory [
 	self resetHistory
 	"
 	^ history := nil
+]
+
+{ #category : #testing }
+GTSpotter class >> settingsOn: aBuilder [
+	<systemsettings>
+	(aBuilder group: #spotter)
+		parent: #tools;
+		label: 'Spotter';
+		description: 'Spotter configuration'.
+
+	(aBuilder setting: #previewVisible)
+		parent: #spotter;
+		default: false;
+		target: self;
+		description: 'If Spotter will show the preview panel on the right of spotter';
+		label: 'Show Preview Panel'.
 ]
 
 { #category : #accessing }
@@ -227,16 +201,6 @@ GTSpotter >> announcer [
 	^ announcer ifNil: [ announcer := Announcer new ]
 ]
 
-{ #category : #'accessing-convenience' }
-GTSpotter >> beDebugging [
-	self exceptionHandler: GTSpotterDebuggingExceptionHandler new
-]
-
-{ #category : #'accessing-convenience' }
-GTSpotter >> beDeployment [
-	self exceptionHandler: GTSpotterDeploymentExceptionHandler new
-]
-
 { #category : #accessing }
 GTSpotter >> currentStep [
 	^ currentStep
@@ -252,9 +216,9 @@ GTSpotter >> currentStep: aStepModel [
 	self notifyCurrentStepChanged
 ]
 
-{ #category : #'accessing-defaults' }
-GTSpotter >> defaultExceptionHandler [
-	^ GTSpotterDeploymentExceptionHandler new
+{ #category : #accessing }
+GTSpotter >> defaultFilterClass [
+    ^ GTFilterFuzzy
 ]
 
 { #category : #'accessing-defaults' }
@@ -267,14 +231,13 @@ GTSpotter >> defaultStep [
 	^ GTSpotterStep new
 ]
 
-{ #category : #accessing }
-GTSpotter >> exceptionHandler [
-	^ exceptionHandler ifNil: [ exceptionHandler := self defaultExceptionHandler ]
-]
-
-{ #category : #accessing }
-GTSpotter >> exceptionHandler: anObject [
-	exceptionHandler := anObject
+{ #category : #'actions api' }
+GTSpotter >> doIt [
+	| result |
+	Smalltalk compiler
+		silentlyDo: [ result := Smalltalk compiler evaluate: text string trimBoth ]
+		exceptionDo: [:ex | ^ex ]. 
+	"self exitDueTo: #doIt"
 ]
 
 { #category : #'actions api' }
@@ -322,36 +285,6 @@ GTSpotter >> getText [
 GTSpotter >> gtDisplayOn: stream [
 
 	stream nextPutAll: 'Spotter'
-]
-
-{ #category : #printing }
-GTSpotter >> gtDisplaySpotterMorphOn: aComposite [
-	<gtInspectorPresentationOrder: 50>
-	
-	aComposite morph 
-		title: 'Live';
-		display: [ 
-			GLMBrick new 
-				hSpaceFill;
-				vSpaceFill;
-				addMorphBack: 
-					(GTSpotterMorph new
-						spotterModel: self);
-				yourself ]
-]
-
-{ #category : #inspecting }
-GTSpotter >> gtInspectorStepsIn: composite [
-	<gtInspectorPresentationOrder: 40>
-	composite list
-		title: 'Steps';
-		display: [ self steps ];
-		when: [ self steps notEmpty ]
-]
-
-{ #category : #'event handling' }
-GTSpotter >> handleExceptionsDuring: aBlock [
-	self exceptionHandler handleExceptionsDuring: aBlock
 ]
 
 { #category : #testing }
@@ -433,8 +366,17 @@ GTSpotter >> menu [
 { #category : #'instance creation' }
 GTSpotter >> newStep [
 
-	^ self defaultStep
-		spotter: self
+	| step |
+	
+	step := self defaultStep
+						spotter: self;
+						yourself.
+	
+	step announcer 
+			when: GTSpotterQueryStarted send: #propagateEvent: to: self;
+			when: GTSpotterQueryEnded send: #propagateEvent: to: self.
+
+	^ step
 ]
 
 { #category : #notifying }
@@ -549,46 +491,6 @@ GTSpotter >> notifyStepPopped [
 	self announce: GTSpotterStepPopped new
 ]
 
-{ #category : #'event handling' }
-GTSpotter >> onPagePopped [
-	
-	self steps size > 0 ifTrue: [
-		self currentStep: self steps last ]
-]
-
-{ #category : #accessing }
-GTSpotter >> pagerModel [
-
-	^ pagerModel ifNil: [
-		pagerModel := self defaultPagerModel defaultNumberOfVisiblePages: 1.
-		pagerModel announcer when: GLMPagePoped send: #onPagePopped to: self.
-		pagerModel ]
-]
-
-{ #category : #'actions api' }
-GTSpotter >> popStep [
-
-	"there always should be minimum one step left"
-	(self steps size > 1)
-		ifTrue: [
-			self
-				after: [ self steps removeLast ]
-				do: [ :o | self notifyDiveOut: o ]
-				with: self currentStep origin.
-			self notifyStepPopped.
-			"perform pane popping only after we scrolled to the penultimate pane, so user doesn't see blinking"
-			self pagerModel
-				scrollToPane: self steps size
-				callback: [ self pagerModel popPane: false ] ]
-]
-
-{ #category : #'actions api' }
-GTSpotter >> popUntil: aStep [
-
-	[ self steps last = aStep ]
-		whileFalse: [ self popStep ]
-]
-
 { #category : #accessing }
 GTSpotter >> processorsFilter [
 
@@ -602,22 +504,18 @@ GTSpotter >> processorsFilter: aFilter [
 	processorsFilter := aFilter
 ]
 
+{ #category : #'event handling' }
+GTSpotter >> propagateEvent: ann [
+
+	self announcer announce: ann	
+]
+
 { #category : #'actions api' }
 GTSpotter >> pushStep: stepModel [
 	
 	self addStep: stepModel.
 	"updating current step"
 	self currentStep: stepModel
-]
-
-{ #category : #'event handling' }
-GTSpotter >> requestNextCategoryStepWith: aProcessorLink for: anEventType [
-	|collection|
-	
-	collection := aProcessorLink processor allFilteredCandidates
-		collect: [ :each | each asSpotterCandidateLink renderingProcessor: aProcessorLink ].
-		
-	self requestNextStepWith: collection for: anEventType
 ]
 
 { #category : #'event handling' }
@@ -644,31 +542,16 @@ GTSpotter >> setText: aText from: aView [
 	^ true
 ]
 
-{ #category : #'actions api' }
-GTSpotter >> shiftPressed: aBoolean [
+{ #category : #'processors-discovery' }
+GTSpotter >> spotterProcessorsFor: aSpotterStep [
 
-	self isShiftPressed = aBoolean ifTrue: [ ^ self ].
-	
-	isShiftPressed := aBoolean.
-	
-	SmalltalkImage current vm canHandleShiftPressed
-		ifTrue: [ ^ isShiftPressed := false ].
+	| processors |
 
-	self isShiftPressed
-		ifTrue: [ self notifyRevealHints ]
-		ifFalse: [ self notifyHideHints ]
+	processors := AbstractSpotterProcessor allEnabledSubclasses	collect: [ :e | e new ].
 
-	
-]
-
-{ #category : #'actions api' }
-GTSpotter >> showPreview [
-
-	self isPreviewVisible ifTrue: [ ^ self ].
-	isPreviewVisible := true.
-	self class showPreview.
-	self notifyShowPreview
-	
+	processors sort: [ :a :b | a order < b order ].
+		
+	processors do: [ :e | e configureOn: aSpotterStep ].
 ]
 
 { #category : #accessing }
@@ -687,12 +570,4 @@ GTSpotter >> terminateProcessors [
 GTSpotter >> text [
 
 	^ text ifNil: [ text := '' asText ]
-]
-
-{ #category : #'actions api' }
-GTSpotter >> togglePreview [
-
-	self isPreviewVisible
-		ifTrue: [ self hidePreview ]
-		ifFalse: [ self showPreview ]
 ]

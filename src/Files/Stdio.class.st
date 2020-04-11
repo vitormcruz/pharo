@@ -43,15 +43,13 @@ Stdio class >> cleanStdioHandles [
 
 { #category : #private }
 Stdio class >> createStdioFileFor: moniker [
-	^ [ self createWriteStreamBlock cull: moniker asString ]
+	^ [[ self createWriteStreamBlock cull: moniker asString ]
 		on: CannotDeleteFileException
 		do:
 			[ "HACK: if the image is opened a second time windows barks about the already opened locked file"
-			[ self createWriteStreamBlock
+			 self createWriteStreamBlock
 				cull: moniker asString , '_' , (Random new nextInt: SmallInteger maxVal) asString ]
-				on: FileException
-				do:
-					[ "Nothing, we do not have the rights to write and cannot suppose a dependency to the class MemoryFileSystemFile" ] ]
+	 ] on: FileException do: [ NullStream new ] 
 ]
 
 { #category : #accessing }
@@ -78,15 +76,18 @@ Stdio class >> initialize [
 
 { #category : #stdio }
 Stdio class >> standardIOStreamNamed: moniker forWrite: forWrite [
-	"Create if necessary and store default stdin, stdout and other files based on the their names"
+	"Create the requested stdio (#stdin, #stdout, #stderr) if possible.
+	On Windows, if stdio is not available, create a regular file instead."
 
-	| handle |
-	([ File stdioDescriptorIsATTY not ]
-		on: PrimitiveFailed
-		do: [ :ex | "HACK kept for retrocompatibility" Smalltalk os isWin32 ])
-		ifTrue: [ ^ self createStdioFileFor: moniker ].
-	handle := File stdioHandles at: (#(stdin stdout stderr) identityIndexOf: moniker).
-	handle ifNil: [ self error: moniker , ' is unavailable' ].
+	| handle streamIndex |
+
+	streamIndex := #(stdin stdout stderr) identityIndexOf: moniker.
+	handle := File stdioHandles at: streamIndex.
+	(handle isNil or: [ (File fileDescriptorIsAvailable: streamIndex-1) not ]) ifTrue: [ 
+		"On windows, create a file for stdio, error on other platforms"
+		Smalltalk os isWindows 
+			ifTrue: [ ^ self createStdioFileFor: moniker ]
+			ifFalse: [ self error: moniker , ' is unavailable' ] ].
 	^ StdioStream handle: handle file: (File named: moniker) forWrite: forWrite
 ]
 

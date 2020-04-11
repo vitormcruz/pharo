@@ -4,7 +4,7 @@ All Stream hierarchy: read/write stream
 Class {
 	#name : #ManifestCollectionsStreams,
 	#superclass : #PackageManifest,
-	#category : #'Collections-Streams'
+	#category : #'Collections-Streams-Manifest'
 }
 
 { #category : #'meta-data' }
@@ -14,7 +14,7 @@ ManifestCollectionsStreams class >> dependencies [
 
 { #category : #'meta-data - dependency analyser' }
 ManifestCollectionsStreams class >> manuallyResolvedDependencies [
-	^ #(#UIManager #'Collections-Abstract' #Jobs)
+	^ #(#UIManager #'Collections-Abstract')
 ]
 
 { #category : #'meta-data' }

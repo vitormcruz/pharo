@@ -85,9 +85,9 @@ OCUndeclaredVariableWarning >> defaultAction [
 	selector := self methodNode selector. 
 	varName := node name.
 
-	self methodNode selector ifNotNil: [self crTrace: className, '>>', selector, ' ']
-			ifNil: [self traceCr:''].
-	self traceCr: '(' , varName , ' is Undeclared) '.
+	NewUndeclaredWarning signal: varName in: (self methodNode selector 
+		ifNotNil: [className, '>>', selector]
+			ifNil: ['<unknown>']).
 
 	^super defaultAction ifNil: [
 		Undeclared add: (UndeclaredVariable named: varName asSymbol).
@@ -187,13 +187,13 @@ OCUndeclaredVariableWarning >> openMenuIn: aBlock [
 			labels add: 'Declare new global'.
 			actions add: [ self declareGlobal ].
 			labels add: 'Declare new class variable'.
-			actions add: [ self declareClassVar ] ].
+			actions add: [ self declareClassVar ] .
 			labels add: 'Define new trait'.
 			actions
 				add: [ 
 					[ self defineTrait: name ]
 						on: Abort
-						do: [ self openMenuIn: aBlock ] ].		
+						do: [ self openMenuIn: aBlock ] ] ].	
 	lines add: labels size.
 	alternatives
 		do: [ :each | 

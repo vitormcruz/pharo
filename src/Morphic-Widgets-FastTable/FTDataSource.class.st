@@ -40,6 +40,22 @@ Class {
 }
 
 { #category : #accessing }
+FTDataSource >> basicHeaderCellFor: column [
+	| cell |
+	column id ifNil: [ ^ nil ].
+	cell := FTHeaderColumnCellMorph new
+		listCentering: #center;
+		column: column;
+		cellInset: 5;
+		addMorph: column id asStringMorph;
+		yourself.
+
+	column sortingIcon ifNotNil: [ :icon | cell addMorph: icon ].
+
+	^ cell
+]
+
+{ #category : #accessing }
 FTDataSource >> cellColumn: column row: rowIndex [
 	"Answer a morph with the cell view. I will probably return a FTCellMorph."
 
@@ -56,6 +72,12 @@ FTDataSource >> elementAt: rowIndex [
 	"I am a really important method for a DataSource. I take an index and I return an object 
 	 that should be displayed in the table for the index."
 	self subclassResponsibility
+]
+
+{ #category : #testing }
+FTDataSource >> hasElementAt: index [ 
+
+	^ self numberOfRows >= index
 ]
 
 { #category : #accessing }
@@ -110,6 +132,12 @@ FTDataSource >> realElementAt: anIndex [
 ]
 
 { #category : #accessing }
+FTDataSource >> rowHeight: roIndex [
+
+	^ self table rowHeight
+]
+
+{ #category : #accessing }
 FTDataSource >> searchText: aString [
 	"search a text and answers a list of elements indexes matching condition. 
 	 E.g,
@@ -119,6 +147,19 @@ FTDataSource >> searchText: aString [
 			
 	Rows not in range will cause the end of the world as we know it :)"
 	^ #()
+]
+
+{ #category : #sorting }
+FTDataSource >> sortElements: aSortFunction [
+	"This method should sort the elements of the datasource using the sort function as parameter."
+
+	self subclassResponsibility
+]
+
+{ #category : #sorting }
+FTDataSource >> sortWith: aSortFunction [
+	self sortElements: aSortFunction.
+	self table refresh
 ]
 
 { #category : #accessing }
@@ -143,6 +184,19 @@ FTDataSource >> toString: anObject [
 	"Override me if you expect something else."
 
 	^ anObject asString
+]
+
+{ #category : #sorting }
+FTDataSource >> unsort [
+	self unsortElements.
+	self table refresh
+]
+
+{ #category : #sorting }
+FTDataSource >> unsortElements [
+	"This method should return the elements in their initial state."
+
+	self subclassResponsibility
 ]
 
 { #category : #'drag and drop' }

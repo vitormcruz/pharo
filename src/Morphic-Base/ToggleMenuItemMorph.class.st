@@ -6,8 +6,7 @@ Class {
 	#superclass : #MenuItemMorph,
 	#instVars : [
 		'getStateSelector',
-		'enablementSelector',
-		'keyText'
+		'enablementSelector'
 	],
 	#category : #'Morphic-Base-Menus'
 }
@@ -177,7 +176,7 @@ ToggleMenuItemMorph >> icon [
 	self getStateSelector ifNil: [^super icon].
 	state := (MessageSend receiver: self target selector: self getStateSelector)
 		valueWithEnoughArguments: self arguments .
-	self flag: #CleanYesNoOnOffAfter.
+	self flag: #pharoFixMe.
 	(state isKindOf: Association)
 		ifTrue: [^ state key ifTrue: [self onImage] ifFalse: [self offImage]]
 		ifFalse: [
@@ -216,20 +215,6 @@ ToggleMenuItemMorph >> itemShortcut [
 		owner: self 
 		keyText: self keyText
 		
-]
-
-{ #category : #accessing }
-ToggleMenuItemMorph >> keyText [
-	"Answer the value of keyText"
-
-	^ keyText
-]
-
-{ #category : #accessing }
-ToggleMenuItemMorph >> keyText: anObject [
-	"Set the value of keyText"
-
-	keyText := anObject
 ]
 
 { #category : #private }
@@ -333,8 +318,10 @@ ToggleMenuItemMorph >> stringColorToUse [
 	"Answer the state dependent color to use for drawing text."
 	
 	^self isEnabled
-		ifTrue: [self isSelected
-					ifTrue: [self theme menuItemSelectedTextColorFor: self]
-					ifFalse: [self theme menuItemNormalTextColorFor: self]]
-		ifFalse: [self theme menuItemDisabledTextColorFor: self]
+		ifTrue: [
+			self isSelected
+				ifTrue: [ self theme menuItemSelectedTextColorFor: self ]
+				ifFalse: [ self theme menuItemNormalTextColorFor: self ] ]
+		ifFalse: [
+				self theme menuItemDisabledTextColorFor: self ]
 ]

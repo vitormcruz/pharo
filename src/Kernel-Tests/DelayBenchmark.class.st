@@ -13,7 +13,7 @@ Class {
 		'ExitCount',
 		'Running'
 	],
-	#category : #'Kernel-Tests-Processes'
+	#category : #'Kernel-Tests-Delays'
 }
 
 { #category : #action }
@@ -25,51 +25,52 @@ DelayBenchmark class >> run [
 { #category : #action }
 DelayBenchmark class >> runAll [
 	"DelayBenchmark runAll"
-	Transcript clear.
-	DelayScheduler allSubclasses do: [ :delayScheudlerClass | self new bench: delayScheudlerClass ].
+
+	DelayNullScheduler allSubclasses
+		do: [ :delaySchedulerClass | self new bench: delaySchedulerClass ]
 ]
 
 { #category : #benchmarks }
 DelayBenchmark >> bench [
 	"DelayBenchmark runAll."
+
 	"DelayBenchmark run."
+
 	| sampleSetSeeds trialOfNumberConcurrent completed |
-	sampleSetSeeds := #( 42 "5975 13746 22634 44022" ). "uncomment items to get a better average"
-	trialOfNumberConcurrent := #( 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 ).
+	sampleSetSeeds := #(42).	"5975 13746 22634 44022"	"uncomment items to get a better average"
+	trialOfNumberConcurrent := #(1000 2000 3000 4000 5000 6000 7000 8000 9000 10000).
 	completed := Semaphore new.
-
-Transcript cr; crShow: 'Benchmarking ' , Delay delaySchedulerClass printString.
-[ 	trialOfNumberConcurrent do: [ :numberConcurrent |   
-		Transcript crShow:  '#ConcurrentDelays: ' , numberConcurrent printString ; space.
-		EnterCount := ExitCount := 0.
-		sampleSetSeeds do: [ :seed |  
-			Transcript show: '.'.
-			self 
-				trialConcurrent: numberConcurrent 
-				priority: Processor userSchedulingPriority + 1
-				maxDuration: 50 
-				fromSeed: seed.
-			].
-		Transcript space ;
-			show: 'EnterCount: ' , (EnterCount // (sampleSetSeeds size)) printString ; space ;
-			show: 'ExitCount: ' , (ExitCount // (sampleSetSeeds size)) printString .
-		World doOneCycle. "since we are a higher priority would prevent transcript showing"
-		]. 
-		completed signal.
-] forkAt: Processor userSchedulingPriority + 2. "To avoid UI loop influencing result"
-
-completed wait.
-
-
- 
-		
+	self
+		crTrace: String cr , 'Benchmarking ' , Delay delaySchedulerClass printString.
+	[ trialOfNumberConcurrent
+		do: [ :numberConcurrent | 
+			self
+				crTrace: '#ConcurrentDelays: ' , numberConcurrent printString , String space.
+			EnterCount := ExitCount := 0.
+			sampleSetSeeds
+				do: [ :seed | 
+					self trace: '.'.
+					self
+						trialConcurrent: numberConcurrent
+						priority: Processor userSchedulingPriority + 1
+						maxDuration: 50
+						fromSeed: seed ].
+			self trace: String space.
+			self
+				trace:
+					'EnterCount: ' , (EnterCount // sampleSetSeeds size) printString
+						, String space.
+			self
+				trace: 'ExitCount: ' , (ExitCount // sampleSetSeeds size) printString ].
+	completed signal ] forkAt: Processor userSchedulingPriority + 2.	"To avoid UI loop influencing result"
+	completed wait
 ]
 
 { #category : #benchmarks }
 DelayBenchmark >> bench: aDelaySchedulerClass [
 	| schedulerClassToRestore |
 	
-	self assert: (aDelaySchedulerClass inheritsFrom: DelayScheduler).
+	self assert: (aDelaySchedulerClass inheritsFrom: DelayNullScheduler).
 	schedulerClassToRestore := Delay delaySchedulerClass.
 	
 	[	Delay delaySchedulerClass: aDelaySchedulerClass.
@@ -94,10 +95,10 @@ DelayBenchmark >> generateDelayProcesses: numberConcurrent priority: priority ma
 	Reuse Delay object with modified duration each loop."
     ^ (1 to: numberConcurrent) collect: 
 			[ 	:each | 
-				[	| delay | 
-					delay := Delay forMilliseconds: 0.
-					[	sampleIndex := (sampleIndex rem: sampleDurations size) + 1.
-						delay setDelay: (sampleDurations at: sampleIndex).
+				[					
+					[	| delay | 	
+						sampleIndex := (sampleIndex rem: sampleDurations size) + 1.
+						delay := Delay forMilliseconds: (sampleDurations at: sampleIndex).
 						EnterCount := EnterCount + 1. 	
 						delay wait.
 						ExitCount := ExitCount + 1.

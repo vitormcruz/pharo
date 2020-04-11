@@ -5,11 +5,6 @@ Class {
 }
 
 { #category : #tests }
-GLMScriptingTest >> expectedFailures [ 
-	^ #(testFinderWithPreviousPort)
-]
-
-{ #category : #tests }
 GLMScriptingTest >> testActionDefinition [
 	| browser |
 	browser := GLMTabulator new.
@@ -129,6 +124,7 @@ GLMScriptingTest >> testEntityInUpdateAction [
 
 { #category : #tests }
 GLMScriptingTest >> testFinderWithPreviousPort [
+	<expectedFailure>
 	| browser |
 	browser := GLMFinder new.
 	browser show: [:a | 
@@ -278,23 +274,25 @@ GLMScriptingTest >> testPublishingToOutsideAndInsideFinder [
 	innerBrowser
 		column: #one;
 		column: #two.
-	innerBrowser
-		transmit to: #one;
+	innerBrowser transmit
+		to: #one;
 		andShow: [ :a | a list display: [ :x | 1 to: 43 ] ].
-	innerBrowser
-		transmit to: #two;
+	innerBrowser transmit
+		to: #two;
 		from: #one;
 		andShow: [ :a | a text ].
-	innerBrowser transmit toOutsidePort: #selection; from: #one port: #selection.
-	finder show: [:a | a custom: innerBrowser].
+	innerBrowser transmit
+		toOutsidePort: #selection;
+		from: #one port: #selection.
+	finder show: [ :a | a custom: innerBrowser ].
 	self assert: innerBrowser transmissions size equals: 3.
-	self assert: innerBrowser transmissions second origins first pane == innerBrowser panes first.
-	self assert: innerBrowser transmissions second destination pane == innerBrowser panes last.
+	self assert: innerBrowser transmissions second origins first pane identicalTo: innerBrowser panes first.
+	self assert: innerBrowser transmissions second destination pane identicalTo: innerBrowser panes last.
 	finder startOn: 43.
 	realInnerBrowser := innerBrowser.
 	self assert: realInnerBrowser transmissions size equals: 3.
-	self assert: realInnerBrowser transmissions second origins first pane == realInnerBrowser panes first.
-	self assert: realInnerBrowser transmissions second destination pane == realInnerBrowser panes last
+	self assert: realInnerBrowser transmissions second origins first pane identicalTo: realInnerBrowser panes first.
+	self assert: realInnerBrowser transmissions second destination pane identicalTo: realInnerBrowser panes last
 ]
 
 { #category : #tests }
@@ -326,21 +324,21 @@ GLMScriptingTest >> testReferences [
 	| browser pane1 |
 	browser := GLMExplicitBrowser new.
 	pane1 := browser addNewPaneNamed: #pane1.
-	self assert: (browser resolveOriginPort: #pane1) == (pane1 port: #selection).
-	self assert: (browser resolveOriginPort: #pane1 -> #foo) == (pane1 port: #foo).
-	self assert: (browser resolveDestinationPort: #pane1) == (pane1 port: #entity).
-	self assert: (browser resolveDestinationPort: #pane1 -> #foo) == (pane1 port: #foo).
+	self assert: (browser resolveOriginPort: #pane1) identicalTo: (pane1 port: #selection).
+	self assert: (browser resolveOriginPort: #pane1 -> #foo) identicalTo: (pane1 port: #foo).
+	self assert: (browser resolveDestinationPort: #pane1) identicalTo: (pane1 port: #entity).
+	self assert: (browser resolveDestinationPort: #pane1 -> #foo) identicalTo: (pane1 port: #foo).
 	self assert: ((browser resolveOriginPort: #outer) isKindOf: GLMPresentationBoundPort).
-	self assert: (browser resolveOriginPort: #outer) presentation == browser.
+	self assert: (browser resolveOriginPort: #outer) presentation identicalTo: browser.
 	self assert: (browser resolveOriginPort: #outer) name equals: #selection.
 	self assert: ((browser resolveOriginPort: #outer -> #foo) isKindOf: GLMPresentationBoundPort).
-	self assert: (browser resolveOriginPort: #outer -> #foo) presentation == browser.
+	self assert: (browser resolveOriginPort: #outer -> #foo) presentation identicalTo: browser.
 	self assert: (browser resolveOriginPort: #outer -> #foo) name equals: #foo.
 	self assert: ((browser resolveDestinationPort: #outer) isKindOf: GLMPresentationBoundPort).
-	self assert: (browser resolveDestinationPort: #outer) presentation == browser.
+	self assert: (browser resolveDestinationPort: #outer) presentation identicalTo: browser.
 	self assert: (browser resolveDestinationPort: #outer) name equals: #entity.
 	self assert: ((browser resolveDestinationPort: #outer -> #foo) isKindOf: GLMPresentationBoundPort).
-	self assert: (browser resolveDestinationPort: #outer -> #foo) presentation == browser.
+	self assert: (browser resolveDestinationPort: #outer -> #foo) presentation identicalTo: browser.
 	self assert: (browser resolveDestinationPort: #outer -> #foo) name equals: #foo
 ]
 
@@ -390,15 +388,15 @@ GLMScriptingTest >> testStartTransmission [
 	browser
 		column: #one;
 		column: #two.
-	browser
-		transmit to: #one;
+	browser transmit
+		to: #one;
 		andShow: [ :a | a list ].
 	self assert: browser transmissions size equals: 1.
-	self assert: (browser paneNamed: #one) presentations isEmpty.
-	self assert: (browser paneNamed: #two) presentations isEmpty.
+	self assertEmpty: (browser paneNamed: #one) presentations.
+	self assertEmpty: (browser paneNamed: #two) presentations.
 	browser startOn: 15.
 	self assert: (browser paneNamed: #one) presentations size equals: 1.
-	self assert: (browser paneNamed: #two) presentations isEmpty
+	self assertEmpty: (browser paneNamed: #two) presentations
 ]
 
 { #category : #tests }
@@ -408,19 +406,15 @@ GLMScriptingTest >> testStartTransmissionFromInitializationBlock [
 	browser
 		column: #one;
 		column: #two.
-	browser
-		transmit to: #one;
-		andShow: [ :a | 
-			a list
-				initialize: [ :pres | pres selection: 4 ] ].
-	browser 
-		transmit 
-		from:#one port: #selection;
-		to:#two port: #entity;
-		andShow: [ :a |
-			a text ].
-	self assert: (browser paneNamed: #one) presentations isEmpty.
-	self assert: (browser paneNamed: #two) presentations isEmpty.
+	browser transmit
+		to: #one;
+		andShow: [ :a | a list initialize: [ :pres | pres selection: 4 ] ].
+	browser transmit
+		from: #one port: #selection;
+		to: #two port: #entity;
+		andShow: [ :a | a text ].
+	self assertEmpty: (browser paneNamed: #one) presentations.
+	self assertEmpty: (browser paneNamed: #two) presentations.
 	browser startOn: 42.
 	self assert: (browser paneNamed: #one) presentations size equals: 1.
 	self assert: (browser paneNamed: #one) presentations first selection equals: 4.
@@ -434,21 +428,21 @@ GLMScriptingTest >> testStartWithOnlyJumpStart [
 	browser
 		column: #one;
 		column: #two.
-	browser
-		transmit to: #one;
+	browser transmit
+		to: #one;
 		andShow: [ :a | a list ].
-	browser
-		transmit to: #two;
+	browser transmit
+		to: #two;
 		from: #one;
 		andShow: [ :a | a text ].
 	self assert: browser transmissions size equals: 2.
-	self assert: (browser paneNamed: #one) presentations isEmpty.
-	self assert: (browser paneNamed: #two) presentations isEmpty.
+	self assertEmpty: (browser paneNamed: #one) presentations.
+	self assertEmpty: (browser paneNamed: #two) presentations.
 	browser startOn: #(15 25 35).
 	self assert: (browser paneNamed: #one) presentations size equals: 1.
 	self assert: (browser paneNamed: #one) matchingPresentations size equals: 1.
-	self assert: (browser paneNamed: #two) presentations isEmpty.
-	self assert: (browser paneNamed: #two) matchingPresentations isEmpty
+	self assertEmpty: (browser paneNamed: #two) presentations.
+	self assertEmpty: (browser paneNamed: #two) matchingPresentations
 ]
 
 { #category : #tests }
@@ -508,25 +502,25 @@ GLMScriptingTest >> testTwoTransmissionsWithOnlyOneEvent [
 		column: #one;
 		column: #two;
 		column: #three.
-	browser
-		transmit to: #two;
+	browser transmit
+		to: #two;
 		from: #one;
 		andShow: [ :a | a list ].
-	browser
-		transmit to: #three;
+	browser transmit
+		to: #three;
 		from: #two;
 		andShow: [ :a | a text ].
 	self assert: browser transmissions size equals: 2.
-	self assert: (browser paneNamed: #one) presentations isEmpty.
-	self assert: (browser paneNamed: #two) presentations isEmpty.
-	self assert: (browser paneNamed: #three) presentations isEmpty.
+	self assertEmpty: (browser paneNamed: #one) presentations.
+	self assertEmpty: (browser paneNamed: #two) presentations.
+	self assertEmpty: (browser paneNamed: #three) presentations.
 	((browser paneNamed: #one) port: #selection) value: 42.
 	self assert: ((browser paneNamed: #two) port: #entity) value equals: 42.
-	self assert: (browser paneNamed: #one) presentations isEmpty.
+	self assertEmpty: (browser paneNamed: #one) presentations.
 	self assert: (browser paneNamed: #two) presentations size equals: 1.
 	self assert: (browser paneNamed: #two) matchingPresentations size equals: 1.
-	self assert: (browser paneNamed: #three) presentations isEmpty.
-	self assert: (browser paneNamed: #three) matchingPresentations isEmpty
+	self assertEmpty: (browser paneNamed: #three) presentations.
+	self assertEmpty: (browser paneNamed: #three) matchingPresentations
 ]
 
 { #category : #tests }
@@ -536,16 +530,16 @@ GLMScriptingTest >> testUpdateAction [
 	browser
 		column: #one;
 		column: #two.
-	(browser transmit)
+	browser transmit
 		to: #one;
 		andShow: [ :a | a list populate: #foo on: $m with: [ :list :input | 42 ] ].
-	(browser transmit)
+	browser transmit
 		to: #two;
 		from: #one port: #foo;
 		andShow: [ :a | a text ].
 	browser startOn: #(1 2 3).
 	self assert: browser panes first presentations size equals: 1.
-	self assert: browser panes last presentations isEmpty.
+	self assertEmpty: browser panes last presentations.
 	browser panes first presentations first actions first actOn: browser panes first presentations first.
 	self assert: browser panes second presentations size equals: 1.
 	self assert: browser panes second presentations first entity equals: 42

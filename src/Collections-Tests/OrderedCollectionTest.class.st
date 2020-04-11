@@ -15,13 +15,11 @@ Class {
 		'emptyButAllocatedWith20',
 		'otherCollection',
 		'indexCollection',
-		'elementExistsTwice',
 		'collectionWithElement',
 		'collectionOfFloat',
 		'elementNotIn',
 		'indexArray',
 		'withoutEqualElements',
-		'floatCollectionWithSameBeginingEnd',
 		'duplicateElement',
 		'collectionWithDuplicateElement',
 		'collection5Elements',
@@ -29,8 +27,9 @@ Class {
 		'collectionOfCollectionsOfInts',
 		'collectionOfCollectionsOfStrings',
 		'withCharacters',
-		'collectionNotIncluded',
-		'simpleCollection'
+		'simpleCollection',
+		'collectionOfString',
+		'collectionWithSameBeginingEnd'
 	],
 	#category : #'Collections-Tests-Sequenceable'
 }
@@ -123,11 +122,6 @@ OrderedCollectionTest >> collectionOfCollectionsOfStrings [
 ]
 
 { #category : #requirements }
-OrderedCollectionTest >> collectionOfFloat [
-	^ collectionOfFloat 
-]
-
-{ #category : #requirements }
 OrderedCollectionTest >> collectionWith1TimeSubcollection [
 " return a collection including 'oldSubCollection'  only one time "
 	^ ((OrderedCollection new add: elementNotIn; yourself),self oldSubCollection) add: elementNotIn;yourself   
@@ -153,7 +147,7 @@ OrderedCollectionTest >> collectionWithCharacters [
 { #category : #requirements }
 OrderedCollectionTest >> collectionWithCopyNonIdentical [
 	" return a collection that include elements for which 'copy' return a different object (this is not the case of SmallInteger)"
-	^ collectionOfFloat
+	^ collectionOfString
 ]
 
 { #category : #requirements }
@@ -178,14 +172,14 @@ OrderedCollectionTest >> collectionWithEqualElements [
 OrderedCollectionTest >> collectionWithNonIdentitySameAtEndAndBegining [
 	" return a collection with elements at end and begining equals only with classic equality (they are not the same object).
 (others elements of the collection are not equal to those elements)"
-	^ floatCollectionWithSameBeginingEnd 
+	^ collectionWithSameBeginingEnd 
 ]
 
 { #category : #requirements }
 OrderedCollectionTest >> collectionWithSameAtEndAndBegining [
 " return a collection with elements at end and begining equals .
 (others elements of the collection are not equal to those elements)"
-	^ floatCollectionWithSameBeginingEnd 
+	^ collectionWithSameBeginingEnd 
 ]
 
 { #category : #requirements }
@@ -277,7 +271,7 @@ OrderedCollectionTest >> elementTwiceInForOccurrences [
 { #category : #requirements }
 OrderedCollectionTest >> elementsCopyNonIdenticalWithoutEqualElements [
 	" return a collection that does niot incllude equal elements ( classic equality )"
-	^ collectionOfFloat
+	^ collectionOfString
 ]
 
 { #category : #setup }
@@ -307,13 +301,6 @@ OrderedCollectionTest >> firstCollection [
 OrderedCollectionTest >> firstIndex [
 " return an index between 'nonEmpty' bounds that is < to 'second index' "
 	^1
-]
-
-{ #category : #requirements }
-OrderedCollectionTest >> floatCollectionWithSameAtEndAndBegining [
-" return a collection with elements at end and begining equals only with classic equality (they are not the same object).
-(others elements of the collection are not equal to those elements)"
-	^ floatCollectionWithSameBeginingEnd 
 ]
 
 { #category : #requirements }
@@ -466,7 +453,8 @@ OrderedCollectionTest >> setUp [
 	emptyButAllocatedWith20 := OrderedCollection new: 20. 
 	collectionWithElement := OrderedCollection new add: self element; yourself.
 	collectionOfFloat := OrderedCollection new add: 4.1; add: 7.2; add: 2.5; yourself.
-	floatCollectionWithSameBeginingEnd := OrderedCollection new add: 4.1; add: 7.2; add: 4.1 copy ; yourself.
+	collectionOfString := OrderedCollection new add: 'a'; add: 'b'; add: 'c'; yourself.
+	collectionWithSameBeginingEnd := OrderedCollection new add: 'a'; add: 'b'; add: 'a' copy ; yourself.
 	duplicateElement := 2.
 	collectionWithDuplicateElement := OrderedCollection new add: duplicateElement ; add: duplicateElement ; add:4 ; yourself.	
 
@@ -518,14 +506,12 @@ OrderedCollectionTest >> test0FixtureTConvertAsSetForMultiplinessTest [
 	self withEqualElements do: [ :each | self assert: each isFloat ].
 	res := true.
 	self withEqualElements detect: [ :each | (self withEqualElements occurrencesOf: each) > 1 ] ifNone: [ res := false ].
-	self assert: res = true.	"a collection of Float without equal elements:"
-	self elementsCopyNonIdenticalWithoutEqualElements.
-	self elementsCopyNonIdenticalWithoutEqualElements do: [ :each | self assert: each isFloat ].
+	self assert: res equals: true.	"a collection of Float without equal elements:"
 	res := true.
 	self elementsCopyNonIdenticalWithoutEqualElements
 		detect: [ :each | (self elementsCopyNonIdenticalWithoutEqualElements occurrencesOf: each) > 1 ]
 		ifNone: [ res := false ].
-	self assert: res = false
+	self assert: res equals: false
 ]
 
 { #category : #'tests - adding' }
@@ -533,24 +519,19 @@ OrderedCollectionTest >> testAdd [
 	| l |
 	l := #(1 2 3 4) asOrderedCollection.
 	l add: 88.
-	self assert: (l =  #(1 2 3 4 88) asOrderedCollection).
+	self assert: l equals: #(1 2 3 4 88) asOrderedCollection.
 	l add: 99.
-	self assert: (l =  #(1 2 3 4 88 99) asOrderedCollection). 
-
-
+	self assert: l equals: #(1 2 3 4 88 99) asOrderedCollection
 ]
 
 { #category : #'tests - adding' }
 OrderedCollectionTest >> testAddAfter [
-
 	| l |
 	l := #(1 2 3 4) asOrderedCollection.
 	l add: 88 after: 1.
-	self assert: (l =  #(1 88 2 3 4) asOrderedCollection).
+	self assert: l equals: #(1 88 2 3 4) asOrderedCollection.
 	l add: 99 after: 2.
-	self assert: (l =  #(1 88 2 99 3 4) asOrderedCollection). 
-
-
+	self assert: l equals: #(1 88 2 99 3 4) asOrderedCollection
 ]
 
 { #category : #'tests - public methods' }
@@ -600,7 +581,7 @@ OrderedCollectionTest >> testAddAllFirst [
 OrderedCollectionTest >> testAddAllFirstUnlessAlreadyPresent [
 	"Allows one to add each element of an orderedCollection at the beginning of
 	another orderedCollection preserving the order but no duplicate element"
-	
+
 	| c1 c2 c3 |
 	c1 := #(1 2 3 4) asOrderedCollection.
 	c2 := #(5 6 7 8 9) asOrderedCollection.
@@ -608,9 +589,8 @@ OrderedCollectionTest >> testAddAllFirstUnlessAlreadyPresent [
 	c2 addAllFirstUnlessAlreadyPresent: c1.
 	self assert: c2 equals: #(1 2 3 4 5 6 7 8 9) asOrderedCollection.
 	c1 addAllFirstUnlessAlreadyPresent: c3.
-	self deny: c1 = #(0 1 1 2 3 4) asOrderedCollection.
-	self assert: c1 equals: #(0 1 2 3 4) asOrderedCollection.
-	
+	self deny: c1 equals: #(0 1 1 2 3 4) asOrderedCollection.
+	self assert: c1 equals: #(0 1 2 3 4) asOrderedCollection
 ]
 
 { #category : #'tests - adding' }
@@ -626,32 +606,26 @@ OrderedCollectionTest >> testAddAllLast [
 
 { #category : #'tests - adding' }
 OrderedCollectionTest >> testAddBefore [
-
 	| l |
 	l := #(1 2 3 4) asOrderedCollection.
 	l add: 88 before: 1.
-	self assert: (l =  #(88 1 2 3 4) asOrderedCollection).
+	self assert: l equals: #(88 1 2 3 4) asOrderedCollection.
 	l add: 99 before: 2.
-	self assert: (l =  #(88 1 99 2 3 4) asOrderedCollection). 
-
-
+	self assert: l equals: #(88 1 99 2 3 4) asOrderedCollection
 ]
 
 { #category : #'tests - adding' }
 OrderedCollectionTest >> testAddBeforeAndRemove [
-
 	| l initialCollection |
 	l := #(1 2 3 4) asOrderedCollection.
 	initialCollection := l shallowCopy.
 	l add: 88 before: 1.
-	self assert: (l =  #(88 1 2 3 4) asOrderedCollection).
+	self assert: l equals: #(88 1 2 3 4) asOrderedCollection.
 	l add: 99 before: 2.
-	self assert: (l =  #(88 1 99 2 3 4) asOrderedCollection). 
+	self assert: l equals: #(88 1 99 2 3 4) asOrderedCollection.
 	l remove: 99.
 	l remove: 88.
-	self assert: l = initialCollection.
-
-
+	self assert: l equals: initialCollection
 ]
 
 { #category : #'tests - public methods' }
@@ -694,37 +668,29 @@ OrderedCollectionTest >> testAddFirst [
 	| l |
 	l := #(1 2 3 4) asOrderedCollection.
 	l addFirst: 88.
-	self assert: (l =  #(88 1 2 3 4) asOrderedCollection).
+	self assert: l equals: #(88 1 2 3 4) asOrderedCollection.
 	l addFirst: 99.
-	self assert: (l =  #(99 88 1 2 3 4) asOrderedCollection). 
-
-
+	self assert: l equals: #(99 88 1 2 3 4) asOrderedCollection
 ]
 
 { #category : #'tests - adding' }
 OrderedCollectionTest >> testAddItem1 [
-
-   | collection size |
-   collection := #('Jim' 'Mary' 'John' 'Andrew' ) asOrderedCollection.
-   size := collection size.
-   collection add: 'James' before: 'Jim'.
-   collection add: 'Margaret' before: 'Andrew'.
-   self assert: size + 2 = collection size.
-
+	| collection size |
+	collection := #('Jim' 'Mary' 'John' 'Andrew') asOrderedCollection.
+	size := collection size.
+	collection add: 'James' before: 'Jim'.
+	collection add: 'Margaret' before: 'Andrew'.
+	self assert: size + 2 equals: collection size
 ]
 
 { #category : #'tests - adding' }
 OrderedCollectionTest >> testAddItem2 [
 	| collection |
-	collection := #('Jim' 'Mary' 'John' 'Andrew' ) asOrderedCollection.
+	collection := #('Jim' 'Mary' 'John' 'Andrew') asOrderedCollection.
 	collection add: 'James' before: 'Jim'.
 	collection add: 'Margaret' before: 'Andrew'.
-	self assert: (collection indexOf: 'James')
-			+ 1
-			= (collection indexOf: 'Jim').
-	self assert: (collection indexOf: 'Margaret')
-			+ 1
-			= (collection indexOf: 'Andrew')
+	self assert: (collection indexOf: 'James') + 1 equals: (collection indexOf: 'Jim').
+	self assert: (collection indexOf: 'Margaret') + 1 equals: (collection indexOf: 'Andrew')
 ]
 
 { #category : #'tests - adding' }
@@ -732,34 +698,30 @@ OrderedCollectionTest >> testAddLast [
 	| l |
 	l := #(1 2 3 4) asOrderedCollection.
 	l addLast: 88.
-	self assert: (l =  #(1 2 3 4 88) asOrderedCollection).
+	self assert: l equals: #(1 2 3 4 88) asOrderedCollection.
 	l addLast: 99.
-	self assert: (l =  #(1 2 3 4 88 99) asOrderedCollection). 
-
-
+	self assert: l equals: #(1 2 3 4 88 99) asOrderedCollection
 ]
 
 { #category : #'tests - converting' }
 OrderedCollectionTest >> testAsOrderedCollectionKeepsIdentity [
-	
-	|x y|
+	| x y |
 	x := (1 to: 5) asOrderedCollection.
 	y := x asOrderedCollection.
-	self assert: y identityHash = x identityHash  
+	self assert: y identityHash equals: x identityHash
 ]
 
 { #category : #'tests - converting' }
 OrderedCollectionTest >> testAsOrderedCollectionReturnsOrderedCollection [
-	
-	self assert: #(5 4 3 ) asSortedCollection asOrderedCollection species == OrderedCollection 
+	self assert: #(5 4 3) asSortedCollection asOrderedCollection species identicalTo: OrderedCollection
 ]
 
 { #category : #'tests - accessing' }
 OrderedCollectionTest >> testAt [
 	| collection |
-	collection := #('Jim' 'Mary' 'John' 'Andrew' ) asOrderedCollection.
-	self assert: (collection at:1) = 'Jim'.
-	self assert: (collection at:2) = 'Mary'
+	collection := #('Jim' 'Mary' 'John' 'Andrew') asOrderedCollection.
+	self assert: (collection at: 1) equals: 'Jim'.
+	self assert: (collection at: 2) equals: 'Mary'
 ]
 
 { #category : #'tests - adding' }
@@ -784,10 +746,8 @@ OrderedCollectionTest >> testAtPut [
 	c := #(1 2 3 4) asOrderedCollection.
 	c at: 2 put: 5.
 	self assert: c equals: #(1 5 3 4) asOrderedCollection.
-	self
-		should: [ c at: 5 put: 8 ]
-		raise: Error.
-	self deny: c = #(1 5 3 4 8) asOrderedCollection
+	self should: [ c at: 5 put: 8 ] raise: Error.
+	self deny: c equals: #(1 5 3 4 8) asOrderedCollection
 ]
 
 { #category : #'tests - begin' }
@@ -805,6 +765,21 @@ OrderedCollectionTest >> testBeginsWithAnyOf [
 	self deny: (la beginsWithAnyOf: #()).
 	self deny: (la beginsWithAnyOf: #(())).
 	self deny: (la beginsWithAnyOf: #((42))).
+]
+
+{ #category : #'tests - enumerating' }
+OrderedCollectionTest >> testBind [
+	
+	| aCollection |
+	
+	aCollection := #(1 2 3).
+	
+	self assertCollection: (aCollection bind: [ :first :second :third | { first. second. third } ]) equals: aCollection.
+	
+	self assert: (#() bind: [ #blockResult ]) equals: #blockResult .
+	
+	self should: [#() bind: [ :arg | #blockResult ]] raise: ArgumentsCountMismatch.
+	self should: [#(1 2) bind: [ :arg | #blockResult ]] raise: ArgumentsCountMismatch
 ]
 
 { #category : #'tests - accessing' }
@@ -847,24 +822,24 @@ OrderedCollectionTest >> testCollectFromTo [
 OrderedCollectionTest >> testCompact [
 	| collection |
 	collection := OrderedCollection new.
-	self assert: collection isEmpty.
+	self assertEmpty: collection.
 	self assert: collection capacity equals: 10.
 	collection compact.
 	self assert: collection capacity equals: 0.
-	
+
 	collection := OrderedCollection new.
 	collection add: 1.
 	collection compact.
 	self assert: collection capacity equals: 1.
-	
+
 	collection growAtLast.
 	collection compact.
 	self assert: collection capacity equals: 1.
-	
+
 	"we do not shrink the start for now"
 	collection growAtFirst.
 	collection compact.
-	self assert: collection capacity equals: 2.
+	self assert: collection capacity equals: 2
 ]
 
 { #category : #'tests - copying' }
@@ -880,21 +855,17 @@ OrderedCollectionTest >> testCopyEmptyOld [
 { #category : #'tests - copying' }
 OrderedCollectionTest >> testCopyFromTo [
 	"Allows one to create a copy of the receiver that contains elements from position start to end"
-	
-	| c1 c2 c3 | 
-	c1 := #(1 2 3 4) asOrderedCollection.
-	c2 := (c1 copyFrom: 1 to: 2).
-	self assert: c2 equals: #(1 2) asOrderedCollection.
-	self should: [c1 copyFrom: 10 to: 20] raise: Error.
-	
-	c3 := c1 copyFrom: 4 to: 2.
-	self assert: c3 isEmpty.
-	
-	self should: [c1 copyFrom: 4 to: 5 ] raise: Error.
-	
-	
-	
 
+	| c1 c2 c3 |
+	c1 := #(1 2 3 4) asOrderedCollection.
+	c2 := c1 copyFrom: 1 to: 2.
+	self assert: c2 equals: #(1 2) asOrderedCollection.
+	self should: [ c1 copyFrom: 10 to: 20 ] raise: Error.
+
+	c3 := c1 copyFrom: 4 to: 2.
+	self assertEmpty: c3.
+
+	self should: [ c1 copyFrom: 4 to: 5 ] raise: Error
 ]
 
 { #category : #'tests - copy' }
@@ -974,45 +945,41 @@ OrderedCollectionTest >> testIncludesElementIsNotThere [
 
 { #category : #'tests - enumerating' }
 OrderedCollectionTest >> testIndexOfWithDuplicates [
+	| collection indices bagOfIndices |
+	collection := #('Jim' 'Mary' 'John' 'Andrew' 'Mary' 'John' 'Jim' 'Micheal') asOrderedCollection.
+	indices := collection collect: [ :item | collection indexOf: item ].
+	self assert: indices asSet size equals: collection asSet size.
+	bagOfIndices := indices asBag.
+	self assert:
+		(indices asSet allSatisfy: [ :index | (bagOfIndices occurrencesOf: index) = (collection occurrencesOf: (collection at: index)) ])
 
-   | collection indices bagOfIndices |
-   collection := #('Jim' 'Mary' 'John' 'Andrew' 'Mary' 'John' 'Jim' 'Micheal') asOrderedCollection.
-   indices := collection collect: [:item | collection indexOf: item].
-   self assert: indices asSet size = collection asSet size.
-   bagOfIndices := indices asBag.
-   self assert: (indices asSet 
-                    allSatisfy: [:index | (bagOfIndices occurrencesOf: index)
-	                                       = (collection occurrencesOf: (collection at: index))]).
-
-  "  indexOf:  returns the index of the first occurrence of an item.
+	"  indexOf:  returns the index of the first occurrence of an item.
      For an item with n occurrences, the index of its first occurrence
      is found  n  times. "
 ]
 
 { #category : #'tests - removing' }
 OrderedCollectionTest >> testRemoveAll [
-	"Allows one to remove all elements of a collection" 
-	
+	"Allows one to remove all elements of a collection"
+
 	| c1 c2 s2 |
 	c1 := #(2 3 4 6) asOrderedCollection.
 	c1 addAll: (1 to: 200).
 	c2 := c1 copy.
 	s2 := c2 size.
-	
+
 	c1 removeAll.
-	
-	self assert: c1 size = 0.
+
+	self assert: c1 size equals: 0.
 	self assert: c2 size = s2 description: 'the copy has not been modified'
-	
 ]
 
 { #category : #'tests - removing' }
 OrderedCollectionTest >> testRemoveAllSuchThat [
 	| collection |
 	collection := (1 to: 10) asOrderedCollection.
-	collection
-		removeAllSuchThat: [:e | e even].
-	self assert: collection = (1 to: 10 by: 2) asOrderedCollection
+	collection removeAllSuchThat: [ :e | e even ].
+	self assert: collection equals: (1 to: 10 by: 2) asOrderedCollection
 ]
 
 { #category : #'tests - removing' }
@@ -1076,10 +1043,10 @@ OrderedCollectionTest >> testRemoveLast [
 { #category : #'tests - copying' }
 OrderedCollectionTest >> testReversed [
 	| collection1 collection2 |
-	collection1 := #('Jim' 'Mary' 'John' 'Andrew' ) asOrderedCollection.
+	collection1 := #('Jim' 'Mary' 'John' 'Andrew') asOrderedCollection.
 	collection2 := collection1 reversed.
-	self assert: collection2 first = 'Andrew'.
-	self assert: collection2 last = 'Jim'
+	self assert: collection2 first equals: 'Andrew'.
+	self assert: collection2 last equals: 'Jim'
 ]
 
 { #category : #tests }

@@ -12,10 +12,10 @@ Class {
 	#instVars : [
 		'index'
 	],
-	#category : #'Regex-Core'
+	#category : #'Regex-Core-Links'
 }
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RxmMarker >> index: anIndex [
 	"An index is a key that makes sense for the matcher.
 	This key can be passed to marker position getters and

@@ -27,19 +27,29 @@ RBAddClassChange class >> definitionPatterns [
 		'`@superclass variableWordSubclass: `#className instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries category: `#category'
 		'`@superclass variableWordSubclass: `#className uses: `@traitComposition instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries category: `#category'
 		'`@superclass weakSubclass: `#className instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries category: `#category'
-		'`@superclass weakSubclass: `#className uses: `@traitComposition instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries category: `#category')
+		'`@superclass weakSubclass: `#className uses: `@traitComposition instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries category: `#category'
+		'`@superclass subclass: `#className instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass subclass: `#className uses: `@traitComposition instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass variableByteSubclass: `#className instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass variableByteSubclass: `#className uses: `@traitComposition instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass variableSubclass: `#className instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass variableSubclass: `#className uses: `@traitComposition instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass variableWordSubclass: `#className instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass variableWordSubclass: `#className uses: `@traitComposition instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass weakSubclass: `#className instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category'
+		'`@superclass weakSubclass: `#className uses: `@traitComposition instanceVariableNames: `#instanceVariableNames classVariableNames: `#classVariableNames poolDictionaries: `#poolDictionaries package: `#category')
 		flatCollect: [ :each | Array with: each with: (each copyReplaceAll: '`@superclass' with: 'ProtoObject') , '. `className superclass: `@superclass' ]
 ]
 
 { #category : #converting }
 RBAddClassChange >> asUndoOperation [
 	| class |
-	class := Smalltalk globals
-		at: self changeClassName
-		ifAbsent: [ nil ].
+	class := onSystemDictionary 
+					classNamed: self changeClassName.
+
 	^ class isBehavior
-		ifTrue: [ RBRefactoryChangeManager changeFactory addClassDefinition: class definition ]
-		ifFalse: [ RBRefactoryChangeManager changeFactory removeClassNamed: self changeClassName ]
+		ifTrue: [ changeFactory addClassDefinition: class oldDefinition ]
+		ifFalse: [ changeFactory removeClassNamed: self changeClassName ]
 ]
 
 { #category : #accessing }
@@ -54,7 +64,7 @@ RBAddClassChange >> classVariableNames [
 
 { #category : #private }
 RBAddClassChange >> definitionClass [
-	^ Smalltalk globals at: (self superclassName ifNil: [ ^ ProtoObject ])
+	^ onSystemDictionary classNamed: (self superclassName ifNil: [ #ProtoObject ])
 ]
 
 { #category : #private }
@@ -83,6 +93,12 @@ RBAddClassChange >> instanceVariableNames [
 ]
 
 { #category : #accessing }
+RBAddClassChange >> nameToDisplay [
+
+	^ self changeString
+]
+
+{ #category : #accessing }
 RBAddClassChange >> sharedPoolNames [
 	^ poolDictionaryNames
 ]
@@ -90,4 +106,10 @@ RBAddClassChange >> sharedPoolNames [
 { #category : #accessing }
 RBAddClassChange >> superclassName [
 	^ superclassName
+]
+
+{ #category : #accessing }
+RBAddClassChange >> textToDisplay [
+
+	^ self definition
 ]

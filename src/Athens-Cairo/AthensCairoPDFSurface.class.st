@@ -7,15 +7,12 @@ as output.
 Class {
 	#name : #AthensCairoPDFSurface,
 	#superclass : #AthensCairoSurface,
-	#category : #'Athens-Cairo'
+	#category : #'Athens-Cairo-Surface'
 }
 
 { #category : #private }
 AthensCairoPDFSurface class >> createPDF: fileName width: width_in_points height: height_in_points [
-
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin>
-	
-	^self nbCall: #(AthensCairoPDFSurface cairo_pdf_surface_create (String fileName,
+	^ self ffiCall: #(AthensCairoPDFSurface cairo_pdf_surface_create (String fileName,
                                                       double width_in_points,
                                                       double height_in_points) )
 
@@ -39,15 +36,12 @@ AthensCairoPDFSurface class >> registerSurface: surface [
 	"do not register my instances with SurfacePlugin"
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 AthensCairoPDFSurface >> resourceData [
 	^ handle value 
 ]
 
 { #category : #private }
 AthensCairoPDFSurface >> showPage [
-
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin>
-	
-	^self nbCall: #( void cairo_surface_show_page (self) )
+	^ self ffiCall: #( void cairo_surface_show_page (self) )
 ]

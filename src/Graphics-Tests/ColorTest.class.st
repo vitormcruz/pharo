@@ -17,9 +17,15 @@ ColorTest >> assertColorrefFor: aColor equals: anInteger [
 			('(<1p>) asColorref was <2s>; should have been <3s>' expandMacrosWith: aColor with: colorref hex with: anInteger hex)
 ]
 
+{ #category : #coverage }
+ColorTest >> classToBeTested [
+
+	^Color
+]
+
 { #category : #'tests - 32 bit' }
 ColorTest >> test32BitBlackColorTranformation [
-	"Solve bug: https://pharo.fogbugz.com/f/cases/14619/Strange-behavior-of-TestRunner-Icon"
+	"Solve bug: https://pharo.manuscript.com/f/cases/14619"
 
 	self assert: ((Color black pixelWordForDepth: 32) asColorOfDepth: 32) equals: Color black
 ]
@@ -53,30 +59,32 @@ ColorTest >> testAsColorrefPrimaryColors [
 
 { #category : #tests }
 ColorTest >> testAsHexString [
-
 	| table aColorString |
-	
-	self assert: Color white asHexString = 'FFFFFF'.
-	self assert: Color red asHexString = 'FF0000'.
-	self assert: Color black asHexString = '000000'.
-	
+	self assert: Color white asHexString equals: 'FFFFFF'.
+	self assert: Color red asHexString equals: 'FF0000'.
+	self assert: Color black asHexString equals: '000000'.
+
 	table := #('0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 'A' 'B' 'C' 'D' 'E' 'F').
 
-	table do: [ :each |
-		aColorString := each, each, '0000'.
-		self assert: ((Color fromHexString: aColorString) asHexString sameAs: aColorString)].
+	table
+		do: [ :each | 
+			aColorString := each , each , '0000'.
+			self assert: ((Color fromHexString: aColorString) asHexString sameAs: aColorString) ].
 
-	table do: [ :each |
-		aColorString :=  '00', each, each, '00'.
-		self assert: ((Color fromHexString: aColorString) asHexString sameAs: aColorString)].
+	table
+		do: [ :each | 
+			aColorString := '00' , each , each , '00'.
+			self assert: ((Color fromHexString: aColorString) asHexString sameAs: aColorString) ].
 
-	table do: [ :each |
-		aColorString := '0000', each, each.
-		self assert: ((Color fromHexString: aColorString) asHexString sameAs: aColorString)].
+	table
+		do: [ :each | 
+			aColorString := '0000' , each , each.
+			self assert: ((Color fromHexString: aColorString) asHexString sameAs: aColorString) ].
 
-	table do: [ :each |
-		aColorString := each, each, each, each, each, each.
-		self assert: ((Color fromHexString: aColorString) asHexString sameAs: aColorString)].
+	table
+		do: [ :each | 
+			aColorString := each , each , each , each , each , each.
+			self assert: ((Color fromHexString: aColorString) asHexString sameAs: aColorString) ]
 ]
 
 { #category : #tests }
@@ -86,6 +94,28 @@ ColorTest >> testColorFrom [
 	self assert: ((Color colorFrom: (Color white)) asHexString sameAs: 'ffffff').
 	self assert: ((Color colorFrom: '#FF8800') asHexString sameAs: 'ff8800').
 	self assert: ((Color colorFrom: '#222222') asHexString sameAs: '222222').
+]
+
+{ #category : #tests }
+ColorTest >> testFromHexString [
+
+	| color |
+	
+	color := Color fromHexString: 'FFFFFF'.
+	self assert: color equals: Color white.
+
+	color := Color fromHexString: 'ff0000'.
+	self assert: color equals: Color red.
+
+	color := Color fromHexString: '#ff0000'.
+	self assert: color equals: Color red.
+
+	color := Color fromHexString: '#FF00FFFF'.
+	self assert: color equals: Color magenta.
+
+	color := Color fromHexString: '#FF00FF55'.
+	self assert: (color alpha > 0.3 and: [color alpha < 0.4])
+
 ]
 
 { #category : #tests }

@@ -98,6 +98,11 @@ BIConfigurableFormatter class >> initialize [
 ]
 
 { #category : #accessing }
+BIConfigurableFormatter class >> isPrettyPrinter [
+	^ true
+]
+
+{ #category : #accessing }
 BIConfigurableFormatter class >> keepBlockInMessage [
 	^ DefaultPrettyPrintContext keepBlockInMessage
 ]
@@ -323,55 +328,78 @@ BIConfigurableFormatter class >> settingsOn: aBuilder [
 	<systemsettings>
 	(aBuilder group: #blueInkFormatter)
 		target: self;
-		parent: #codeBrowsing;
+		parent: #codeFormatters;
 		label: 'BlueInk Pretty Printing';
 		description: 'Settings related to the formatter';
 		with:
 				[ 
-			(aBuilder setting: #formatCommentWithStatements) label: 'Format comment with statements'.
-			(aBuilder setting: #indentString) label: 'Indent string'.
-			(aBuilder setting: #indentsForKeywords) label: 'Indents for keywords'.
+			(aBuilder setting: #formatCommentWithStatements) 
+				default: true; label: 'Format comment with statements'.
+			(aBuilder setting: #indentString) 
+				default: Character tab asString; label: 'Indent string'.
+			(aBuilder setting: #indentsForKeywords) 
+				default: 1; label: 'Indents for keywords'.
 			(aBuilder setting: #keepBlockInMessage)
+				default: true;
 				label: 'Keep block in message';
 				description: (BIFormatSettingsExample >> #keepBlockInMessageExample) sourceCode.
 			(aBuilder setting: #lineUpBlockBrackets)
+				default: false;
 				label: 'Line up block brackets';
 				description: (BIFormatSettingsExample >> #lineUpBlockBracketsExample) sourceCode.
 			(aBuilder setting: #methodSignatureOnMultipleLines)
+				default: false;
 				label: 'Method signature on multiple lines'.
-			(aBuilder setting: #oneLineMessages) label: 'One line messages'.
-			(aBuilder setting: #multiLineMessages) label: 'Multi line messages'.
+			(aBuilder setting: #oneLineMessages) 
+				default: '#(#to: #to:do: #to:by: #to:by:do:)';
+				label: 'One line messages'.
+			(aBuilder setting: #multiLineMessages) 
+				default: '#(#ifTrue:ifFalse: #ifFalse:ifTrue: #ifTrue: #ifFalse: #on:do: #ensure: #ifCurtailed:)';
+				label: 'Multi line messages'.
 			(aBuilder setting: #minimumNewLinesBetweenStatements)
+				default: 1;
 				label: 'Minimum new lines between statements'.
 			(aBuilder setting: #newLineAfterCascade)
 				label: 'New line after cascade';
+				default: true;
 				description: (BIFormatSettingsExample >> #newLineAfterCascadeExample) sourceCode.
 			(aBuilder setting: #newLineBeforeFirstCascade)
 				label: 'New line before first cascade';
+				default: true;
 				description: (BIFormatSettingsExample >> #newLineBeforeFirstCascadeExample) sourceCode.
 			(aBuilder setting: #newLineBeforeFirstKeyword)
 				label: 'New line before first keyword';
+				default: false;
 				description: (BIFormatSettingsExample >> #newLineBeforeFirstKeywordExample) sourceCode.
-			(aBuilder setting: #newLinesAfterMethodComment) label: 'New lines after method comment'.
-			(aBuilder setting: #newLinesAfterMethodPattern) label: 'New lines after method pattern'.
-			(aBuilder setting: #newLinesAfterTemporaries) label: 'New lines after temporaries'.
+			(aBuilder setting: #newLinesAfterMethodComment) default: 2; label: 'New lines after method comment'.
+			(aBuilder setting: #newLinesAfterMethodPattern) default: 1; label: 'New lines after method pattern'.
+			(aBuilder setting: #newLinesAfterTemporaries)  default: 1; label: 'New lines after temporaries'.
 			(aBuilder setting: #numberOfArgumentsForMultiLine)
+				default: 4;
 				label: 'Number of arguments for multi line'.
-			(aBuilder setting: #periodsAsTerminators) label: 'Periods as terminators'.
-			(aBuilder setting: #periodsAtEndOfBlock) label: 'Periods at end of block'.
-			(aBuilder setting: #periodsAtEndOfMethod) label: 'Periods at end of method'.
+			(aBuilder setting: #periodsAsTerminators) default: false; label: 'Periods as terminators'.
+			(aBuilder setting: #periodsAtEndOfBlock) default: false; label: 'Periods at end of block'.
+			(aBuilder setting: #periodsAtEndOfMethod) default: false; label: 'Periods at end of method'.
 			(aBuilder setting: #retainBlankLinesBeforeComments)
+				default: true; 
 				label: 'Retain blank lines before comments'.
 			(aBuilder setting: #retainBlankLinesBetweenStatements)
+				default: false;
 				label: 'Retain blank lines between statements'.
 			(aBuilder setting: #selectorAndArgumentCombinedMaxSize)
+				default: 40;			
 				label: 'Selector and argument combined in method signature max size'.
-			(aBuilder setting: #stringFollowingReturn) label: 'String following return'.
-			(aBuilder setting: #stringInsideBlocks) label: 'String inside blocks'.
-			(aBuilder setting: #stringInsideParentheses) label: 'String inside parentheses'.
-			(aBuilder setting: #traditionalBinaryPrecedenceArray) label: 'Traditional binary precedence'.
-			(aBuilder setting: #useBasicCommentFormat) label: 'Use basic comment format'.
+			(aBuilder setting: #stringFollowingReturn) default: ' '; label: 'String following return'.
+			(aBuilder setting: #stringInsideBlocks)  default: ' '; label: 'String inside blocks'.
+			(aBuilder setting: #stringInsideParentheses)  default: ''; label: 'String inside parentheses'.
+			(aBuilder setting: #traditionalBinaryPrecedenceArray) 
+				default: '#(#($| $& $?) #($= $~ $< $>) #($- $+) #($* $/ $% $\) #($@))';
+				label: 'Traditional binary precedence'.
+			(aBuilder setting: #useBasicCommentFormat) 
+				default: true;
+				label: 'Use basic comment format'.
 			(aBuilder setting: #useTraditionalBinaryPrecedenceForParentheses)
+				default: true;
 				label: 'Use traditional binary precedence for parentheses' ]
 ]
 
@@ -461,7 +489,10 @@ BIConfigurableFormatter >> addSpaceIfNeededForLastArgument: aPragmaNode [
 
 { #category : #private }
 BIConfigurableFormatter >> basicFormatCommentFor: aComment [
-	codeStream nextPutAll: (originalSource copyFrom: aComment start to: aComment stop).
+	codeStream
+		nextPut: $";
+		nextPutAll: aComment contents;
+		nextPut: $"
 ]
 
 { #category : #private }
@@ -475,10 +506,9 @@ BIConfigurableFormatter >> bracketWith: bracketString around: aBlock [
 
 { #category : #private }
 BIConfigurableFormatter >> characterSeparatorMethodSignatureFor: aMethodNode [
-	^ [ 
-	(self needsMethodSignatureOnMultipleLinesFor: aMethodNode)
-		ifTrue: [ self newLine ]
-		ifFalse: [ self space ] ]
+	^ (self needsMethodSignatureOnMultipleLinesFor: aMethodNode)
+			ifTrue: [ self newLine ]
+			ifFalse: [ self space ]
 ]
 
 { #category : #accessing }
@@ -491,11 +521,6 @@ BIConfigurableFormatter >> codeStream: anObject [
 	codeStream := anObject
 ]
 
-{ #category : #'public interface' }
-BIConfigurableFormatter >> containerWidth: anInteger [
-	self installNewValueInContext: {(#maxLineLength: -> anInteger)}
-]
-
 { #category : #private }
 BIConfigurableFormatter >> currentLineLength [
 	^ codeStream position - lineStart
@@ -504,6 +529,7 @@ BIConfigurableFormatter >> currentLineLength [
 { #category : #'public interface' }
 BIConfigurableFormatter >> format: aParseTree [
 	originalSource := aParseTree source.
+	self initializeCodeStream.
 	self visitNode: aParseTree.
 	^ codeStream contents
 ]
@@ -555,16 +581,15 @@ BIConfigurableFormatter >> formatBlockArgumentsFor: aBlockNode [
 
 { #category : #'private-formatting' }
 BIConfigurableFormatter >> formatBlockCommentFor: aBlockNode [
-	originalSource isNil
-		ifTrue: [  ^ self ].
+
 	aBlockNode comments
 		do: [ :each | 
-			
 			self basicFormatCommentFor: each.
-			(self isNonEmptySingleLineBlock: aBlockNode)
-				ifTrue: [  self space ].
-			(self willBeMultiline: aBlockNode body)
-				ifTrue: [  self newLine ] ]
+			( self isNonEmptySingleLineBlock: aBlockNode )
+				ifTrue: [ self space ].
+			( self willBeMultiline: aBlockNode body )
+				ifTrue: [ self newLine ]
+			]
 ]
 
 { #category : #accessing }
@@ -579,13 +604,12 @@ BIConfigurableFormatter >> formatCommentWithStatements: aBoolean [
 
 { #category : #'private-formatting' }
 BIConfigurableFormatter >> formatCommentsFor: aNode [
-	originalSource isNil
-		ifTrue: [ ^ self ].
+
 	aNode comments
-		do:
-			[ :each | 
+		do: [ :each | 
 			self basicFormatCommentFor: each.
-			self newLine ]
+			self newLine
+			]
 ]
 
 { #category : #private }
@@ -617,17 +641,14 @@ BIConfigurableFormatter >> formatMethodBodyFor: aMethodNode [
 
 { #category : #'private-formatting' }
 BIConfigurableFormatter >> formatMethodCommentFor: aMethodNode [
-	originalSource isNil
-		ifTrue: [ ^ self ].
+
 	aMethodNode comments
-		do:
-			[ :each | 
-			
-			self useBasicCommentFormat 
-			ifTrue: [ self basicFormatCommentFor: each ]
-			ifFalse: [ 
-			self resizeCommentFor: each startingAt: 0].
-			self newLines: self newLinesAfterMethodComment ]
+		do: [ :each | 
+			self useBasicCommentFormat
+				ifTrue: [ self basicFormatCommentFor: each ]
+				ifFalse: [ self resizeCommentFor: each startingAt: 0 ].
+			self newLines: self newLinesAfterMethodComment
+			]
 ]
 
 { #category : #'private-formatting' }
@@ -713,22 +734,21 @@ BIConfigurableFormatter >> formatSequenceNodeStatementsFor: aSequenceNode [
 
 { #category : #'private-formatting' }
 BIConfigurableFormatter >> formatStatementCommentsFor: aStatementNode [
-	originalSource isNil
-		ifTrue: [ ^ self ].
+
 	self formatCommentWithStatements
 		ifFalse: [ ^ self ].
 	aStatementNode statementComments
-		do:
-			[ :each | 
+		do: [ :each | 
 			| count |
+
 			count := self newLinesBeforeStartingAt: each start.
-			self retainBlankLinesBeforeComments & (count > 0)
+			self retainBlankLinesBeforeComments & ( count > 0 )
 				ifTrue: [ self newLines: count ]
 				ifFalse: [ codeStream tab ].
 			self useBasicCommentFormat
 				ifTrue: [ self basicFormatCommentFor: each ]
-				ifFalse: [ 
-			self resizeCommentFor: each startingAt: self currentLineLength ]]
+				ifFalse: [ self resizeCommentFor: each startingAt: self currentLineLength ]
+			]
 ]
 
 { #category : #private }
@@ -849,8 +869,13 @@ BIConfigurableFormatter >> initialize [
 	self indent: 0.
 	self isInCascadeNode: false.
 	lookaheadCode := IdentityDictionary new.
-	codeStream := WriteStream on: (String new: 256).
+	self initializeCodeStream.
 	context := DefaultPrettyPrintContext
+]
+
+{ #category : #initialization }
+BIConfigurableFormatter >> initializeCodeStream [
+	codeStream := WriteStream on: (String new: 256)
 ]
 
 { #category : #'public interface' }
@@ -997,6 +1022,7 @@ BIConfigurableFormatter >> needsParenthesisFor: aNode [
 	aNode ifNil: [ ^ false ].
 	aNode isValue
 		ifFalse: [ ^ false ].
+	aNode isParseError ifTrue: [ ^false ].
 	parent := aNode parent ifNil: [ ^ false ].
 	(aNode isMessage and: [ 
 		parent isMessage and: [ 
@@ -1212,7 +1238,7 @@ BIConfigurableFormatter >> privateFormatMethodPatternMonoLineFor: aMethodNode [
 			codeStream nextPutAll: key.
 			self space.
 			self visitNode: arg ]
-		separatedBy: (self characterSeparatorMethodSignatureFor: aMethodNode)
+		separatedBy: [ self characterSeparatorMethodSignatureFor: aMethodNode ]
 ]
 
 { #category : #private }
@@ -1232,7 +1258,7 @@ BIConfigurableFormatter >> privateFormatMethodPatternMultiLineFor: aMethodNode [
 			codeStream nextPutAll: key.
 			self space.
 			self visitNode: arg ]
-		separatedBy: (self characterSeparatorMethodSignatureFor: aMethodNode).
+		separatedBy: [ self characterSeparatorMethodSignatureFor: aMethodNode].
 	self newLines: 1
 ]
 
@@ -1442,10 +1468,18 @@ BIConfigurableFormatter >> visitLiteralArrayNode: aRBArrayLiteralNode [
 { #category : #visiting }
 BIConfigurableFormatter >> visitLiteralNode: aLiteralNode [
 	aLiteralNode value isLiteral
-		ifFalse: [ 
-
-			self writeString: '''<an unprintable nonliteral value>''' ]
+		ifFalse: [ self writeString: '''<an unprintable nonliteral value>''' ]
 		ifTrue: [ self writeString: aLiteralNode sourceText ]
+]
+
+{ #category : #visiting }
+BIConfigurableFormatter >> visitLiteralVariableNode: aLiteralVariableNode [
+	| binding |
+	binding := aLiteralVariableNode binding.
+	self writeString: binding key storeString, ' -> '.
+	aLiteralVariableNode binding value isLiteral
+		ifFalse: [ self writeString: '''<an unprintable nonliteral value>''' ]
+		ifTrue: [ self writeString:  binding value asString ]
 ]
 
 { #category : #visiting }
@@ -1479,6 +1513,11 @@ BIConfigurableFormatter >> visitNode: aNode [
 				ifFalse: [ self formatCommentsFor: aNode ].
 			needsParenthesis
 				ifTrue: [ codeStream nextPutAll: self stringInsideParentheses ] ]
+]
+
+{ #category : #visiting }
+BIConfigurableFormatter >> visitParseErrorNode: aNode [
+	self writeString: aNode value
 ]
 
 { #category : #visiting }

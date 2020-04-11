@@ -43,27 +43,17 @@ TransferMorph class >> initialize [
 ]
 
 { #category : #'instance creation' }
-TransferMorph class >> withPassenger: anObject [ 
-	^ self withPassenger: anObject from: nil
-]
-
-{ #category : #'instance creation' }
-TransferMorph class >> withPassenger: anObject from: source [ 
-	^self withPassenger: anObject from: source hand: nil
+TransferMorph class >> withPassenger: anObject from: source [
+	^self withPassenger: anObject from: source hand: source currentHand
 ]
 
 { #category : #'instance creation' }
 TransferMorph class >> withPassenger: anObject from: source hand: dragHand [
-	| hand |
-	
-	hand := (dragHand ifNil:[ ActiveHand ]).
-	
 	^ self new
 		passenger: anObject;
 		source: source;
-		"If the client hasn't provided a hand use the currently active hand"
-		dragHand: hand;
-		shouldCopy: hand shiftPressed;
+		dragHand: dragHand;
+		shouldCopy: dragHand shiftPressed;
 		position: source positionInWorld;
 		yourself
 ]
@@ -103,7 +93,7 @@ TransferMorph >> animationForMoveSuccess: success [
 { #category : #initialization }
 TransferMorph >> defaultColor [
 	"answer the default color/fill style for the receiver"
-	^ Smalltalk ui theme selectionColor
+	^ self theme selectionColor
 ]
 
 { #category : #'submorphs-add/remove' }
@@ -270,7 +260,7 @@ TransferMorph >> source: anObject [
 	source := anObject
 ]
 
-{ #category : #'stepping and presenter' }
+{ #category : #stepping }
 TransferMorph >> step [
 	self shouldCopy = dragHand shiftPressed
 		ifTrue: [ ^ self ].
@@ -279,7 +269,7 @@ TransferMorph >> step [
 	self updateCopyIcon.
 ]
 
-{ #category : #'stepping and presenter' }
+{ #category : #stepping }
 TransferMorph >> stepTime [
 	^100
 ]

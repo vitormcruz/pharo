@@ -5,7 +5,7 @@ Class {
 		'theCompiledMethod',
 		'theClass'
 	],
-	#category : 'Fuel-Tests-Core-Base'
+	#category : #'Fuel-Tests-Core-Base'
 }
 
 { #category : #running }
@@ -20,14 +20,14 @@ FLCompiledMethodSerializationTest >> testDoIt [
 	"Since Pharo 3.0 decompilation of compiled methods is no longer possible.
 	That means we have to store the source too."
 	self useDoIt.
-	
+
 	theCompiledMethod selector: #DoIt.
 	self assert: theCompiledMethod isDoIt.
 	self assert: theCompiledMethod isInstalled.
 	self deny: theCompiledMethod trailer hasSource.
 	self assert: theCompiledMethod trailer isEmpty.
 	self deny: theCompiledMethod trailer hasSourcePointer.
-	
+
 	materialized := self resultOfSerializeAndMaterialize: theCompiledMethod.
 	"not possible since it's a different instance"
 	self deny: materialized isInstalled.
@@ -36,7 +36,7 @@ FLCompiledMethodSerializationTest >> testDoIt [
 	self assert: materialized trailer hasSource.
 	self deny: materialized trailer isEmpty.
 	self deny: materialized trailer hasSourcePointer.
-	
+
 	self assert: (materialized isEqualRegardlessTrailerTo: theCompiledMethod)
 ]
 
@@ -46,31 +46,31 @@ FLCompiledMethodSerializationTest >> testInstalled [
 	"Since Pharo 3.0 decompilation of compiled methods is no longer possible.
 	That means we have to store the source too."
 	self useInstalled.
-	
+
 	self assert: theCompiledMethod isInstalled.
 	self deny: theCompiledMethod isDoIt.
 	self deny: theCompiledMethod trailer hasSource.
 	self deny: theCompiledMethod trailer isEmpty.
 	self assert: theCompiledMethod trailer hasSourcePointer.
-	
+
 	"if installed but not different, the installed instance will be answered"
 	materialized := self resultOfSerializeAndMaterialize: theCompiledMethod.
-	self assert: materialized == theCompiledMethod
+	self assert: materialized identicalTo: theCompiledMethod
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #tests }
 FLCompiledMethodSerializationTest >> testInstalledModified [
 	| copy materialized |
 	"Since Pharo 3.0 decompilation of compiled methods is no longer possible.
 	That means we have to store the source too."
 	self useInstalled.
-	
+
 	self assert: theCompiledMethod isInstalled.
 	self deny: theCompiledMethod isDoIt.
 	self deny: theCompiledMethod trailer hasSource.
 	self deny: theCompiledMethod trailer isEmpty.
 	self assert: theCompiledMethod trailer hasSourcePointer.
-	
+
 	copy := theCompiledMethod copy.
 	"different instance can not be installed at the same time."
 	self deny: copy isInstalled.
@@ -78,11 +78,11 @@ FLCompiledMethodSerializationTest >> testInstalledModified [
 	self deny: copy trailer hasSource.
 	self deny: copy trailer isEmpty.
 	self assert: copy trailer hasSourcePointer.
-	
+
 	"if installed but not different, the installed instance will be answered"
 	materialized := self resultOfSerializeAndMaterialize: copy.
-	self deny: materialized == theCompiledMethod.
-	self deny: materialized == copy.
+	self deny: materialized identicalTo: theCompiledMethod.
+	self deny: materialized identicalTo: copy.
 	self deny: materialized isInstalled.
 	self deny: materialized isDoIt.
 	"we serialized the source"

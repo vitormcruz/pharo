@@ -1,7 +1,10 @@
+"
+Unit tests for LocaleChanged announcement
+"
 Class {
 	#name : #LocaleChangedTest,
 	#superclass : #TestCase,
-	#category : #'System-Localization-Tests'
+	#category : #'System-Localization-Tests-Locales'
 }
 
 { #category : #'private accessing' }
@@ -20,7 +23,7 @@ LocaleChangedTest >> testInstanceCreation [
 	instance := LocaleChanged from: self englishLocale to: self germanLocale.
 	
 	self 
-		assert: instance oldLocale = self englishLocale;
-		assert: instance newLocale = self germanLocale 
+		assert: instance oldLocale equals: self englishLocale;
+		assert: instance newLocale equals: self germanLocale 
 	
 ]

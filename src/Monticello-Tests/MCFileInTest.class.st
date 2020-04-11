@@ -28,16 +28,14 @@ MCFileInTest >> assertFileOutFrom: writerClass canBeFiledInWith: aBlock [
 MCFileInTest >> assertInitializersCalled [
 	| cvar |
 	cvar := self mockClassA cVar.
-	self assert: cvar = #initialized
+	self assert: cvar equals: #initialized
 ]
 
 { #category : #testing }
 MCFileInTest >> assertInitializersOrder [
-
 	| initializationOrder |
 	initializationOrder := self mockClassA initializationOrder.
-	self assert: initializationOrder = 2.	
-
+	self assert: initializationOrder equals: 2
 ]
 
 { #category : #asserting }
@@ -45,7 +43,7 @@ MCFileInTest >> assertNoChange [
 	| actual |
 	actual := MCSnapshotResource takeSnapshot.
 	diff := actual patchRelativeToBase: expected.
-	self assert: diff isEmpty
+	self assertEmpty: diff
 ]
 
 { #category : #testing }
@@ -61,7 +59,7 @@ MCFileInTest >> assertSuccessfulLoadWith: aBlock [
 MCFileInTest >> setUp [
 	super setUp.
 	expected := self mockSnapshot.
-	stream := RWBinaryOrTextStream on: String new.
+	stream := ReadWriteStream on: ''
 ]
 
 { #category : #running }

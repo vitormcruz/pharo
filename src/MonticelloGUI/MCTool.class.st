@@ -15,7 +15,7 @@ Class {
 	#classVars : [
 		'MCVersionCache'
 	],
-	#category : #MonticelloGUI
+	#category : #'MonticelloGUI-Tools'
 }
 
 { #category : #'class initialization' }
@@ -340,9 +340,7 @@ MCTool >> showLabelled: labelString [
 { #category : #'morphic ui' }
 MCTool >> showModally [
 	modal := true.
-	self window openInWorldExtent: 400 @ 400.
-	self setDefaultFocus.
-	[ self window world notNil ] whileTrue: [ self window outermostWorldMorph doOneCycle ].
+	self window openModal.
 	morph := nil.
 	^ modalValue
 ]

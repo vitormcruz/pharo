@@ -19,18 +19,6 @@ BehaviorTest >> sampleMessageWithFirstArgument: firstArgument "This is a comment
 ]
 
 { #category : #tests }
-BehaviorTest >> testAllLocalCallsOn [
-	
-	self assert: (( Point allLocalCallsOn: #asPoint )  notEmpty).
-	self assert: (( Point allLocalCallsOn: #asPoint )  size = 4).
-	self assert: (( Point allLocalCallsOn: #asPoint )  includes: (Point>> #roundDownTo:) asRingDefinition).
-	self assert: (( Point allLocalCallsOn: #asPoint )  includes: (Point >> #roundUpTo:) asRingDefinition).
-	self assert: (( Point allLocalCallsOn: #asPoint )  includes: (Point >> #roundTo:) asRingDefinition).
-	self assert: (( Point allLocalCallsOn: #asPoint )  includes: (Point >> #truncateTo: ) asRingDefinition).
-	
-]
-
-{ #category : #tests }
 BehaviorTest >> testAllMethods [
 	| allMethods nonOverridenMethods |
 	allMethods := IdentitySet new
@@ -46,26 +34,10 @@ BehaviorTest >> testAllMethods [
 ]
 
 { #category : #tests }
-BehaviorTest >> testAllReferencesTo [
-	| result |
-	result := SystemNavigation new allReferencesTo: Point binding.
-	result do: [ :each | self assert: (each compiledMethod hasLiteral: Point binding) ].
-	self assert: (result anySatisfy: [ :each | each actualClass = self class and: [ each selector = #testAllReferencesTo ] ]).
-		
-	result := SystemNavigation new allReferencesTo: #printOn:.
-	result do: [ :each | self assert: (each compiledMethod hasLiteralThorough: #printOn:) ].
-	self assert: (result anySatisfy: [ :each | each actualClass = self class and: [ each selector = #testAllReferencesTo ] ]).
-	
-	result := SystemNavigation new allReferencesTo: #+.
-	result do: [ :each | self assert: ((each compiledMethod sendsSelector: #+) or: [ each compiledMethod hasLiteralThorough: #+ ]) ].
-	self assert: (result anySatisfy: [ :each | each actualClass = self class and: [ each selector = #testAllReferencesTo ] ])
-]
-
-{ #category : #tests }
 BehaviorTest >> testAllSelectors [
-	self assert: ProtoObject allSelectors asSet = ProtoObject selectors asSet.
-	self assert: Object allSelectors asSet = (Object selectors asSet union: ProtoObject selectors).
-	self assert: (Object allSelectorsBelow: ProtoObject) asSet = (Object selectors) asSet.
+	self assert: ProtoObject allSelectors asSet equals: ProtoObject selectors asSet.
+	self assert: Object allSelectors asSet equals: (Object selectors asSet union: ProtoObject selectors).
+	self assert: (Object allSelectorsBelow: ProtoObject) asSet equals: Object selectors asSet
 ]
 
 { #category : #tests }
@@ -84,7 +56,7 @@ BehaviorTest >> testAllSelectorsAbove [
 BehaviorTest >> testAllSelectorsAboveUntil [
 		
 	|sels |
-	sels := Date allSelectorsAboveUntil: Object..
+	sels := Date allSelectorsAboveUntil: Object.
 	self deny: (sels includes: #mmddyyyy). 
 	self deny: (sels includes: #weekday).
 	self assert: (sels includes: #at:).
@@ -102,14 +74,14 @@ BehaviorTest >> testBehaviornewnewShouldNotCrash [
 
 { #category : #tests }
 BehaviorTest >> testBinding [
-	self assert: Object binding value = Object.
-	self assert: Object binding key = #Object.
-	
-	self assert: Object class binding value = Object class.
-	
+	self assert: Object binding value equals: Object.
+	self assert: Object binding key equals: #Object.
+
+	self assert: Object class binding value equals: Object class.
+
 	"returns nil for Metaclasses... like Encoder>>#associationFor:"
-	
-	self assert: Object class binding key isNil.
+
+	self assert: Object class binding key isNil
 ]
 
 { #category : #tests }
@@ -136,6 +108,13 @@ BehaviorTest >> testIncludesMethod [
 
 	self assert: (Point includesMethod: Point>>#x).
 	self deny: (LookupKey includesMethod: Point>>#x).
+]
+
+{ #category : #metrics }
+BehaviorTest >> testInstSize [
+	self assert: Object instSize equals: 0.
+	self assert: Point instSize equals: 2.
+	self assert: Metaclass instSize equals: 6
 ]
 
 { #category : #tests }
@@ -174,44 +153,35 @@ BehaviorTest >> testIsUsed [
 { #category : #'tests - queries' }
 BehaviorTest >> testMethodsAccessingSlot [
 	| numberViaSlot numberViaIVar |
-	
 	"Check the source code availability to do not fail on images without sources"
-	(Point>>#x) hasSourceCode ifFalse: [ ^ self ].
-	
+	(Point >> #x) hasSourceCode ifFalse: [ ^ self ].
+
 	numberViaSlot := (Point methodsAccessingSlot: (Point slotNamed: #x)) size.
 	numberViaIVar := (Point whichSelectorsAccess: 'x') size.
-	self assert: numberViaSlot = numberViaIVar.
+	self assert: numberViaSlot equals: numberViaIVar
 ]
 
 { #category : #'tests - queries' }
 BehaviorTest >> testMethodsReadingSlot [
 	| numberViaSlot numberViaIVar |
-	
 	"Check the source code availability to do not fail on images without sources"
-	(Point>>#x) hasSourceCode ifFalse: [ ^ self ].
-	
+	(Point >> #x) hasSourceCode ifFalse: [ ^ self ].
+
 	numberViaSlot := (Point methodsReadingSlot: (Point slotNamed: #x)) size.
 	numberViaIVar := (Point whichSelectorsRead: 'x') size.
-	self assert: numberViaSlot = numberViaIVar.
+	self assert: numberViaSlot equals: numberViaIVar
 ]
 
 { #category : #'tests - queries' }
 BehaviorTest >> testMethodsWritingSlot [
 	| numberViaSlot numberViaIVar |
-	
 	"Check the source code availability to do not fail on images without sources"
-	(Point>>#x) hasSourceCode ifFalse: [ ^ self ].
-
-	numberViaSlot := (Point methodsWritingSlot: (Point slotNamed: #x)) size.
-	numberViaIVar := (Point whichSelectorsAssign: 'x') size.
-	self assert: numberViaSlot = numberViaIVar.
-]
-
-{ #category : #metrics }
-BehaviorTest >> testNumberOfInstanceVariables [
-	self assert: Object numberOfInstanceVariables equals: 0.
-	self assert: Point numberOfInstanceVariables equals: 2.
-	self assert: Metaclass numberOfInstanceVariables equals: 1
+	(Point >> #x) hasSourceCode
+		ifFalse: [ ^ self ].
+	numberViaSlot := (Point methodsWritingSlot: (Point slotNamed: #x))
+		size.
+	numberViaIVar := (Point whichSelectorsWrite: 'x') size.
+	self assert: numberViaSlot equals: numberViaIVar
 ]
 
 { #category : #'tests - properties' }
@@ -232,10 +202,39 @@ BehaviorTest >> testRemoveProperty [
 	self assert: (self class propertyAt: #testKeySelector) equals: nil
 ]
 
-{ #category : #'tests - testing method dictionary' }
-BehaviorTest >> testWhichSelectorsAccess [
-	self assert: ((Point whichSelectorsAccess: 'x') includes: #x).
-	self deny:  ((Point whichSelectorsAccess: 'y') includes: #x).
+{ #category : #'tests - queries' }
+BehaviorTest >> testallMethodsAccessingSlot [
+	| methods |	
+	"Check the source code availability to do not fail on images without sources"
+	(Point>>#x) hasSourceCode ifFalse: [ ^ self ].
+
+
+	methods := LookupKey allMethodsAccessingSlot: (LookupKey slotNamed: #key).
+	self assert: (methods includes: (Association >>#key:value:))
+
+]
+
+{ #category : #'tests - queries' }
+BehaviorTest >> testallMethodsReadingSlot [
+	| methods |	
+	"Check the source code availability to do not fail on images without sources"
+	(Point>>#x) hasSourceCode ifFalse: [ ^ self ].
+
+	methods := LookupKey allMethodsReadingSlot: (LookupKey slotNamed: #key).
+	self assert: (methods includes: (Ephemeron >>#mourn))
+
+]
+
+{ #category : #'tests - queries' }
+BehaviorTest >> testallMethodsWritingSlot [
+	| methods |	
+	"Check the source code availability to do not fail on images without sources"
+	(Point>>#x) hasSourceCode ifFalse: [ ^ self ].
+
+
+	methods := LookupKey allMethodsWritingSlot: (LookupKey slotNamed: #key).
+	self assert: (methods includes: (Association >>#key:value:))
+
 ]
 
 { #category : #tests }
@@ -247,4 +246,25 @@ BehaviorTest >> testallSuperclassesIncluding [
 	self deny: (cls includes: Object). 
 	self assert: (cls includes: Collection). 
 	self assert: (cls includes: SequenceableCollection). 
+]
+
+{ #category : #tests }
+BehaviorTest >> testsourceCodeTemplateFor [
+	"check for distictive source code templates for class-side and instance-side"
+	self assert: ((Object sourceCodeTemplate) includesSubstring: 'instance-side method'). 
+	self assert: ((Object class sourceCodeTemplate) includesSubstring: 'class-side method') 
+]
+
+{ #category : #'tests - queries' }
+BehaviorTest >> testthoroughWhichMethodsReferTo [
+	| array |
+	array := #(thisIsOnlyHereIntestthoroughWhichMethodsReferTo).
+	"normal case"
+	self assert: (Point thoroughWhichMethodsReferTo: #x) notEmpty.
+	"we understand send bytecodes for special selectors"
+	self assert: (Point thoroughWhichMethodsReferTo: #+) notEmpty.
+	"we dive into literal arrays"
+	self assert: (self class thoroughWhichMethodsReferTo: array first) notEmpty.
+	"and we are false for non existing symbols"
+	self assert: (self class thoroughWhichMethodsReferTo: ('this', 'doesNotExist') asSymbol) isEmpty.
 ]

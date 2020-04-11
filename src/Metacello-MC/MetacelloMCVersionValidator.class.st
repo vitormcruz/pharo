@@ -364,6 +364,7 @@ MetacelloMCVersionValidator >> validateProjectVersionLoad: versionString loads: 
 		ifTrue: [ self error: 'The specified version is #broken' ].
 	self validateCleanLoadAndTestsForVersion: version loads: loadList.
 	^ self validationReport
+
 ]
 
 { #category : #loading }
@@ -484,7 +485,10 @@ MetacelloMCVersionValidator >> validateVersionTests: version [
 	cleanTests := true.
 	version currentlyLoadedClassesInVersion
 		do: [ :class | 
-			((class inheritsFrom: TestCase) and: [ class isAbstract not ])
+			| isTestCase |
+			isTestCase := (class withAllSuperclasses collect: #name) includes: #TestCase.
+			"do not use direct inheritance check to avoid direct dependency of Metacello on SUnit"
+			(isTestCase and: [ class isAbstract not ])
 				ifTrue: [ testCases add: class ] ].
 	testCases
 		do: [ :testCase | 

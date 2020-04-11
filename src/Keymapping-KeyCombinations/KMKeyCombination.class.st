@@ -112,10 +112,35 @@ KMKeyCombination >> platform [
 	^#all
 ]
 
+{ #category : #'accessing platform' }
+KMKeyCombination >> platformCharacter [
+
+	^ ''
+]
+
+{ #category : #'accessing platform' }
+KMKeyCombination >> platformModifier [
+
+	^ nil
+]
+
 { #category : #printing }
 KMKeyCombination >> prettyPrintOn: aStream [
 
 	aStream << self shortcut modifier symbol.
+	self shortcut character printOn: aStream
+]
+
+{ #category : #printing }
+KMKeyCombination >> printOsRepresentation [
+	^String streamContents: [ : stream | self printOsRepresentationOn: stream ]
+]
+
+{ #category : #printing }
+KMKeyCombination >> printOsRepresentationOn: aStream [
+	self shortcut modifier ifNotNil: [: modifier |  
+		modifier printOsRepresentationOn: aStream.
+		aStream << $+].
 	self shortcut character printOn: aStream
 ]
 

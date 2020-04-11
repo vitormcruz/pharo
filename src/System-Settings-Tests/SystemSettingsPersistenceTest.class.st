@@ -29,10 +29,9 @@ SystemSettingsPersistenceTest >> setUp [
 	memory := FileSystem memory.
 	preferences := memory root / 'pharo' / 'pharoX.Y' / 'preferences.ston.txt'.
 	systemSettings := SystemSettingsPersistence new.
-	systemSettings 
+	systemSettings
 		fileReference: preferences;
-		settingTree: MockSettings settingTree.
-	
+		settingTree: MockSettings settingTree
 ]
 
 { #category : #accessing }
@@ -65,11 +64,27 @@ SystemSettingsPersistenceTest >> testAccessibleRealValues [
 { #category : #tests }
 SystemSettingsPersistenceTest >> testAllStoredSettings [
 	"There is no preference file. It should not generate an error."
-	self assert: systemSettings allStoredSettings isEmpty.
-	systemSettings writeStream nextPutAll: 'random string'; close.
-	self assert: systemSettings fileReference contents equals: 'random string'.
-	self assert: systemSettings allStoredSettings isEmpty.
 
+	self assertEmpty: systemSettings allStoredSettings.
+	systemSettings writeStream
+		nextPutAll: 'random string';
+		close.
+	self assert: systemSettings fileReference contents equals: 'random string'.
+	self assertEmpty: systemSettings allStoredSettings
+]
+
+{ #category : #tests }
+SystemSettingsPersistenceTest >> testDefaultImageDoesNotStoreAnySetting [
+	| nodesToStore |
+	"An image with all default values should not save any setting.
+	The settings only should be saved if changed from default value"
+
+	Author
+		useAuthor: ''
+		during: [ 
+			nodesToStore := StoredSettingsFactory new fromSettingNodes: SettingBrowser currentTree nodeList ].
+
+	self assertCollection: nodesToStore hasSameElements: #()
 ]
 
 { #category : #tests }

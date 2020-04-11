@@ -47,7 +47,7 @@ RBPragmaNode >> = anObject [
 ]
 
 { #category : #visiting }
-RBPragmaNode >> acceptVisitor: aProgramNodeVisitor [ 
+RBPragmaNode >> acceptVisitor: aProgramNodeVisitor [
 	^ aProgramNodeVisitor visitPragmaNode: self
 ]
 
@@ -112,14 +112,12 @@ RBPragmaNode >> hash [
 
 { #category : #initialization }
 RBPragmaNode >> initialize [
-
 	super initialize.
 
 	arguments := #().
 	keywordsPositions := #().
 	left := 0.
-	right := 0.
-	selector := nil.
+	right := 0
 ]
 
 { #category : #testing }

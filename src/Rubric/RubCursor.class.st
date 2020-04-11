@@ -68,26 +68,30 @@ RubCursor class >> rubricSettingsOn: aBuilder [
 		with: [ 
 					(aBuilder setting: #cursorWithFixedColor)
 						target: self;
+						default: false;
 						label: 'Fixed color';
 						with: [ 
 									(aBuilder setting: #defaultColor)
 										target: self;
+										default: Color lightGray;
 										description: 'The cursolr color color';
 										label: 'Color'  ].
 					(aBuilder range: #defaultWidth)
 						target: self;
+						default: 2;
 						label: 'Width';
 						description: 'Specify the cursor width';
 						range: (1 to: 4).
 					(aBuilder range: #period)
 						target: self;
+						default: 700;
 						label: 'Blinking period';
 						description:
 								'Specify the cursor blinking period in milliseconds. If it is set to zero then the cursor will not blink';
 						range: (0 to: 1000) ]
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 RubCursor >> aboutToBeRemoved [
 	self beNotVisible.
 	self removeAlarm.
@@ -134,17 +138,17 @@ RubCursor >> beVisible [
 		ifTrue: [ self color: self actualCursorColor ]
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 RubCursor >> defaultBounds [
 	^ 0 @ 0 corner: 0 @ 0
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 RubCursor >> defaultColor [ 
 	^ Color transparent
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 RubCursor >> defaultVisibleCursorColor [
 	^ self theme textColor
 ]

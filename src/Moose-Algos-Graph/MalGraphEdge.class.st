@@ -1,3 +1,16 @@
+"
+I represent an edge in a graph.  I'm part of the edges of a MalGraphAlgorithm and I link two MalNode together.
+
+Public API and Key Messages
+- from
+- to 
+- model 
+ 
+Instance Variables
+	from: <MalNode>
+	to: <MalNode>
+	model: <Object>
+"
 Class {
 	#name : #MalGraphEdge,
 	#superclass : #Object,
@@ -9,7 +22,7 @@ Class {
 	#category : #'Moose-Algos-Graph'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : #'instance creation' }
 MalGraphEdge class >> with: aModel [
 
 	^ self new model: aModel
@@ -52,17 +65,11 @@ MalGraphEdge >> model: aModel [
 	model := aModel
 ]
 
-{ #category : #accessing }
+{ #category : #printing }
 MalGraphEdge >> printOn: aStream [
 	self from printOn: aStream.
-	aStream << ' -> '.
+	aStream nextPutAll: ' -> '.
 	self to printOn: aStream
-]
-
-{ #category : #accessing }
-MalGraphEdge >> printString [
-
-	^ self from printString, ' -> ', self to printString
 ]
 
 { #category : #accessing }

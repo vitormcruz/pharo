@@ -9,7 +9,7 @@ Class {
 	#category : #'Monticello-Tests-Base'
 }
 
-{ #category : #running }
+{ #category : #mocks }
 MCMethodDefinitionTest >> override [ ^ 1
 ]
 
@@ -22,8 +22,8 @@ MCMethodDefinitionTest >> ownPackage [
 MCMethodDefinitionTest >> setUp [
 	super setUp.
 	extensionPackage := (MCWorkingCopy forPackage: (MCPackage named: 'FooBarBaz')).
-	navigation := (Smalltalk hasClassNamed: #SystemNavigation)
-		ifTrue: [ (Smalltalk globals at: #SystemNavigation) new ]
+	navigation := (testingEnvironment hasClassNamed: #SystemNavigation)
+		ifTrue: [ (testingEnvironment at: #SystemNavigation) new ]
 		ifFalse: [ Smalltalk ].
 	isModified := self ownPackage modified
 ]
@@ -52,9 +52,13 @@ MCMethodDefinitionTest >> tearDown [
 { #category : #testing }
 MCMethodDefinitionTest >> testCannotLoad [
 	| definition |
-	definition := self mockMethod: #kjahs87 class: 'NoSuchClass' source: 'kjahs87 ^self' meta: false.
-	self should: [definition load] raise: Error.
-	self assert: (navigation allImplementorsOf: #kjahs87) isEmpty
+	definition := self
+		mockMethod: #kjahs87
+		class: 'NoSuchClass'
+		source: 'kjahs87 ^self'
+		meta: false.
+	self should: [ definition load ] raise: Error.
+	self assertEmpty: (navigation allImplementorsOf: #kjahs87)
 ]
 
 { #category : #testing }
@@ -79,11 +83,26 @@ MCMethodDefinitionTest >> testComparison [
 MCMethodDefinitionTest >> testLoadAndUnload [
 	|definition|
 	definition := self mockMethod: #one class: 'MCMockClassA' source: 'one ^2' meta: false.
-	self assert: self mockInstanceA one = 1.
+	self assert: self mockInstanceA one equals: 1.
 	definition load.
-	self assert: self mockInstanceA one = 2.
+	self assert: self mockInstanceA one equals: 2.
 	definition unload.
 	self deny: (self mockInstanceA respondsTo: #one)
+]
+
+{ #category : #testing }
+MCMethodDefinitionTest >> testMethodDefinitionWithEmptyProtocolIsClassifiedAsAsYetUnclassified [
+
+	| methodDef |
+	methodDef := (MCMethodDefinition
+			className: #Object
+			classIsMeta: false
+			selector: #name
+			category: '' 
+			timeStamp: nil
+			source: 'name
+	^ self printString').
+	self assert: methodDef category equals: #'as yet unclassified'.
 ]
 
 { #category : #testing }
@@ -94,11 +113,10 @@ MCMethodDefinitionTest >> testPartiallyRevertOverrideMethod [
 	self class compile: 'override ^ 4' classified: self mockOverrideMethodCategory.
 	definition := (RGMethodDefinition realClass: self class selector: #override) asMCMethodDefinition.
 	self assert: definition isOverrideMethod.
-	self assert: self override = 4.
+	self assert: self override equals: 4.
 	definition unload.
-	self assert: self override = 2.
-	self assert: (RGMethodDefinition realClass: self class selector: #override) category = '*foobarbaz'.
-	
+	self assert: self override equals: 2.
+	self assert: (RGMethodDefinition realClass: self class selector: #override) category equals: '*foobarbaz'
 ]
 
 { #category : #testing }
@@ -108,8 +126,8 @@ MCMethodDefinitionTest >> testRevertOldMethod [
 	definition := (RGMethodDefinition realClass: Object selector: #yourself) asMCMethodDefinition.
 	changeRecord := definition overridenMethodOrNil.
 	self assert: changeRecord notNil.
-	self assert: changeRecord category = 'accessing'.
-	changeRecord fileIn.
+	self assert: changeRecord category equals: 'accessing'.
+	changeRecord fileIn
 ]
 
 { #category : #testing }
@@ -118,9 +136,8 @@ MCMethodDefinitionTest >> testRevertOverrideMethod [
 	self class compile: 'override ^ 2' classified: self mockOverrideMethodCategory.
 	definition := (RGMethodDefinition realClass: self class selector: #override) asMCMethodDefinition.
 	self assert: definition isOverrideMethod.
-	self assert: self override = 2.
+	self assert: self override equals: 2.
 	definition unload.
-	self assert: self override = 1.
-	self assert: (RGMethodDefinition realClass: self class selector: #override) category = 'mocks'.
-	
+	self assert: self override equals: 1.
+	self assert: (RGMethodDefinition realClass: self class selector: #override) category equals: 'mocks'
 ]

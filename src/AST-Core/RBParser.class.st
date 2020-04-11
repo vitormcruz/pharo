@@ -64,7 +64,13 @@ RBParser class >> parseFaultyExpression: aString [
 { #category : #parsing }
 RBParser class >> parseFaultyMethod: aString [
 	"parse aString even if syntactically incorrect. Instead of raising an error, we create an AST with RB RBParseErrorNode"
-	^self parseMethod: aString onError: self errorNodeBlock
+
+	| ast |
+	ast := self parseMethod: aString onError: self errorNodeBlock.
+	"make sure to return a RBMethodNode"
+	^ ast class == RBMethodNode
+		ifFalse: [ RBMethodNode selector: #faulty body: ast asSequenceNode ]
+		ifTrue: [ ast ]
 ]
 
 { #category : #parsing }
@@ -178,6 +184,11 @@ RBParser >> cascadeNodeClass [
 	^ RBCascadeNode
 ]
 
+{ #category : #accessing }
+RBParser >> currentToken [
+	^currentToken 
+]
+
 { #category : #'error handling' }
 RBParser >> errorBlock [
 	^errorBlock ifNil: [[:message :position | ]] ifNotNil: [errorBlock]
@@ -242,7 +253,7 @@ RBParser >> methodNodeClass [
 
 { #category : #private }
 RBParser >> nextToken [
-	^nextToken ifNil: [nextToken := scanner next] ifNotNil: [nextToken]
+	^nextToken ifNil: [nextToken := self scannerNext] ifNotNil: [nextToken]
 ]
 
 { #category : #'private-parsing' }
@@ -433,19 +444,27 @@ RBParser >> parseCascadeMessage [
 
 { #category : #'error handling' }
 RBParser >> parseErrorNode: aMessageString [
-	| sourceString |
-	currentToken isError 
+	| sourceString errorPosition |
+	currentToken isError
 		ifTrue: [ ^ RBParseErrorNode errorMessage: currentToken cause value: currentToken value at: currentToken start ].
-	sourceString := source copyFrom: self errorPosition to: source size.
-	^ RBParseErrorNode
-		errorMessage: aMessageString value: sourceString at: self errorPosition
+	errorPosition := self errorPosition.
+	"the error at the end means in some cases that the start of the error is before"
+	aMessageString = ''')'' expected'
+		ifTrue: [ errorPosition := source findLastOccurrenceOfString: '(' startingAt: 1 ].
+	aMessageString = '''|'' expected'
+		ifTrue: [ errorPosition := source findLastOccurrenceOfString: '|' startingAt: 1 ].
+	(errorPosition = 0) ifTrue: [ errorPosition := self errorPosition].
+	sourceString := source copyFrom: errorPosition to: source size.
+	^ RBParseErrorNode errorMessage: aMessageString value: sourceString at: errorPosition
 ]
 
 { #category : #accessing }
-RBParser >> parseExpression: aString [ 
+RBParser >> parseExpression: anExpressionString [
+	"Parse and return an AST corresponding to the expression passed as argument."
+	
 	| node |
 	node := self parseStatements: false.
-	(RBMethodNode selector: #noMethod body: node) source: aString.	"Make the sequence node have a method node as its parent"
+	(self methodNodeClass selector: #noMethod body: node) source: anExpressionString.	"Make the sequence node have a method node as its parent"
 	self atEnd ifFalse: [ ^ self parseIncompleteExpression: node ].
 	^node
 ]
@@ -636,14 +655,16 @@ methodNode body: sequenceNode .
 ]
 
 { #category : #accessing }
-RBParser >> parseMethod: aString [
+RBParser >> parseMethod: aMethodDefinitionString [
+	"Parse and return a abstract syntax tree from the argument"
+	
 	| node |
 	node := self parseMethod.
-	node source: aString.
+	node source: aMethodDefinitionString.
 	self atEnd
 		ifFalse: [ 
 			 ^ self parseIncompleteExpression: node ].
-	node source: aString.
+	node source: aMethodDefinitionString.
 	^ node
 ]
 
@@ -682,7 +703,7 @@ RBParser >> parsePragma [
 	self step.
 	pragma := self basicParsePragma.
 	(currentToken isBinary and: [ currentToken value == #> ]) 
-		ifFalse: [ ^ self parserError: '''>'' expected' ].
+		ifFalse: [ ^ self addPragma: (self parserError: '''>'' expected') ].
 	pragma left: start; right: currentToken start.
 	self addPragma: pragma.
 ]
@@ -694,7 +715,7 @@ RBParser >> parsePragmaLiteral [
 			[^currentToken isForByteArray 
 				ifTrue: [self parseLiteralByteArray]
 				ifFalse: [self parseLiteralArray]].
-	currentToken isLiteralToken ifFalse: [self parserError:'Literal constant expected'].
+	currentToken isLiteralToken ifFalse: [^self parserError:'Literal constant expected'].
 	^self parsePrimitiveLiteral
 ]
 
@@ -913,7 +934,7 @@ RBParser >> parseVariableNode [
 
 { #category : #'error handling' }
 RBParser >> parserError: aString [ 
-	"Let the errorBlock try to recover from the error."
+	"Let the errorBlock try to recover from the error. Answer a ParseNode (possibly an RBParseErrorNode) or signal there is new source"
 	| errorNode errorMessage errorPosition newSource |
 	errorNode := self errorBlock cull: aString cull: self errorPosition cull: self.
 	errorNode ifNotNil: [ ^ errorNode ].
@@ -929,7 +950,7 @@ RBParser >> parserError: aString [
 						location: errorPosition.
 	
 	"If the syntax error notification is resumed, then the source was corrected and we have to announce that parsing can restart."					
-	ReparseAfterSourceEditing signalWithNewSource: newSource
+	ReparseAfterSourceEditing signalWithNewSource: newSource.
 ]
 
 { #category : #private }
@@ -984,15 +1005,13 @@ RBParser >> patchLiteralArrayToken [
 
 { #category : #private }
 RBParser >> patchLiteralMessage [
-	currentToken value == true 
-		ifTrue: 
-			[^currentToken := RBIdentifierToken value: 'true' start: currentToken start].
-	currentToken value == false 
-		ifTrue: 
-			[^currentToken := RBIdentifierToken value: 'false' start: currentToken start].
-	currentToken value isNil 
-		ifTrue: 
-			[^currentToken := RBIdentifierToken value: 'nil' start: currentToken start]
+
+	currentToken value == true
+		ifTrue: [ ^ currentToken := RBIdentifierToken value: 'true' start: currentToken start ].
+	currentToken value == false
+		ifTrue: [ ^ currentToken := RBIdentifierToken value: 'false' start: currentToken start ].
+	currentToken value
+		ifNil: [ ^ currentToken := RBIdentifierToken value: 'nil' start: currentToken start ]
 ]
 
 { #category : #private }
@@ -1036,7 +1055,7 @@ RBParser >> saveCommentsDuring: aBlock [
 		ensure: [ comments := comments, currentComments ]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 RBParser >> scanner: aScanner [ 
 	scanner := aScanner.
 	pragmas := nil.
@@ -1050,9 +1069,10 @@ RBParser >> scannerClass [
 	^RBScanner
 ]
 
-{ #category : #'private-classes' }
-RBParser >> selfNodeClass [
-	^ RBSelfNode
+{ #category : #private }
+RBParser >> scannerNext [
+
+	^ scanner next
 ]
 
 { #category : #'private-classes' }
@@ -1068,17 +1088,7 @@ RBParser >> step [
 		ifTrue: 
 			[currentToken := nextToken.
 			nextToken := nil]
-		ifFalse: [currentToken := scanner next].
-]
-
-{ #category : #'private-classes' }
-RBParser >> superNodeClass [
-	^ RBSuperNode
-]
-
-{ #category : #'private-classes' }
-RBParser >> thisContextNodeClass [
-	^ RBThisContextNode
+		ifFalse: [currentToken := self scannerNext].
 ]
 
 { #category : #'private-classes' }

@@ -11,7 +11,20 @@ BaselineOfPharo >> baseline: spec [
 	repository := self packageRepositoryURL.
 
 	spec for: #common do: [
+		spec postLoadDoIt: #'postload:package:'.
+		spec baseline: 'BaseLibraries' with: [spec repository: repository].
+		
 		spec baseline: 'IDE' with: [spec repository: repository].
-		spec package: 'Deprecated70'.
+		spec baseline: 'Calypso' with: [ 
+			spec repository: repository; loads: #('IcebergSupport'). ].
+
+		spec package: 'Deprecated90'.
+		spec package: 'Gofer-UI'.
 	]
+]
+
+{ #category : #baseline }
+BaselineOfPharo >> postload: loader package: packageSpec [
+
+	WelcomeHelp openForRelease
 ]

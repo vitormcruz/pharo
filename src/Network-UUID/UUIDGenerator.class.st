@@ -98,7 +98,7 @@ UUIDGenerator >> clockOn: stream [
 	| microseconds |
 	microseconds := Time microsecondClockValue.
 	1 to: 8 do: [ :each |
-		stream nextPut: (microseconds digitAt: each) ]
+		stream nextPut: (microseconds byteAt: each) ]
 ]
 
 { #category : #private }
@@ -118,7 +118,7 @@ UUIDGenerator >> computeNodeIdentifier [
 	^ (MD5 hashMessage: nodeData) hash asByteArrayOfSize: 4
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 UUIDGenerator >> initialize [
 	super initialize.
 	random := Random new.

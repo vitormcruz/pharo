@@ -82,7 +82,7 @@ Class {
 		'PackageGlobalOrganizer',
 		'Properties'
 	],
-	#category : #'RPackage-Core'
+	#category : #'RPackage-Core-Base'
 }
 
 { #category : #constants }
@@ -186,13 +186,13 @@ RPackage >> actualClassTags [
 { #category : #'add class' }
 RPackage >> addClass: aClass [
 	"TODO: deprecate system category / replace this with a direct call to moveClass:fromPackage:toTag:"
-	
+
 	"This does two things:
 		- make sure the class tag for ourselves exists
 		- change the class category as appropriate.
 			(and by cascade, ensure systemClassRecategorizedAction: is called)."
-	
-	aClass category: (self addClassTag: self categoryName) categoryName
+
+	aClass category: (self addClassTag: self name) categoryName
 ]
 
 { #category : #'add class' }
@@ -389,21 +389,6 @@ RPackage >> category: categoryName matches: prefix [
 	^(categoryName at: prefix size + 1 ifAbsent: [ ^true ]) = $-
 ]
 
-{ #category : #'under deprecation' }
-RPackage >> categoryName [
-	^ self name
-]
-
-{ #category : #'system compatibility' }
-RPackage >> changeRecordForOverriddenMethod: aMethodDefinition [
-	^ SourceFiles
-		changeRecordsFor: aMethodDefinition 
-		detect: [ :protocol | 
-			self 
-				includesMethodCategory: protocol 
-				ofClass: aMethodDefinition actualClass ]
-]
-
 { #category : #slices }
 RPackage >> classDefinedSlicesDo: aBlock [
 	"This method iterates over the defined class and their associated selectors. a slice is a class * list of selectors. aBlock will be applied to all the extensions slices of the receiver. aBlok first argument is the class and the second argument a list of method selectors"
@@ -496,16 +481,6 @@ RPackage >> classes [
 	
 ]
 
-{ #category : #'system compatibility' }
-RPackage >> classesAndMetaClasses [
-	"Return a Set with all classes and metaclasses belonging to this package"
-	self flag: #stef. "only used by goferCleanUp"
-	^ OrderedCollection new
-		addAll: self definedClasses;
-		addAll: (self definedClasses collect: [:each | each classSide]);
-		yourself.
-]
-
 { #category : #'class tags' }
 RPackage >> classesForClassTag: aSymbol [
 	"Returns the classes tagged using aSymbol"
@@ -522,14 +497,6 @@ RPackage >> classesTaggedWith: aSymbol [
 	This method select all classes which are tagged by given symbol"
 	
 	^(self classTagNamed: aSymbol) classes
-]
-
-{ #category : #'system compatibility' }
-RPackage >> coreCategoriesForClass: aClass [
-
-	self flag: #stef. "only used by goferCleanUp"
-	^ aClass organization categories 
-		reject: [ :cat | self isForeignClassExtension: cat ]
 ]
 
 { #category : #accessing }
@@ -720,12 +687,6 @@ RPackage >> extensionCategoriesForClass: aClass [
 		select: [ :cat | self isYourClassExtension: cat ]
 ]
 
-{ #category : #'system compatibility' }
-RPackage >> extensionClasses [
-	self flag: #stef. "only used by RB and Gofer"
-	^ self extendedClasses
-]
-
 { #category : #accessing }
 RPackage >> extensionMethods [
 	"Extension methods are methods defined on classes that are not defined in the receiver"
@@ -819,16 +780,13 @@ RPackage >> importPackage: anRPackage [
 ]
 
 { #category : #private }
-RPackage >> importProtocol: aProtocol forClass: aClass [ 
-	"import all the methods of a protocol as defined in the receiver." 
-	
-		(aClass organization listAtCategoryNamed: aProtocol)
-			do: [:each | 
-				| aCompiledMethod |
-				aCompiledMethod := (aClass >> each).
-				aCompiledMethod isFromTrait ifFalse: [ self addMethod: aCompiledMethod ]].
-	
-	
+RPackage >> importProtocol: aProtocol forClass: aClass [
+	"import all the methods of a protocol as defined in the receiver."
+
+	(aClass organization listAtCategoryNamed: aProtocol) do: [ :each | 
+		aClass
+			compiledMethodAt: each
+			ifPresent: [ :method | method isFromTrait ifFalse: [ self addMethod: method ] ] ]
 ]
 
 { #category : #testing }
@@ -906,21 +864,6 @@ RPackage >> includesExtensionSelector: aSelector ofMetaclassName: aClassName [
 ]
 
 { #category : #'system compatibility' }
-RPackage >> includesMethod: aSymbol ofClass: aClass [
-
-	self flag: #stef. "only used by RB"
-	self flag: #cyrille. "looks like a bogus implementation because category have nothing to do with the fact that a method is in package or not."
-	"CD: Indeed, it looks strange. 
-	With RPackage we have 'includesSelector:ofClass:. I guess it should return the same result (?)'
-	"
-	aClass ifNil: [^ false].
-	^ self
-		includesMethodCategory: ((aClass organization categoryOfElement: aSymbol)
-										ifNil: [' '])
-		ofClass: aClass
-]
-
-{ #category : #'system compatibility' }
 RPackage >> includesMethodCategory: categoryName ofClass: aClass [
 	^ (self isYourClassExtension: categoryName)
 		or: [(self includesClass: aClass)
@@ -977,6 +920,13 @@ RPackage >> isDefault [
 ]
 
 { #category : #testing }
+RPackage >> isDeprecated [
+	^ self packageManifestOrNil 
+		ifNil: [ ^ false ]
+		ifNotNil: [ :manifest | manifest isDeprecated ]
+]
+
+{ #category : #testing }
 RPackage >> isEmpty [
 	self name = self class defaultPackageName ifTrue: [ ^false ].
 	^self classes isEmpty and: [ self extensionSelectors isEmpty]
@@ -1026,12 +976,6 @@ RPackage >> methodCategoryPrefix [
 	^ '*', self name asLowercase
 ]
 
-{ #category : #'system compatibility' }
-RPackage >> methodReferences [
-	
-	^ self methods collect: [:each | each methodReference] thenSelect: [:each| each isValid and: [each isLocalSelector]].
-]
-
 { #category : #accessing }
 RPackage >> methods [
 	"Return all the methods defined in this package. Including extension methods (i.e., methods defined on a class that is not defined by me)"
@@ -1060,12 +1004,6 @@ RPackage >> methodsForClass: aClass [
 		ifFalse: [self extensionMethodsForClass: aClass]
 		ifTrue: [self definedMethodsForClass: aClass]
 	
-]
-
-{ #category : #'system compatibility' }
-RPackage >> methodsInCategory: aString ofClass: aClass do: aBlock [
-	((aClass organization listAtCategoryNamed: aString) ifNil: [^self])
-		do: [:sel | aBlock value: (self referenceForMethod: sel ofClass: aClass)]
 ]
 
 { #category : #private }
@@ -1116,6 +1054,13 @@ RPackage >> orderedClasses [
 { #category : #private }
 RPackage >> organizer [
 	^ self class organizer
+]
+
+{ #category : #accessing }
+RPackage >> packageManifestOrNil [
+	^ self definedClasses
+		detect: [ :each | each isManifest ]
+		ifNone: [ nil ]
 ]
 
 { #category : #accessing }
@@ -1170,11 +1115,6 @@ RPackage >> propertyAt: propName put: propValue [
 	^ self ensureProperties
 		at: propName
 		put: propValue
-]
-
-{ #category : #'system compatibility' }
-RPackage >> referenceForMethod: aSymbol ofClass: aClass [
-	^ (aClass >> aSymbol) asRingDefinition
 ]
 
 { #category : #register }
@@ -1457,42 +1397,37 @@ RPackage >> renameTagsPrefixedWith: oldName to: newName [
 { #category : #register }
 RPackage >> renameTo: aSymbol [
 	"Rename a package with a different name, provided as a symbol"
-	| oldName newName oldCategoryNames repositoryGroup |
 
+	| oldName newName oldCategoryNames repositoryGroup |
 	oldName := self name.
 	newName := aSymbol asSymbol.
 	repositoryGroup := self mcPackage workingCopy repositoryGroup.
-	
 	self organizer validatePackageDoesNotExist: aSymbol.
-
-	oldCategoryNames  := (self classTags collect: #categoryName as: Set) 
-		add: self categoryName;
-		difference: { newName}.
-	
+	oldCategoryNames := (self classTags collect: #categoryName as: Set)
+		add: self name;
+		difference: {newName}.
 	self name: aSymbol.
-	SystemAnnouncer uniqueInstance suspendAllWhile: [
-		self definedClasses do: [ :each | each category: newName, (each category allButFirst: oldName size) ].
-		oldCategoryNames do: [ :each | SystemOrganizer default removeCategory: each ] ].
-	self renameTagsPrefixedWith: oldName to: newName. 
+	SystemAnnouncer uniqueInstance
+		suspendAllWhile: [ self definedClasses
+				do:
+					[ :each | each category: newName , (each category allButFirst: oldName size) ].
+			oldCategoryNames
+				do: [ :each | SystemOrganizer default removeCategory: each ] ].
+	self renameTagsPrefixedWith: oldName to: newName.
 	self renameExtensionsPrefixedWith: oldName to: newName.
-			
-	self organizer 
+	self organizer
 		basicUnregisterPackageNamed: oldName;
 		basicRegisterPackage: self.
-	
-	self mcPackage workingCopy repositoryGroup: repositoryGroup. 
-	
-	SystemAnnouncer uniqueInstance 
-		announce: (RPackageRenamed 
-			to: self 
-			oldName: oldName 
-			newName: newName).
+	self mcPackage workingCopy repositoryGroup: repositoryGroup.
+	SystemAnnouncer uniqueInstance
+		announce:
+			(RPackageRenamed to: self oldName: oldName newName: newName)
 ]
 
 { #category : #private }
 RPackage >> reportBogusBehaviorOf: aSelector [
 
-	self logCr: 'RPackage log: Something wrong around ', aSelector asString , 'since the removeKey: is called on not present information.'.
+	self traceCr: 'RPackage log: Something wrong around ', aSelector asString , 'since the removeKey: is called on not present information.'.
 ]
 
 { #category : #accessing }

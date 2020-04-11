@@ -7,7 +7,7 @@ Class {
 	#instVars : [
 		'fields'
 	],
-	#category : #UnifiedFFI
+	#category : #'UnifiedFFI-External-StructureHandling'
 }
 
 { #category : #accessing }
@@ -42,4 +42,9 @@ FFIExternalStructureFieldSpec >> initialize [
 { #category : #accessing }
 FFIExternalStructureFieldSpec >> typeFor: aString [ 
 	^ fields at: aString
+]
+
+{ #category : #accessing }
+FFIExternalStructureFieldSpec >> types [
+	^ fields values
 ]

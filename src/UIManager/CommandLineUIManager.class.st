@@ -50,6 +50,7 @@ CommandLineUIManager class >> uiSettingsOn: aBuilder [
 		with: [
 			(aBuilder setting: #snapshotErrorImage)
 				label: 'Snapshot before quitting' ;
+				default: false;
 				target: CommandLineUIManager;
 				description: 'On unhandled exception, save a new version of the image before quitting']
 ]
@@ -88,11 +89,6 @@ CommandLineUIManager >> alert: aStringOrText title: aString configure: aBlock [
 	"Ignore the block, because we don't create a dialog, so there is nothing to configure."
 
 	self alert: aStringOrText title: aString.
-]
-
-{ #category : #display }
-CommandLineUIManager >> checkForNewDisplaySize [
-	"do nothing"
 ]
 
 { #category : #'ui requests' }
@@ -219,16 +215,7 @@ CommandLineUIManager >> inform: aString [
 			nextPutAll: aString; cr;
 			nextPutAll: (String new: 79 withAll: $= ); cr].
 
-	Smalltalk logDuring: logBlock.		
-	aString logCr.
-]
-
-{ #category : #'ui requests' }
-CommandLineUIManager >> informUserDuring: aBlock [
-	self
-		displayProgress: ''
-		from: 1 to: 100
-		during: aBlock
+	Smalltalk logDuring: logBlock.
 ]
 
 { #category : #initialization }
@@ -284,14 +271,6 @@ CommandLineUIManager >> logTitle: aString andDescription: aStringOrText to: aStr
 CommandLineUIManager >> logYellowDuring: aBlock [
 	
 	^ self logColored: '33' during: aBlock
-]
-
-{ #category : #'ui requests' }
-CommandLineUIManager >> merge: merger informing: aString [
-	"Check for conflicts, if there are none, just continue. 
-	 Merger will accept all conflicts"
-	merger hasConflicts ifFalse: [ ^ self ].
-	self abort: aString title: 'Conflict detected'
 ]
 
 { #category : #display }
@@ -410,16 +389,16 @@ CommandLineUIManager >> stdout [
 ]
 
 { #category : #'ui requests' }
-CommandLineUIManager >> syntaxErrorNotificationDefaultAction: aSyntaxErrorNotification [
-	"log the syntax notificaiton and print a nicely formatted and colored syntax error on stderr"
-	Smalltalk logDuring: [ :logger |
-		logger print: aSyntaxErrorNotification; cr.
-		aSyntaxErrorNotification signalerContext errorReportOn: logger ].
+CommandLineUIManager >> systemNotificationDefaultAction: aNotification [
 	
-	STCommandLineHandler printCompilerWarning: aSyntaxErrorNotification.
-			
-	"in noninteractive mode simply quit"
-	^ self exitFailure
+	Smalltalk logStdOutDuring: [:logger |
+		logger nextPutAll: aNotification class name;
+				 nextPutAll: ': ';  
+				 nextPutAll: aNotification messageText; 
+				 cr ].
+	
+	aNotification resume.
+
 ]
 
 { #category : #'ui TEasilyThemed' }

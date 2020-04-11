@@ -65,6 +65,12 @@ ZnBufferedWriteStream >> close [
 	stream close
 ]
 
+{ #category : #testing }
+ZnBufferedWriteStream >> closed [
+	
+	^ stream closed
+]
+
 { #category : #accessing }
 ZnBufferedWriteStream >> cr [
 	self nextPut: Character cr
@@ -198,10 +204,10 @@ ZnBufferedWriteStream >> nextIntegerOfSize: numberOfBytes signed: signed bigEndi
 	bigEndian
 		ifTrue: [ 
 			numberOfBytes to: 1 by: -1 do: [ :index |
-				self nextPut: (unsignedValue digitAt: index) ] ]
+				self nextPut: (unsignedValue byteAt: index) ] ]
 		ifFalse: [ 
 			1 to: numberOfBytes do: [ :index |
-				self nextPut: (unsignedValue digitAt: index) ] ].
+				self nextPut: (unsignedValue byteAt: index) ] ].
 	^ value
 ]
 

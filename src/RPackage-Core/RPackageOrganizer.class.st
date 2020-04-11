@@ -107,12 +107,13 @@ Class {
 		'classPackageMapping',
 		'packages',
 		'classExtendingPackagesMapping',
-		'debuggingName'
+		'debuggingName',
+		'packageNames'
 	],
 	#classInstVars : [
 		'default'
 	],
-	#category : #'RPackage-Core'
+	#category : #'RPackage-Core-Base'
 }
 
 { #category : #singleton }
@@ -213,6 +214,15 @@ RPackageOrganizer >> addMethod: method [
 	rPackage addMethod: method
 ]
 
+{ #category : #'package-names-cache' }
+RPackageOrganizer >> addPackageNameToCache: aPackageName [
+
+	packageNames ifNil: [ ^ self ].
+	
+	packageNames add: aPackageName
+
+]
+
 { #category : #'system integration' }
 RPackageOrganizer >> announcer [ 
 	^SystemAnnouncer uniqueInstance private
@@ -249,6 +259,9 @@ RPackageOrganizer >> basicInitializeFromPackagesList: aPackagesList [
 					initializeExtensionsFor: eachBehavior classSide 
 					protocol: eachProtocol ] ]
 		displayingProgress: 'Importing extensions'.
+	
+	"I reset the cache of names"
+	packageNames := nil.
 ]
 
 { #category : #'private registration' }
@@ -263,6 +276,8 @@ RPackageOrganizer >> basicRegisterPackage: aPackage [
 	self flag: #hack. "for decoupling MC"
 	self class environment at: #MCWorkingCopy ifPresent: [ :wc |
 		wc forPackage: ((self class environment at: #MCPackage) named: aPackage name)].
+	
+	self addPackageNameToCache: aPackage name asSymbol.
 	
 	^ aPackage
 ]
@@ -280,6 +295,8 @@ RPackageOrganizer >> basicUnregisterPackage: aPackage [
 	self class environment at: #MCWorkingCopy ifPresent: [ 
 		aPackage mcPackage 
 			ifNotNil: [ :mcPackage | mcPackage workingCopy unregister ]].
+		
+	self removePackageNameFromCache: aPackage name asSymbol
 ]
 
 { #category : #'private registration' }
@@ -288,7 +305,9 @@ RPackageOrganizer >> basicUnregisterPackageNamed: aSymbolName [
 	
 	packages
 		removeKey: aSymbolName asSymbol
-		ifAbsent: [ ]
+		ifAbsent: [ ].
+	
+	self removePackageNameFromCache: aSymbolName asSymbol
 	
 ]
 
@@ -348,7 +367,10 @@ RPackageOrganizer >> ensureExistAndRegisterPackageNamed: aSymbol [
 	
 	package := packages 
 		at: aSymbol asSymbol 
-		ifAbsentPut: [ self packageClass named: aSymbol ].
+		ifAbsentPut: [ 
+			"I add the package to the packageName cache"
+			self addPackageNameToCache: aSymbol asSymbol.
+			self packageClass named: aSymbol ].
 		
 	package extendedClasses do: [ :extendedClass|
 			self registerExtendingPackage: package forClass: extendedClass].
@@ -489,7 +511,7 @@ RPackageOrganizer >> initializeExtensionsFor: aBehavior protocol: aProtocol [
 	package := self packageMatchingExtensionName: protocolName.
 	package ifNil: [
 		package := self basicRegisterPackage: (self packageClass named: protocolName) ].
-	nonTraitMethods := aProtocol methods 
+	nonTraitMethods := aProtocol methodSelectors 
 		select: [ :eachSelector | (aBehavior >> eachSelector) origin = aBehavior ].
 	nonTraitMethods ifEmpty:[^ self].
 	self registerExtendingPackage: package forClass: aBehavior.
@@ -528,7 +550,7 @@ RPackageOrganizer >> initializeMethodsFor: aBehavior [
 	(aBehavior organization protocols
 		select: [ :each | each isExtensionProtocol not ])
 		do: [ :eachProtocol | 
-			 (eachProtocol methods 
+			 (eachProtocol methodSelectors 
 				select: [ :eachSelector | (aBehavior >> eachSelector) origin = aBehavior ])
 				do: [ :eachSelector | package addMethod: (aBehavior >> eachSelector) ] ]
 ]
@@ -692,14 +714,16 @@ RPackageOrganizer >> packageNamedIgnoreCase: aSymbol ifAbsent: aBlock [
 	^ aBlock value.
 ]
 
-{ #category : #accessing }
-RPackageOrganizer >> packageNames [
-	^ packages keys
+{ #category : #'package-names-cache' }
+RPackageOrganizer >> packageNames [ 
+
+	^ packageNames ifNil: [ packageNames := packages keys asSortedCollection ]
 ]
 
-{ #category : #accessing }
+{ #category : #'package-names-cache' }
 RPackageOrganizer >> packageNamesDo: aBlock [
-	^ packages keysDo: aBlock
+
+	^ self packageNames do: aBlock
 ]
 
 { #category : #'package access from class' }
@@ -713,7 +737,7 @@ RPackageOrganizer >> packageOf: aClass [
 { #category : #'package access from class' }
 RPackageOrganizer >> packageOfClassNamed: aName [
 
-	self flag: self. "shouldProbablyReturnUnunpackagedPackage instead of nil"
+	self flag: #pharoFixMe. "Should probably return _UnunpackagedPackage instead of nil"
 	^ classPackageMapping at: aName asSymbol ifAbsent: [nil]
 ]
 
@@ -744,23 +768,25 @@ RPackageOrganizer >> register [
 ]
 
 { #category : #'private registration' }
-RPackageOrganizer >> registerExtendingPackage: aPackage forClass: aClass [ 
+RPackageOrganizer >> registerExtendingPackage: aPackage forClass: aClass [
 
 	| cur |
-	cur := classExtendingPackagesMapping at: aClass instanceSide name ifAbsent: [nil].
-	cur isNil
-		ifTrue: [classExtendingPackagesMapping at: aClass instanceSide name put: (Set with: aPackage)]
-		ifFalse: [cur add: aPackage]
+
+	cur := classExtendingPackagesMapping at: aClass instanceSide name ifAbsent: [ nil ].
+	cur
+		ifNil: [ classExtendingPackagesMapping at: aClass instanceSide name put: ( Set with: aPackage ) ]
+		ifNotNil: [ cur add: aPackage ]
 ]
 
 { #category : #'private registration' }
-RPackageOrganizer >> registerExtendingPackage: aPackage forClassName: aClassName [ 
+RPackageOrganizer >> registerExtendingPackage: aPackage forClassName: aClassName [
 
 	| cur |
-	cur := classExtendingPackagesMapping at: aClassName asSymbol ifAbsent: [nil].
-	cur isNil
-		ifTrue: [classExtendingPackagesMapping at: aClassName asSymbol put: (Set with: aPackage)]
-		ifFalse: [cur add: aPackage]
+
+	cur := classExtendingPackagesMapping at: aClassName asSymbol ifAbsent: [ nil ].
+	cur
+		ifNil: [ classExtendingPackagesMapping at: aClassName asSymbol put: ( Set with: aPackage ) ]
+		ifNotNil: [ cur add: aPackage ]
 ]
 
 { #category : #'system integration' }
@@ -845,6 +871,14 @@ RPackageOrganizer >> registerPackageNamed: aString [
 		ifAbsent: [ (self packageClass named: aString asSymbol) register ]
 ]
 
+{ #category : #'package-names-cache' }
+RPackageOrganizer >> removePackageNameFromCache: aPackageName [
+
+	packageNames ifNil: [ ^ self ].	
+	packageNames remove: aPackageName ifAbsent: [  ]
+
+]
+
 { #category : #'system integration' }
 RPackageOrganizer >> renamePackage: rPackage from: oldName to: newName [ 
 	| classesAndProtocolsToRename |
@@ -852,6 +886,9 @@ RPackageOrganizer >> renamePackage: rPackage from: oldName to: newName [
 	rPackage name: newName. 
 	
 	"we update the organizer"
+	self removePackageNameFromCache: oldName.
+	self addPackageNameToCache: newName.
+	
 	packages 
 		at: newName 
 		put: rPackage.
@@ -871,13 +908,13 @@ RPackageOrganizer >> renamePackage: rPackage from: oldName to: newName [
 { #category : #private }
 RPackageOrganizer >> reportBogusBehaviorOf: aSelector [
 
-	self logCr: 'RPackage log: Something wrong around ', aSelector asString , 'since the removeKey: is called on not present information.'.
+	self traceCr: 'RPackage log: Something wrong around ', aSelector asString , 'since the removeKey: is called on not present information.'.
 ]
 
 { #category : #private }
 RPackageOrganizer >> reportExtraRemovalOf: aClass [
 
-	self logCr:  'The class ',  aClass name printString, 'is removed twice'.
+	self traceCr: 'The class ', aClass name printString , ' is removed twice'
 ]
 
 { #category : #'public registration' }
@@ -1059,7 +1096,7 @@ RPackageOrganizer >> systemMethodAddedActionFrom: ann [
 { #category : #'system integration' }
 RPackageOrganizer >> systemMethodModifiedActionFrom: ann [
 
-	"this annoucement can correspond to several kind of modifications:
+	"this announcement can correspond to several kind of modifications:
 		=> a method has been renamed
 		=> a method has been move to another category // SHOULD BE TREATED WITH SystemMethodRecategorizedEvent
 		(
@@ -1198,11 +1235,11 @@ RPackageOrganizer >> unregisterExtendingPackage: aPackage forClass: aClass [
 
 { #category : #'private registration' }
 RPackageOrganizer >> unregisterExtendingPackage: aPackage forClassName: aClassName [
-	
+
 	| cur |
-	cur := classExtendingPackagesMapping at: aClassName asSymbol ifAbsent: [nil].
-	cur isNil
-		ifFalse: [cur remove: aPackage ifAbsent: [] "not happy with this one"]
+
+	cur := classExtendingPackagesMapping at: aClassName asSymbol ifAbsent: [ nil ].
+	cur ifNotNil: [ cur remove: aPackage ifAbsent: [ "not happy with this one" ] ]
 ]
 
 { #category : #'system integration' }
@@ -1257,17 +1294,16 @@ RPackageOrganizer >> unregisterPackageNamed: symbol [
 ]
 
 { #category : #private }
-RPackageOrganizer >> validateCanBeAddedPackage: aPackage [ 	
-	self 
-		validateCanBeAddedPackageName: aPackage categoryName 
-		tagName: nil
+RPackageOrganizer >> validateCanBeAddedPackage: aPackage [
+	self validateCanBeAddedPackageName: aPackage name tagName: nil
 ]
 
 { #category : #private }
 RPackageOrganizer >> validateCanBeAddedPackage: aPackage tagName: aSymbol [
-	aPackage name = aSymbol ifTrue: [ ^ self ].
-	self 
-		validateCanBeAddedPackageName: aPackage categoryName, '-', aSymbol
+	aPackage name = aSymbol
+		ifTrue: [ ^ self ].
+	self
+		validateCanBeAddedPackageName: aPackage name , '-' , aSymbol
 		tagName: nil
 ]
 

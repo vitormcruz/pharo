@@ -17,7 +17,7 @@ Class {
 { #category : #transforming }
 RBAbstractInstanceVariableRefactoring >> abstractReferences [
 	| replacer |
-	replacer := RBParseTreeRewriter 
+	replacer := self parseTreeRewriterClass 
 				variable: variableName
 				getter: self accessorsRefactoring getterMethod
 				setter: self accessorsRefactoring setterMethod.
@@ -35,14 +35,15 @@ RBAbstractInstanceVariableRefactoring >> abstractReferences [
 
 { #category : #'private-accessing' }
 RBAbstractInstanceVariableRefactoring >> accessorsRefactoring [
-	^accessorsRefactoring isNil 
-		ifTrue: 
-			[accessorsRefactoring := RBCreateAccessorsForVariableRefactoring 
-						model: self model
-						variable: variableName
-						class: class
-						classVariable: false]
-		ifFalse: [accessorsRefactoring]
+
+	^ accessorsRefactoring
+		ifNil: [ accessorsRefactoring := RBCreateAccessorsForVariableRefactoring
+				model: self model
+				variable: variableName
+				class: class
+				classVariable: false
+			]
+		ifNotNil: [ accessorsRefactoring ]
 ]
 
 { #category : #transforming }

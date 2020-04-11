@@ -56,8 +56,7 @@ SDL2 class >> clipboardText: text [
 
 { #category : #cursor }
 SDL2 class >> createCursor: data mask: mask w: w h: h hotX: hotX hotY: hotY [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_Cursor SDL_CreateCursor ( Uint8* data, Uint8* mask, int w, int h, int hotX, int hotY ) )
+	^ self ffiCall: #( SDL_Cursor SDL_CreateCursor ( Uint8* data, Uint8* mask, int w, int h, int hotX, int hotY ) )
 ]
 
 { #category : #cairo }
@@ -69,22 +68,19 @@ SDL2 class >> createRGBSurfaceForCairoWidth: width height: height [
 { #category : #video }
 SDL2 class >> createRGBSurfaceFromPixels: pixels width: width height: height depth: depth pitch: pitch
 	rmask: rmask gmask: gmask bmask: bmask amask: amask [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_Surface* SDL_CreateRGBSurfaceFrom 
+	^ self ffiCall: #( SDL_Surface* SDL_CreateRGBSurfaceFrom 
 						( void* pixels , int width , int height , int depth , int pitch ,
 						  Uint32 rmask , Uint32 gmask , Uint32 bmask , Uint32 amask ) )
 ]
 
 { #category : #video }
 SDL2 class >> createWindow: title x: x y: y width: w height: h flags: flags [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_Window SDL_CreateWindow ( String title, int x, int y, int w, int h, Uint32 flags ) )
+	^ self ffiCall: #( SDL_Window SDL_CreateWindow ( String title, int x, int y, int w, int h, Uint32 flags ) )
 ]
 
 { #category : #timer }
 SDL2 class >> delay: milliseconds [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( void SDL_Delay ( Uint32 milliseconds ) )
+	^ self ffiCall: #( void SDL_Delay ( Uint32 milliseconds ) )
 ]
 
 { #category : #video }
@@ -112,44 +108,38 @@ SDL2 class >> findSDL2 [
 	'SDL2.dll'					"Windows"
 	) do: [ :eachName | 
 		[ (self checkLibraryName: eachName) ifTrue: [ ^ eachName ] ] 
-		ifError: [nil] ].
+		ifErrorDo: [nil] ].
 	self error: 'Failed to find SDL2 library.'
 ]
 
 { #category : #video }
 SDL2 class >> freeSurface: surface [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( void SDL_FreeSurface ( SDL_Surface* surface ) )
+	^ self ffiCall: #( void SDL_FreeSurface ( SDL_Surface* surface ) )
 ]
 
 { #category : #'game controller' }
 SDL2 class >> gameControllerNameForIndex: deviceIndex [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_String SDL_GameControllerNameForIndex ( int deviceIndex ) )
+	^ self ffiCall: #( SDL_String SDL_GameControllerNameForIndex ( int deviceIndex ) )
 ]
 
 { #category : #'game controller' }
 SDL2 class >> gameControllerOpen: deviceIndex [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_GameController SDL_GameControllerOpen ( int deviceIndex ) )
+	^ self ffiCall: #( SDL_GameController SDL_GameControllerOpen ( int deviceIndex ) )
 ]
 
 { #category : #'error handling' }
 SDL2 class >> getErrorMessage [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( String SDL_GetError ( void ) )
+	^ self ffiCall: #( String SDL_GetError ( void ) )
 ]
 
 { #category : #common }
 SDL2 class >> getVersion: ver [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( void SDL_GetVersion(SDL_Version* ver) )
+	^ self ffiCall: #( void SDL_GetVersion(SDL_Version* ver) )
 ]
 
 { #category : #opengl }
 SDL2 class >> glCreateContext: window [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_GLContext SDL_GL_CreateContext ( SDL_Window window ) )
+	^ self ffiCall: #( SDL_GLContext SDL_GL_CreateContext ( SDL_Window window ) )
 ]
 
 { #category : #opengl }
@@ -164,38 +154,38 @@ SDL2 class >> glGetAttribute: attr [
 
 { #category : #opengl }
 SDL2 class >> glGetAttribute: attr into: value [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_GL_GetAttribute(SDL_GLattr attr, int *value) )
+	^ self ffiCall: #( int SDL_GL_GetAttribute(SDL_GLattr attr, int *value) )
 ]
 
 { #category : #opengl }
 SDL2 class >> glGetProcAddress: procName [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( void* SDL_GL_GetProcAddress ( String procName ) )
+	^ self ffiCall: #( void* SDL_GL_GetProcAddress ( String procName ) )
 ]
 
 { #category : #opengl }
 SDL2 class >> glMakeCurrent: window context: context [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_GL_MakeCurrent ( SDL_Window window , SDL_GLContext context ) )
+	^ self ffiCall: #( int SDL_GL_MakeCurrent ( SDL_Window window , SDL_GLContext context ) )
 ]
 
 { #category : #opengl }
 SDL2 class >> glSetAttribute: attr value: value [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_GL_SetAttribute(SDL_GLattr attr, int value) )
+	^ self ffiCall: #( int SDL_GL_SetAttribute(SDL_GLattr attr, int value) )
 ]
 
 { #category : #opengl }
 SDL2 class >> glSwapWindow: window [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( void SDL_GL_SwapWindow ( SDL_Window window ) )
+	^ self ffiCall: #( void SDL_GL_SwapWindow ( SDL_Window window ) )
 ]
 
 { #category : #common }
 SDL2 class >> init: flags [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_Init ( Uint32 flags ) )
+	^ self ffiCall: #( int SDL_Init ( Uint32 flags ) )
+]
+
+{ #category : #common }
+SDL2 class >> initEverything [
+	self initLibrary;
+		 initSubSystem: SDL_INIT_EVERYTHING
 ]
 
 { #category : #common }
@@ -215,6 +205,9 @@ SDL2 class >> initLibrary [
 	Session == Smalltalk session ifTrue: [ ^ 1 ].
 	"Configure SDL2 in 'application mode', to let the screen to turn off on inactivity.
 	 But we let the user to restore 'game mode' on screen, by using #disableScreenSaver"
+	
+	self initPlatformSpecific.
+	
 	self setHint: SDL_HINT_VIDEO_ALLOW_SCREENSAVER value: '1'.
 	self setHint: SDL_HINT_NO_SIGNAL_HANDLERS value: '1'.
 	self init: SDL_INIT_NOPARACHUTE.
@@ -222,9 +215,16 @@ SDL2 class >> initLibrary [
 ]
 
 { #category : #common }
+SDL2 class >> initPlatformSpecific [
+
+	Smalltalk os isMacOSX ifTrue: [  
+		SDLOSXPlatformInitializer new run.	
+	] 
+]
+
+{ #category : #common }
 SDL2 class >> initSubSystem: flags [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_InitSubSystem ( Uint32 flags ) )
+	^ self ffiCall: #( int SDL_InitSubSystem ( Uint32 flags ) )
 ]
 
 { #category : #common }
@@ -236,31 +236,27 @@ SDL2 class >> initVideo [
 { #category : #common }
 SDL2 class >> isAvailable [
 	^ [ (ExternalAddress loadSymbol: 'SDL_Init' from: SDL2 moduleName) notNil ] 	
-		ifError: [ false ]
+		ifErrorDo: [ false ]
 ]
 
 { #category : #'game controller' }
 SDL2 class >> isGameController: deviceIndex [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( bool SDL_IsGameController ( int deviceIndex ) )
+	^ self ffiCall: #( bool SDL_IsGameController ( int deviceIndex ) )
 ]
 
 { #category : #joystick }
 SDL2 class >> joystickEventState: state [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_Joystick SDL_JoystickEventState ( int state ) )
+	^ self ffiCall: #( SDL_Joystick SDL_JoystickEventState ( int state ) )
 ]
 
 { #category : #joystick }
 SDL2 class >> joystickOpen: deviceIndex [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_Joystick SDL_JoystickOpen ( int deviceIndex ) )
+	^ self ffiCall: #( SDL_Joystick SDL_JoystickOpen ( int deviceIndex ) )
 ]
 
 { #category : #mouse }
 SDL2 class >> modState [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_Keymod SDL_GetModState ( ) )
+	^ self ffiCall: #( SDL_Keymod SDL_GetModState ( ) )
 ]
 
 { #category : #native }
@@ -274,31 +270,26 @@ SDL2 class >> moduleName [
 
 { #category : #mouse }
 SDL2 class >> mouseState [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( Uint32 SDL_GetMouseState ( nil , nil ) )
+	^ self ffiCall: #( Uint32 SDL_GetMouseState ( nil , nil ) )
 ]
 
 { #category : #mouse }
 SDL2 class >> mouseStateX: x y: y [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( Uint32 SDL_GetMouseState ( int* x , int* y ) )
+	^ self ffiCall: #( Uint32 SDL_GetMouseState ( int* x , int* y ) )
 ]
 
 { #category : #joystick }
 SDL2 class >> numberOfJoysticks [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_NumJoysticks() )
+	^ self ffiCall: #( int SDL_NumJoysticks() )
 ]
 
 { #category : #event }
 SDL2 class >> pollEvent: event [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_PollEvent ( SDL_Event event ) )
+	^ self ffiCall: #( int SDL_PollEvent ( SDL_Event event ) )
 ]
 
 { #category : #clipboard }
 SDL2 class >> primClipboardText [
-
 	^ self ffiCall: #( ExternalAddress SDL_GetClipboardText ( ) )
 ]
 
@@ -311,22 +302,19 @@ SDL2 class >> primClipboardText: text [
 
 { #category : #cairo }
 SDL2 class >> primCreateRGBSurfaceForCairoWidth: width height: height [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( SDL_Surface* SDL_CreateRGBSurface 
+	^ self ffiCall: #( SDL_Surface* SDL_CreateRGBSurface 
 						( 0 , int width , int height , 32 ,
 						  16r00FF0000 , 16r0000FF00 , 16r000000FF , 0 ) )
 ]
 
 { #category : #common }
 SDL2 class >> quit [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( void SDL_Quit ( ) )
+	^ self ffiCall: #( void SDL_Quit ( ) )
 ]
 
 { #category : #common }
 SDL2 class >> quitSubSystem: flags [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( void SDL_QuitSubSystem ( Uint32 flags ) )
+	^ self ffiCall: #( void SDL_QuitSubSystem ( Uint32 flags ) )
 ]
 
 { #category : #video }
@@ -336,27 +324,23 @@ SDL2 class >> setHint: aName value: aValue [
 
 { #category : #mouse }
 SDL2 class >> setRelativeMouseMode: enabled [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_SetRelativeMouseMode ( bool enabled ) )
+	^ self ffiCall: #( int SDL_SetRelativeMouseMode ( bool enabled ) )
 ]
 
 { #category : #cursor }
 SDL2 class >> showCursor: toggle [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_ShowCursor ( int toggle ) )
+	^ self ffiCall: #( int SDL_ShowCursor ( int toggle ) )
 ]
 
 { #category : #timer }
 SDL2 class >> ticks [
 	"Gets the number of milliseconds since the SDL library was initialized"
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( Uint32 SDL_GetTicks ( ) )
+	^ self ffiCall: #( Uint32 SDL_GetTicks ( ) )
 ]
 
 { #category : #common }
 SDL2 class >> wasInit: flags [
-	<primitive: #primitiveNativeCall module: #NativeBoostPlugin error: errorCode>
-	^ self nbCall: #( int SDL_WasInit ( Uint32 flags ) )
+	^ self ffiCall: #( int SDL_WasInit ( Uint32 flags ) )
 ]
 
 { #category : #'nb-library' }

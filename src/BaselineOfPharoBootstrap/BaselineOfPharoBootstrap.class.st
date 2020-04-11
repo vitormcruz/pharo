@@ -96,6 +96,7 @@ BaselineOfPharoBootstrap >> baseline: spec [
 		spec package: 'Kernel'.
 		spec package: 'Kernel-BytecodeEncoders'.
 		spec package: 'Kernel-Chronology-Extras'.
+		spec package: 'NumberParser'.
 
 		spec package: 'Math-Operations-Extensions'.
 
@@ -123,6 +124,7 @@ BaselineOfPharoBootstrap >> baseline: spec [
 		spec package: 'System-Platforms'.
 		spec package: 'System-SessionManager'.
 		spec package: 'System-Sources'.
+		spec package: 'System-SourcesCondenser'.
 		spec package: 'System-Support'.
 
 		spec package: 'UIManager'.
@@ -144,6 +146,7 @@ BaselineOfPharoBootstrap >> baseline: spec [
 
 		spec package: 'SUnit-Core'.
 		spec package: 'SUnit-Tests'.
+		spec package: 'Kernel-Tests'.
 		spec package: 'JenkinsTools-Core'.
 		spec package: 'InitializePackagesCommandLineHandler'.
 		
@@ -186,6 +189,7 @@ BaselineOfPharoBootstrap >> baseline: spec [
 			'System-SessionManager'.
 			'System-Sources'.
 			'System-Support'.
+			'NumberParser'.
 
 			'UIManager'.
 			'Zinc-Character-Encoding-Core' }.
@@ -213,6 +217,7 @@ BaselineOfPharoBootstrap >> baseline: spec [
 			'CodeImport'.
 			'CodeImportCommandLineHandlers'.
 			'Jobs'.
+			'System-SourcesCondenser'.
 			'OpalCompiler-Core'}.
 		
 		spec group: 'FileSystemGroup' with: {
@@ -232,6 +237,7 @@ BaselineOfPharoBootstrap >> baseline: spec [
 		spec group: 'SUnitGroup' with: {
 			'SUnit-Core'.
 			'SUnit-Tests'.
+			'Kernel-Tests'.
 			'JenkinsTools-Core'}.
 
 	]

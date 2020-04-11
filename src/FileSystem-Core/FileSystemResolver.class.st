@@ -1,6 +1,19 @@
 "
 I am an abstract superclass for objects that can resolve origins into references. Such objects use the Chain of Responsibility pattern, and when unable to resolve a particular origin, delegate that resolution request to the next resolver in the list.
 
+To add your own origin, implement a method in one of my subclasses, which is annotated with <origin> and returns aFileReference. See my subclasses' ""origin"" procotol for examples. If necessary, you could also create your own subclass and add it to the list with something like this:
+[[[
+MyCustomFileSystemResolver class >> initialize [
+	SessionManager default registerSystemClassNamed: self name atPriority: 100. ""After FileLocator""
+	self startUp: true.
+	]
+	
+MyCustomFileSystemResolver class >> startUp: resuming [
+	resuming ifFalse: [ ^ self ].
+	FileLocator addResolver: self new
+	]
+]]]
+
 next
 	The next resolver in the list, or nil
 
@@ -50,20 +63,16 @@ FileSystemResolver >> resolve: aSymbol [
 
 { #category : #resolving }
 FileSystemResolver >> resolveString: aString [
-	| decoded fs |
-	"The argument string is actually a byte array encoded differently on each platform.
-	We are transforming it to an image string.
-	We assume for now that the string is utf8 encoded."
-	decoded := aString asByteArray utf8Decoded.
+	| fs |
 	fs := FileSystem disk.
 	^ FileReference 
 		fileSystem: fs 
-		path: (fs pathFromString: decoded)
+		path: (fs pathFromString: aString)
 ]
 
 { #category : #resolving }
 FileSystemResolver >> supportedOrigins [
-	^ #()
+	^ (Pragma allNamed: #origin from: self class to: FileSystemResolver) collect: #methodSelector
 ]
 
 { #category : #resolving }

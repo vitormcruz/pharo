@@ -7,11 +7,10 @@ Class {
 	#category : #'Moose-Algos-Graph'
 }
 
-{ #category : #accessing }
+{ #category : #initialization }
 MalDisjointSetsNextNode >> initialize [
-
-	self flag: #refactor.
-	self makeSet. "should be called in super initialize"
+	super initialize.
+	self makeSet.
 	nextNodes := OrderedCollection new
 ]
 
@@ -21,7 +20,7 @@ MalDisjointSetsNextNode >> nextNodes [
 	^ nextNodes 
 ]
 
-{ #category : #adding }
+{ #category : #accessing }
 MalDisjointSetsNextNode >> to: targetNode [
 	self nextNodes add: targetNode
 ]

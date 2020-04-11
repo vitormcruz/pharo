@@ -11,6 +11,6 @@ Class {
 
 { #category : #testing }
 GlobalIdentifierPersistenceChecker >> isEnabled [
-	"See class comment or https://pharo.fogbugz.com/f/cases/19944."
-	^ FileLocator home exists
+	"See class comment or https://pharo.manuscript.com/f/cases/19944."
+	^ FileLocator home exists and: [ FileLocator home fileSystem isWritable ]
 ]

@@ -64,6 +64,7 @@ RBSmalllintTestObject >> booleanPrecedence [
 
 { #category : #methods }
 RBSmalllintTestObject >> codeCruftLeftInMethods [
+	<haltOrBreakpointForTesting>
 	| a b c |
 	a := b := c := 2.
 	self halt.
@@ -168,7 +169,7 @@ RBSmalllintTestObject >> fileBlocks [
 
 { #category : #methods }
 RBSmalllintTestObject >> flagged [
-	self flag: 'to do'.
+	self flag: #pharoTodo
 ]
 
 { #category : #methods }

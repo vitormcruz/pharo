@@ -35,29 +35,29 @@ ClassHierarchyTest class >> fixSubclasses [
 
 { #category : #tests }
 ClassHierarchyTest >> testObjectFormatInstSize [
-	| classes |
+	| classes offending |
 	"check that #instSize is in sync with #allInstVarNames"
-	self assert:
-			(SystemNavigation default allBehaviors
-				allSatisfy: [ :cls | cls instSize = cls allInstVarNames size ]).
+	offending := SystemNavigation default allBehaviors reject: [ :cls | cls instSize = (cls allSlots reject: #isVirtual) size ].
+	self assertCollection: offending hasSameElements: {}.
 
 	"instSpec is only 0 for classes without any inst vars or variable fields"
-	classes := SystemNavigation default allBehaviors
-		select: [ :cls | cls isTrait not and: [ cls instSpec = 0 ] ].
-	self assert: (classes allSatisfy: [ :each | each instVarNames isEmpty or: [ each isVariable not ] ])
+	classes := SystemNavigation default allBehaviors select: [ :cls | cls isTrait not and: [ cls instSpec = 0 ] ].
+	offending := classes reject: [ :each | each instVarNames isEmpty or: [ each isVariable not ] ].
+	self assertCollection: offending hasSameElements: {}.
+
 ]
 
 { #category : #tests }
 ClassHierarchyTest >> testSubclassInstVar [
 	| subclasses |
-	SystemNavigation new allClassesDo: [ :cls|
-		subclasses := cls subclasses.
-		self assert: subclasses isNil not.
-		subclasses do: [:subclass|
-			self assert: (subclasses occurrencesOf: subclass) = 1.
-			self assert: subclass superclass == cls.
-			"cls removeSubclass: subclass.
-			cls addSubclass: subclass."]]
+	SystemNavigation new
+		allClassesDo: [ :cls | 
+			subclasses := cls subclasses.
+			self assert: subclasses isNil not.
+			subclasses
+				do: [ :subclass | 
+					self assert: (subclasses occurrencesOf: subclass) equals: 1.
+					self assert: subclass superclass identicalTo: cls ] ]
 ]
 
 { #category : #tests }

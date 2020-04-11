@@ -4,7 +4,7 @@ I contain tests for the Kernel package.
 Class {
 	#name : #ManifestKernelTests,
 	#superclass : #PackageManifest,
-	#category : #'Kernel-Tests'
+	#category : #'Kernel-Tests-Manifest'
 }
 
 { #category : #metadata }
@@ -15,4 +15,9 @@ ManifestKernelTests class >> dependencies [
 { #category : #metadata }
 ManifestKernelTests class >> packageName [
 	^ #KernelTests
+]
+
+{ #category : #'code-critics' }
+ManifestKernelTests class >> ruleRBModifiesCollectionRuleV1FalsePositive [
+	^ #(#(#(#RGMethodDefinition #(#ClassHierarchyTest #testSubclassInstVar #false)) #'2019-06-26T12:47:46.581134+02:00') )
 ]

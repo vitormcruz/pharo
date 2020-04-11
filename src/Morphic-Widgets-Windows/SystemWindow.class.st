@@ -53,8 +53,218 @@ SystemWindow class >> buildShortcutsOn: aBuilder [
 	(aBuilder shortcut: #close)
 		category: #WindowShortcuts
 		default: PharoShortcuts current closeWindowShortcut
-		do: [ :target | target closeWindowAction ]
+		do: [ :target | SystemWindow closeTopWindow ]
 		description: 'Close this window'.
+]
+
+{ #category : #keymapping }
+SystemWindow class >> buildWindowBottomEdgeShortcutsOn: aBuilder [
+	<keymap>
+
+	(aBuilder shortcut: #windowBottomEdgeUp)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowBottomEdgeUpShortcut
+		do: [ :target | 
+			| movement |
+			movement := 0@(target bounds height / 2) negated.
+			target bounds: ((target bounds topLeft) corner: (target bounds bottomRight + movement))]
+		description: 'Move bottom edge of the window up by half of the window extent'.
+		
+	(aBuilder shortcut: #windowBottomEdgeDown)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowBottomEdgeDownShortcut
+		do: [ :target | 
+			| movement |
+			movement := 0@(target bounds height / 2).
+			target bounds: ((target bounds topLeft) corner: (target bounds bottomRight + movement))]
+		description: 'Move bottXX edge of the window up by half of the window extent'.
+
+]
+
+{ #category : #keymapping }
+SystemWindow class >> buildWindowLeftEdgeShortcutsOn: aBuilder [
+	<keymap>
+
+	(aBuilder shortcut: #windowLeftEdgeLeft)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowLeftEdgeLeftShortcut
+		do: [ :target | 
+			| movement |
+			movement := (target bounds width / 2) negated @0.
+			target bounds: ((target bounds topLeft + movement) corner: (target bounds bottomRight ))]
+		description: 'Move left edge of the window left by half of the window extent'.
+		
+	(aBuilder shortcut: #windowLeftEdgeRight)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowLeftEdgeRightShortcut
+		do: [ :target | 
+			| movement |
+			movement := (target bounds width / 2)@0.
+			target bounds: ((target bounds topLeft + movement) corner: (target bounds bottomRight))]
+		description: 'Move left edge of the window right by half of the window extent'.
+
+]
+
+{ #category : #keymapping }
+SystemWindow class >> buildWindowMovingShortcutsOn: aBuilder [
+	<keymap>
+
+	(aBuilder shortcut: #windowMoveLeft)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowMoveLeftShortcut
+		do: [ :target | 
+			| movement |
+			movement := ((target bounds width / 2) negated)@0.
+			target bounds: ((target bounds topLeft + (movement)) corner: (target bounds bottomRight + (movement)))]
+		description: 'Move window left by half of its extent'.
+		
+	(aBuilder shortcut: #windowMoveRight)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowMoveRightShortcut
+		do: [ :target | 
+			| movement |
+			movement := ((target bounds width /2))@0.
+			target bounds: ((target bounds topLeft + (movement)) corner: (target bounds bottomRight + (movement)))]
+		description: 'Move window right by half of its extent'.
+
+	(aBuilder shortcut: #windowMoveUp)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowMoveUpShortcut
+		do: [ :target | 
+			| movement |
+			movement := 0@((target bounds height / 2) negated).
+			target bounds: ((target bounds topLeft + (movement)) corner: (target bounds bottomRight + (movement)))]
+		description: 'Move window up by half of its extent'.
+		
+	(aBuilder shortcut: #windowMoveDown)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowMoveDownShortcut
+		do: [ :target | 
+			| movement |
+			movement := 0@(target bounds height / 2).
+			target bounds: ((target bounds topLeft + (movement)) corner: (target bounds bottomRight + (movement)))]
+		description: 'Move window down by half of its extent'.
+
+]
+
+{ #category : #keymapping }
+SystemWindow class >> buildWindowRightEdgeShortcutsOn: aBuilder [
+	<keymap>
+
+	(aBuilder shortcut: #windowRightEdgeLeft)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowRightEdgeLeftShortcut
+		do: [ :target | 
+			| movement |
+			movement := (target bounds width / 2) negated @0.
+			target bounds: ((target bounds topLeft) corner: (target bounds bottomRight + movement))]
+		description: 'Center the window with a default extent'.
+		
+	(aBuilder shortcut: #windowRightEdgeRight)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowRightEdgeRightShortcut
+		do: [ :target | 
+			| movement |
+			movement := (target bounds width / 2)@0.
+			target bounds: ((target bounds topLeft) corner: (target bounds bottomRight + movement))]
+		description: 'Center the window with a default extent'.
+
+]
+
+{ #category : #keymapping }
+SystemWindow class >> buildWindowTilingShortcutsOn: aBuilder [
+	<keymap>
+
+	(aBuilder shortcut: #windowTopLeft)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowTopLeftShortcut
+		do: [ :target | target tileTopLeft]
+		description: 'Move the window to the top left corner of the display'.
+
+	(aBuilder shortcut: #windowLeft)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowLeftShortcut
+		do: [ :target | target tileLeft ]
+		description: 'Move the window to the left half of the display'.
+	
+	(aBuilder shortcut: #windowBottomLeft)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowBottomLeftShortcut
+		do: [ :target | target tileBottomLeft ]
+		description: 'Move the window to the bottom left corner of the display'.
+
+	(aBuilder shortcut: #windowTop)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowTopShortcut
+		do: [ :target | target tileTop ]
+		description: 'Move the window to the top half of the display'.
+
+	(aBuilder shortcut: #windowTopRight)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowTopRightShortcut
+		do: [ :target | target tileTopRight ]
+		description: 'Move the window to the top right corner of the display'.
+
+	(aBuilder shortcut: #windowRight)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowRightShortcut
+		do: [ :target | target tileRight ]
+		description: 'Move the window to the right half of the display'.
+
+	(aBuilder shortcut: #windowRightBottom)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowRightBottomShortcut
+		do: [ :target | target tileBottomRight ]
+		description: 'Move the window to the right bottom corner of the display'.
+
+	(aBuilder shortcut: #windowBottom)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowBottomShortcut
+		do: [ :target | target tileBottom ]
+		description: 'Move the window to the bottom half of the display'.
+
+	(aBuilder shortcut: #windowMaximize)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowMaximizeShortcut
+		do: [ :target | target tileFull ]
+		description: 'Maximize the window'.
+
+	(aBuilder shortcut: #windowMinimize)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowMinimizeShortcut
+		do: [ :target | target minimize]
+		description: 'Miminimze the window'.
+
+	(aBuilder shortcut: #windowCenter)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowCenterShortcut
+		do: [ :target | target tileCenter]
+		description: 'Center the window with a default extent'.
+
+]
+
+{ #category : #keymapping }
+SystemWindow class >> buildWindowTopEdgeShortcutsOn: aBuilder [
+	<keymap>
+
+	(aBuilder shortcut: #windowTopEdgeUp)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowTopEdgeUpShortcut
+		do: [ :target | 
+			| movement |
+			movement := 0@(target bounds height / 2) negated.
+			target bounds: ((target bounds topLeft + movement) corner: (target bounds bottomRight))]
+		description: 'Move top edge of the window up by half of the window extent'.
+		
+	(aBuilder shortcut: #windowTopEdgeDown)
+		category: #WindowShortcuts
+		default: PharoShortcuts current windowTopEdgeDownShortcut
+		do: [ :target | 
+			| movement |
+			movement := 0@(target bounds height / 2).
+			target bounds: ((target bounds topLeft + movement) corner: (target bounds bottomRight))]
+		description: 'Move top edge of the window down by half of the window extent'.
+
 ]
 
 { #category : #initializing }
@@ -153,7 +363,7 @@ SystemWindow class >> noteTopWindowIn: aWorld [
 { #category : #'top window' }
 SystemWindow class >> sendTopWindowToBack [
  	"Send the top window of the world to the back. Relies on #submorphs array being ordered top to bottom. "
-	ActiveWorld submorphs 
+	self currentWorld submorphs 
 		detect: [ :morph | morph isSystemWindow ] 
 		ifFound: [ :morph | morph sendToBack ].
 ]
@@ -163,6 +373,89 @@ SystemWindow class >> taskbarIconName [
 	"Answer the icon for the receiver in a task bar."
 
 	^#smallWindowIcon
+]
+
+{ #category : #'menu items - tiling' }
+SystemWindow class >> tilingMenuItemsOn: aBuilder [
+
+	<windowMenu>
+		
+	(aBuilder item: #tileLeft)
+		action: [ :target | target tileLeft ];
+		label: 'Left';
+		parent: #Tile;
+		icon: (self iconNamed: #blank); 
+		order: 1;
+		help: 'Move the window to the left half of the display'.
+
+	(aBuilder item: #tileRight)
+		action: [ :target | target tileRight ];
+		label: 'Right';
+		parent: #Tile;
+		help: 'Move the window to the right half of the display'.
+
+	(aBuilder item: #tileTop)
+		action: [ :target | target tileTop ];
+		label: 'Top';
+		parent: #Tile;
+		help: 'Move the window to the top half of the display'.
+
+	(aBuilder item: #tileBottom)
+		action: [ :target | target tileBottom ];
+		label: 'Bottom';
+		parent: #Tile;
+		help: 'Move the window to the bottom half of the display'.
+
+	(aBuilder item: #tileTopLeft)
+		action: [ :target | target tileTopLeft ];
+		label: 'Top left';
+		parent: #Tile;
+		help: 'Move the window to the top left corner of the display'.
+		
+	(aBuilder item: #tileTopRight)
+		action: [ :target | target tileTopRight ];
+		label: 'Top right';
+		parent: #Tile;
+		help: 'Move the window to the top right corner of the display'.
+
+	(aBuilder item: #tileBottomLeft)
+		action: [ :target | target tileBottomLeft ];
+		label: 'Bottom left';
+		parent: #Tile;
+		help: 'Move the window to the bottom left corner of the display'.
+
+	(aBuilder item: #tileBottomRight)
+		action: [ :target | target tileBottomRight ];
+		label: 'Bottom right';
+		parent: #Tile;
+		help: 'Move the window to the right bottom corner of the display'.
+
+	(aBuilder item: #tileFull)
+		action: [ :target | target tileFull ];
+		label: 'Full';
+		parent: #Tile;
+		help: 'Maximize the window'.
+
+	(aBuilder item: #tileCenter)
+		action: [ :target | target tileCenter ];
+		label: 'Center';
+		parent: #Tile;
+		help: 'Center the window with a default extent'.
+
+
+
+
+
+
+]
+
+{ #category : #'menu items - tiling' }
+SystemWindow class >> tilingMenuOn: aBuilder [
+
+	<windowMenu>
+
+	(aBuilder item: #Tile)
+		order: 10.5.
 ]
 
 { #category : #'top window' }
@@ -194,8 +487,10 @@ SystemWindow class >> windowMenuOn: aBuilder [
 		action: [ aBuilder model showAbout ];
 		iconName: #smallHelpIcon;
 		withSeparatorAfter.
-	(aBuilder item: #'Change title...')
-		action: [ aBuilder model relabel ];
+	(aBuilder item: #'Change title')
+		action: [ aBuilder model relabel ].
+	(aBuilder item: #'Copy title')
+		action: [ aBuilder model copyTitle ];
 		withSeparatorAfter.
 	(aBuilder item: #'Send to back')
 		action: [ aBuilder model sendToBack ].
@@ -209,7 +504,10 @@ SystemWindow class >> windowMenuOn: aBuilder [
 		ifFalse: [ #'Make unclosable' ]
 		ifTrue: [ #'Make closable' ].
 	(aBuilder item: closableLabel)
-		action: [ aBuilder model perform: closableLabel asCamelCase uncapitalized ].
+		action: [ 
+			(closableLabel = #'Make unclosable')
+				ifTrue: [ aBuilder model makeUnclosable ] 
+				ifFalse:[ aBuilder model makeClosable] ].
 	draggableLabel := aBuilder model isSticky
 		ifTrue: [ #'Make draggable' ]
 		ifFalse: [ #'Make undraggable' ].
@@ -221,10 +519,7 @@ SystemWindow class >> windowMenuOn: aBuilder [
 		ifFalse: [ #Maximize ].
 	(aBuilder item: maximizeLabel)
 		action: [ aBuilder model expandBoxHit ];
-		iconName: #windowMaximizeForm.
-	aBuilder model isCollapsed
-		ifFalse: [ (aBuilder item: #'Window color...')
-				action: [ aBuilder model setWindowColor ] ]
+		iconName: #windowMaximizeForm
 ]
 
 { #category : #'top window' }
@@ -384,6 +679,16 @@ SystemWindow >> announceDeActivated [
 	).
 ]
 
+{ #category : #announcement }
+SystemWindow >> announceOpened [
+
+	super announceOpened.
+	self currentWorld announcer
+		announce: (WindowOpened new
+						window: self;
+						yourself).
+]
+
 { #category : #initialization }
 SystemWindow >> applyModelExtent [
 	self extent: model initialExtent 
@@ -461,6 +766,12 @@ SystemWindow >> boxExtent [
 	
 	label ifNil: [^(14 @ 14) * self displayScaleFactor].
 	^ (((14 @ 14) * self displayScaleFactor) max: label height @ label height)  
+]
+
+{ #category : #controls }
+SystemWindow >> buildWindowMenu [
+  
+	^ self menu.
 ]
 
 { #category : #testing }
@@ -547,6 +858,12 @@ SystemWindow >> colorForInsets [
 	^self paneColor colorForInsets
 ]
 
+{ #category : #label }
+SystemWindow >> copyTitle [
+	Clipboard clipboardText: self label.
+	self inform: 'Window title copied.'
+]
+
 { #category : #initialization }
 SystemWindow >> createBox [
 	"create a button with default to be used in the label area"
@@ -617,8 +934,8 @@ SystemWindow >> deleteDiscardingChanges [
 	| thisWorld announcement animateClose |
 	animateClose := self visible
 		and: [ self world notNil
-				and: [ self theme settings animationSettings useAnimation
-						and: [ self theme settings animationSettings animateClosing ] ] ].
+				and: [ self theme shouldUseAnimations
+						and: [ self theme animationSettings animateClosing ] ] ].
 	self removePaneSplitters.	"in case we add some panes and reopen!"
 	thisWorld := self world.
 	self isFlexed
@@ -636,7 +953,7 @@ SystemWindow >> deleteDiscardingChanges [
 		window: self;
 		yourself.
 	self announce: announcement.
-	World announcer announce: announcement
+	self currentWorld announcer announce: announcement
 ]
 
 { #category : #'menu building' }
@@ -863,7 +1180,7 @@ SystemWindow >> icon [
 SystemWindow >> initialExtent [
 	^ (self model respondsTo: #initialExtent)
 		ifTrue: [self model initialExtent]
-		ifFalse: [RealEstateAgent standardWindowExtent]
+		ifFalse: [ self extent ]
 ]
 
 { #category : #initialization }
@@ -1016,10 +1333,20 @@ SystemWindow >> maximumExtent: aPoint [
 	^ self setProperty: #maximumExtent toValue: aPoint
 ]
 
-{ #category : #'menu building' }
-SystemWindow >> menuBuilder [
+{ #category : #api }
+SystemWindow >> menu [
 
-	^ menuBuilder ifNil: [ menuBuilder := PragmaMenuBuilder pragmaKeyword: self discoveredMenuPragmaKeyword model: self ].
+	| aMenuBuilder res |
+
+	aMenuBuilder := BlockMenuBuilder owner: self.
+	aMenuBuilder model: self.
+	aMenuBuilder buildingBlock: [ :aBuilder |
+		self class windowMenuOn: aMenuBuilder.
+		self class tilingMenuOn: aBuilder.
+		self class tilingMenuItemsOn: aBuilder ].
+	aMenuBuilder menuSpec.
+	res := aMenuBuilder menu.
+	^ res.
 ]
 
 { #category : #'resize/collapse' }
@@ -1029,7 +1356,7 @@ SystemWindow >> minimizeOrRestore [
 	|mc windowEvent |
 	isCollapsed
 		ifTrue: ["Expand -- restore panes to morphics structure"
-			self theme settings animationSettings useAnimation 
+			self theme shouldUseAnimations 
 				ifTrue: [self animateRestoreFromMinimized].
 			isCollapsed := false.
 			"Bring to front first"
@@ -1052,7 +1379,7 @@ SystemWindow >> minimizeOrRestore [
 			self
 				setBoundsWithFlex: (-100 @ -100 extent: 2 @ 2); "place offscreen"
 				hide.
-			self theme settings animationSettings useAnimation  
+			self theme shouldUseAnimations  
 				ifTrue: [self animateMinimize].
 			self isActive ifTrue: [
 				self world navigateVisibleWindowForward]].
@@ -1066,6 +1393,45 @@ SystemWindow >> minimizeOrRestore [
 
 	windowEvent window: self.
 	self announce: windowEvent.
+]
+
+{ #category : #'modal-windows' }
+SystemWindow >> modalChild [
+	"Answer the modal child of the receiver, if any."
+
+	^self valueOfProperty: #modalChild
+]
+
+{ #category : #'modal-windows' }
+SystemWindow >> modalLockTo: aSystemWindow [
+	"Lock the receiver as a modal owner of the given window."
+
+	aSystemWindow setProperty: #modalOwner toValue: self.
+	self setProperty: #modalChild toValue: aSystemWindow.
+	
+	closeBox ifNotNil: [ 
+		self setProperty: #preModalCloseEnabled toValue: closeBox enabled.
+		closeBox enabled: false
+	].
+
+]
+
+{ #category : #'modal-windows' }
+SystemWindow >> modalOwner [
+	"Answer the modal owner of the receiver, if any."
+
+	^self valueOfProperty: #modalOwner
+]
+
+{ #category : #'modal-windows' }
+SystemWindow >> modalUnlockFrom: aSystemWindow [
+	"Unlock the receiver as a modal owner of the given window."
+
+	aSystemWindow removeProperty: #modalOwner.
+	self removeProperty: #modalChild.
+	closeBox ifNotNil: [:cl | cl enabled: (self valueOfProperty: #preModalCloseEnabled ifAbsent: [true])].
+	self removeProperty: #preModalCloseEnabled.
+	self activate
 ]
 
 { #category : #events }
@@ -1157,57 +1523,25 @@ SystemWindow >> offerWindowMenu [
 ]
 
 { #category : #'open/close' }
-SystemWindow >> openAsIs [
-	^self openAsIsIn: self currentWorld
-
-]
-
-{ #category : #'open/close' }
-SystemWindow >> openAsIsIn: aWorld [
-	"This msg and its callees result in the window being activeOnlyOnTop.
-	Play the open sound if the preference is enabled."
-	
-	self playOpenSound.
-	aWorld addMorph: self.
-	self activate.
-	aWorld startSteppingSubmorphsOf: self.
-	
-	self announceOpened.
-	
-	World announcer 
-		announce: (WindowOpened new
-						window: self;
-						yourself).
-
-]
-
-{ #category : #'open/close' }
-SystemWindow >> openInWorld: aWorld [
-	"This msg and its callees result in the window being activeOnlyOnTop"
-	self bounds: (RealEstateAgent initialFrameFor: self world: aWorld).
-	^self openAsIsIn: aWorld.
-
-]
-
-{ #category : #'open/close' }
-SystemWindow >> openInWorld: aWorld extent: extent [
-	"This msg and its callees result in the window being activeOnlyOnTop"
-	self position: (RealEstateAgent initialFrameFor: self initialExtent: extent world: aWorld) topLeft; extent: extent.
-	^self openAsIsIn: aWorld
-]
-
-{ #category : #'open/close' }
-SystemWindow >> openInWorldExtent: extent [
-	"This msg and its callees result in the window being activeOnlyOnTop"
-
-	self openInWorld: self currentWorld extent: extent
-]
-
-{ #category : #'open/close' }
 SystemWindow >> openModal [
-
 	self openInWorld.
-	Smalltalk ui theme runModal: self.
+	MorphicRenderLoop new doOneCycleWhile: [ self isInWorld ]
+]
+
+{ #category : #'*Morphic-Widgets-Windows' }
+SystemWindow >> openModal: aSystemWindow [
+	"Open the given window locking the receiver until it is dismissed.
+	Answer the system window.
+	Restore the original keyboard focus when closed."
+
+	| keyboardFocus |
+	
+	keyboardFocus := self activeHand keyboardFocus.
+	self modalLockTo: aSystemWindow.
+	[ aSystemWindow openModal ] ensure: [
+		self modalUnlockFrom: aSystemWindow.
+		self activeHand newKeyboardFocus: keyboardFocus ].
+	^aSystemWindow
 ]
 
 { #category : #panes }
@@ -1301,6 +1635,23 @@ SystemWindow >> positionSubmorphs [
 		[:aMorph | aMorph positionSubmorphs]
 ]
 
+{ #category : #opening }
+SystemWindow >> postOpenInWorld: aWorld [
+
+	self activate.
+	super postOpenInWorld: aWorld
+]
+
+{ #category : #opening }
+SystemWindow >> preOpenInWorld: aWorld [
+	"This msg and its callees result in the window being activeOnlyOnTop"
+	self bounds: (RealEstateAgent
+		initialFrameFor: self
+		initialExtent: self initialExtent
+		world: aWorld).
+	self playOpenSound.
+]
+
 { #category : #printing }
 SystemWindow >> printOn: aStream [
 
@@ -1314,7 +1665,7 @@ SystemWindow >> privateBePassive [
 	self isInWorld ifFalse: [ ^self ].
 	
 	self 
-	rememberKeyboardFocus: ActiveHand keyboardFocus;
+	rememberKeyboardFocus: self activeHand keyboardFocus;
 	passivate;
 	announceDeActivated
 
@@ -1458,7 +1809,7 @@ SystemWindow >> setLabel: aString [
 						label: aString;
 						yourself).
 	self announce: announcement.
-	World announcer announce: announcement.
+	self currentWorld announcer announce: announcement.
 	label ifNil: [^ self].
 	label contents: aString.
 	self labelWidgetAllowance.  "Sets it if not already"

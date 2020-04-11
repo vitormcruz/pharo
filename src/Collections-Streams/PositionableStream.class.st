@@ -9,7 +9,7 @@ Class {
 		'position',
 		'readLimit'
 	],
-	#category : #'Collections-Streams'
+	#category : #'Collections-Streams-Base'
 }
 
 { #category : #'instance creation' }
@@ -29,6 +29,14 @@ PositionableStream class >> on: aCollection from: firstIndex to: lastIndex [
 		on: aCollection
 		from: firstIndex
 		to: lastIndex
+]
+
+{ #category : #enumerating }
+PositionableStream class >> with: aCollectionOrStream do: aBlock [
+	"Evaluates a block with a new stream based on the collection or stream. Answers the result of the block evaluation. Follows the style of FileStream>>fileNamed:do:."
+	| aStream |
+	aStream := self on: aCollectionOrStream.
+	[ ^ aBlock value: aStream ] ensure: [ aStream close ]
 ]
 
 { #category : #testing }
@@ -131,8 +139,8 @@ PositionableStream >> int16: anInteger [
 	n := anInteger < 0
 		ifTrue: [ 16r10000 + anInteger ]
 		ifFalse: [ anInteger ].
-	self nextPut: (n digitAt: 2).
-	self nextPut: (n digitAt: 1)
+	self nextPut: (n byteAt: 2).
+	self nextPut: (n byteAt: 1)
 ]
 
 { #category : #'accessing - data' }
@@ -160,10 +168,10 @@ PositionableStream >> int32: anInteger [
 	n := anInteger < 0
 		ifTrue: [ 16r100000000 + anInteger ]
 		ifFalse: [ anInteger ].
-	self nextPut: (n digitAt: 4).
-	self nextPut: (n digitAt: 3).
-	self nextPut: (n digitAt: 2).
-	self nextPut: (n digitAt: 1)
+	self nextPut: (n byteAt: 4).
+	self nextPut: (n byteAt: 3).
+	self nextPut: (n byteAt: 2).
+	self nextPut: (n byteAt: 1)
 ]
 
 { #category : #testing }
@@ -185,19 +193,15 @@ the receiver are empty. Otherwise returns false"
 { #category : #positioning }
 PositionableStream >> match: subCollection [ 
 	"Set the access position of the receiver to be past the next occurrence of the subCollection. Answer whether subCollection is found.  No wildcards, and case does matter."
-	| pattern startMatch |
+	| pattern |
 	pattern := subCollection readStream.
-	startMatch := nil.
-	[ pattern atEnd ] whileFalse: 
-		[ self atEnd ifTrue: [ ^ false ].
-		self next = pattern next 
-			ifTrue: [ pattern position = 1 ifTrue: [ startMatch := self position ] ]
-			ifFalse: 
-				[ pattern position: 0.
-				startMatch ifNotNil: 
-					[ self position: startMatch.
-					startMatch := nil ] ] ].
-	^ true
+	[ self atEnd or: [pattern atEnd] ] whileFalse: 
+		[self skip: pattern position negated.
+		pattern setToStart. 
+		(self skipTo: pattern next) ifFalse: [ ^false ].
+		[pattern atEnd not and: [self next = pattern peek]] whileTrue: [pattern next]
+	].
+	^ pattern atEnd
 ]
 
 { #category : #accessing }
@@ -277,7 +281,7 @@ PositionableStream >> nextInt32Put: int32 [
 	pos := int32 < 0
 		ifTrue: [(0-int32) bitInvert32 + 1]
 		ifFalse: [int32].
-	1 to: 4 do: [:i | self nextPut: (pos digitAt: 5-i)].
+	1 to: 4 do: [:i | self nextPut: (pos byteAt: 5-i)].
 	^ int32
 ]
 
@@ -324,7 +328,7 @@ PositionableStream >> nextLittleEndianNumber: n put: value [
 	"Answer the next n bytes as a positive Integer or LargePositiveInteger, where the bytes are ordered from least significant to most significant."
 	| bytes |
 	bytes := ByteArray new: n.
-	1 to: n do: [:i | bytes at: i put: (value digitAt: i)].
+	1 to: n do: [:i | bytes at: i put: (value byteAt: i)].
 	self nextPutAll: bytes
 ]
 
@@ -344,7 +348,7 @@ PositionableStream >> nextNumber: n put: v [
 	SmallInteger or a LargePositiveInteger, as the next n bytes.
 	Possibly pad with leading zeros."
 
-	1 to: n do: [:i | self nextPut: (v digitAt: n+1-i)].
+	1 to: n do: [:i | self nextPut: (v byteAt: n+1-i)].
 	^ v
 
 ]
@@ -389,10 +393,10 @@ PositionableStream >> nextStringPut: s [
 	(length := s size) < 192
 		ifTrue: [self nextPut: length]
 		ifFalse: 
-			[self nextPut: (length digitAt: 4)+192.
-			self nextPut: (length digitAt: 3).
-			self nextPut: (length digitAt: 2).
-			self nextPut: (length digitAt: 1)].
+			[self nextPut: (length byteAt: 4)+192.
+			self nextPut: (length byteAt: 3).
+			self nextPut: (length byteAt: 2).
+			self nextPut: (length byteAt: 1)].
 	self nextPutAll: s asByteArray.
 	^s
 ]
@@ -588,7 +592,7 @@ PositionableStream >> readInto: aCollection startingAt: startIndex count: n [
 	^ n
 ]
 
-{ #category : #positioning }
+{ #category : #initialization }
 PositionableStream >> reset [
 	"Set the receiver's position to the beginning of the sequence of objects."
 
@@ -615,6 +619,13 @@ PositionableStream >> setToEnd [
 	"Set the position of the receiver to the end of the sequence of objects."
 
 	position := readLimit
+]
+
+{ #category : #positioning }
+PositionableStream >> setToStart [
+	"Set the position of the receiver to the start of the sequence of objects."
+
+	self reset
 ]
 
 { #category : #positioning }
@@ -692,8 +703,8 @@ PositionableStream >> uint16: anInteger [
 	(anInteger < 0 or: [ anInteger >= 16r10000 ])
 		ifTrue: [self error: 'outside unsigned 16-bit integer range'].
 
-	self nextPut: (anInteger digitAt: 2).
-	self nextPut: (anInteger digitAt: 1).
+	self nextPut: (anInteger byteAt: 2).
+	self nextPut: (anInteger byteAt: 1).
 
 ]
 
@@ -716,9 +727,9 @@ PositionableStream >> uint24: anInteger [
 	(anInteger < 0 or: [ anInteger >= 16r1000000 ])
 		ifTrue: [self error: 'outside unsigned 24-bit integer range'].
 
-	self nextPut: (anInteger digitAt: 3).
-	self nextPut: (anInteger digitAt: 2).
-	self nextPut: (anInteger digitAt: 1).
+	self nextPut: (anInteger byteAt: 3).
+	self nextPut: (anInteger byteAt: 2).
+	self nextPut: (anInteger byteAt: 1).
 
 ]
 
@@ -742,10 +753,10 @@ PositionableStream >> uint32: anInteger [
 	(anInteger < 0 or: [ anInteger >= 16r100000000 ])
 		ifTrue: [self error: 'outside unsigned 32-bit integer range'].
 
-	self nextPut: (anInteger digitAt: 4).
-	self nextPut: (anInteger digitAt: 3).
-	self nextPut: (anInteger digitAt: 2).
-	self nextPut: (anInteger digitAt: 1).
+	self nextPut: (anInteger byteAt: 4).
+	self nextPut: (anInteger byteAt: 3).
+	self nextPut: (anInteger byteAt: 2).
+	self nextPut: (anInteger byteAt: 1).
 
 ]
 

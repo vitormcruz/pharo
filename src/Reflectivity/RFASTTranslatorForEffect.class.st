@@ -82,9 +82,10 @@ RFASTTranslatorForEffect >> visitAssignmentNode: anAssignmentNode [
 
 { #category : #'visitor-double dispatching' }
 RFASTTranslatorForEffect >> visitBlockNode: aBlockNode [ 
-
-	"A block has no side effect, so a block translated for effect just doesn't generate anything" 
-
+	"even though the code is never executed, we generate it to make sure that we 
+	can map bytecode and access temps"
+	super visitBlockNode: aBlockNode.
+	methodBuilder popTop
 ]
 
 { #category : #'visitor-double dispatching' }
@@ -109,6 +110,7 @@ RFASTTranslatorForEffect >> visitParseErrorNode: anErrorNode [
 
 { #category : #'visitor-double dispatching' }
 RFASTTranslatorForEffect >> visitSequenceNode: aSequenceNode [
+	self emitPreamble: aSequenceNode.
 	self emitMetaLinkBefore: aSequenceNode.
 	self emitPrepareLinkAfter: aSequenceNode.
 	
@@ -126,8 +128,8 @@ RFASTTranslatorForEffect >> visitVariableNode: aVariableNode [
 	
 	| binding |
 	
+	self emitPreamble: aVariableNode.
 	self emitMetaLinkBefore: aVariableNode.
-	self emitPrepareLinkAfter: aVariableNode.
 	
 	aVariableNode hasMetalinkInstead
 		ifTrue: [ self emitMetaLinkInstead: aVariableNode ].
@@ -137,6 +139,6 @@ RFASTTranslatorForEffect >> visitVariableNode: aVariableNode [
 	(binding isLiteralVariable or: [ binding isUndeclared ])
 		ifTrue: [ methodBuilder addLiteral: binding assoc ].
 		
-	self emitMetaLinkAfter: aVariableNode.
+	self emitMetaLinkAfterNoEnsure: aVariableNode.
 
 ]

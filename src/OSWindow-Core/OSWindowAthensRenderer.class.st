@@ -8,7 +8,7 @@ Class {
 		'athensSurface',
 		'session'
 	],
-	#category : #'OSWindow-Core'
+	#category : #'OSWindow-Core-Renderer'
 }
 
 { #category : #accessing }
@@ -39,8 +39,7 @@ OSWindowAthensRenderer >> drawDuring: aBlock [
 { #category : #initialization }
 OSWindowAthensRenderer >> initialize [
 	super initialize.
-	session := Smalltalk session.
-	athensSurface := nil.
+	session := Smalltalk session
 ]
 
 { #category : #drawing }

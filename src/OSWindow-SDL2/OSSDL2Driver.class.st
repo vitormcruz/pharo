@@ -12,12 +12,13 @@ Class {
 	#classVars : [
 		'EventLoopProcess',
 		'JoystickMap',
-		'WindowMap'
+		'WindowMap',
+		'WindowMapMutex'
 	],
 	#pools : [
 		'SDL2Constants'
 	],
-	#category : #'OSWindow-SDL2'
+	#category : #'OSWindow-SDL2-Base'
 }
 
 { #category : #testing }
@@ -45,13 +46,16 @@ OSSDL2Driver class >> isVMDisplayUsingSDL2 [
 { #category : #private }
 OSSDL2Driver >> closeRemovedController: index [
 	"TODO: What should I do here?"
-	Transcript show: 'Game controller '; show: index; show: 'removed'; cr.
+
+	self
+		traceCr: ('Game controller <1s> removed' expandMacrosWith: index)
 ]
 
 { #category : #private }
 OSSDL2Driver >> closeRemovedJoystick: index [
 	"TODO: What should I do here?"
-	Transcript show: 'Joystick '; show: index; show: 'removed'; cr.
+
+	self traceCr: ('Joystick <1s> removed' expandMacrosWith: index)
 ]
 
 { #category : #'events-processing' }
@@ -61,15 +65,18 @@ OSSDL2Driver >> convertEvent: sdlEvent [
 	mappedEvent := sdlEvent mapped ifNil: [ ^ nil ].
 	mappedEvent windowID ifNil: [ ^ self sendEventWithoutWindow: mappedEvent ].
 	
-	window := WindowMap at: mappedEvent windowID ifAbsent: [ ^ nil ].
-	window handleNewSDLEvent: mappedEvent.
-	^ nil
+	WindowMapMutex critical: [ 
+		window := WindowMap at: mappedEvent windowID ifAbsent: [ ^ nil ].
+	].
+
+	^ window handleNewSDLEvent: mappedEvent.
+	
 	
 ]
 
 { #category : #'window creation and deletion' }
 OSSDL2Driver >> createWindowWithAttributes: attributes osWindow: osWindow [
-	| flags handle window glAttributes x y |
+	| flags handle aBackendWindow glAttributes x y |
 	
 	flags := attributes visible ifTrue: [ SDL_WINDOW_SHOWN ] ifFalse: [ SDL_WINDOW_HIDDEN ].
 	attributes fullscreen ifTrue: [ flags := flags | SDL_WINDOW_FULLSCREEN_DESKTOP ].
@@ -100,17 +107,34 @@ OSSDL2Driver >> createWindowWithAttributes: attributes osWindow: osWindow [
 		flags := flags | SDL_WINDOW_MINIMIZED ].
 
 	"Create the window"
-	handle := SDL2 createWindow: attributes title
-		x: x
-		y: y
-		width: attributes width 
-		height: attributes height 
-		flags: flags.
-	
-	window := OSSDL2WindowHandle newWithHandle: handle attributes: attributes.
-	window osWindow: osWindow.
-	self registerWindow: window.
-	^ window
+	WindowMapMutex critical: [ 
+		handle := SDL2 createWindow: attributes title
+			x: x
+			y: y
+			width: attributes width 
+			height: attributes height 
+			flags: flags.
+		
+		aBackendWindow := OSSDL2BackendWindow newWithHandle: handle attributes: attributes.
+		aBackendWindow osWindow: osWindow.
+		self registerWindow: aBackendWindow.
+		
+		"The OSWindow handle has to be set inside of this critical section to avoid losing some events such as expose."
+		osWindow setJustCreatedHandle: aBackendWindow.
+	].
+	^ aBackendWindow
+]
+
+{ #category : #'events-processing' }
+OSSDL2Driver >> evaluateUserInterrupt: anSDLEvent [
+
+	anSDLEvent ifNil: [ ^ self ].
+
+	((anSDLEvent isKindOf: SDL_KeyDownEvent)
+		and: [ ((anSDLEvent keysym mod bitAnd: 16r200) = 0) "ignore all if AltGr is pressed" 
+		and: [(anSDLEvent keysym mod anyMask: 1344) 
+		and: [ anSDLEvent keysym scancode = 55 ] ]])
+		ifTrue: [ UserInterruptHandler new handleUserInterrupt ]
 ]
 
 { #category : #'events-processing' }
@@ -171,9 +195,10 @@ OSSDL2Driver >> initialize [
 		initializeWindowMap;
 		initializeJoystickMap.
 	SDL2
-		initVideo;
+"		initVideo;
 		initJoystick;
-		initGameController.
+		initGameController;
+"		initEverything.
 	self setupEventLoop.
 ]
 
@@ -191,6 +216,7 @@ OSSDL2Driver >> initializeWindowMap [
 	WindowMap ifNil: [ 
 		WindowMap := WeakValueDictionary new. 
 	].
+	WindowMapMutex := Semaphore forMutualExclusion.
 ]
 
 { #category : #'global events' }
@@ -235,8 +261,10 @@ OSSDL2Driver >> primitiveSetVMSDL2Input: semaIndex [
 { #category : #'events-processing' }
 OSSDL2Driver >> processEvent: sdlEvent [
 	| event |
+			
 	[  
-		event := self convertEvent: sdlEvent.
+		event := self convertEvent: sdlEvent.	
+		self evaluateUserInterrupt: sdlEvent mapped.
 		event ifNotNil: [ eventQueue nextPut: event ].
 	] on: Error do: [ :err | 
 		"It is critical, that event handling keep running despite errors.
@@ -256,8 +284,8 @@ OSSDL2Driver >> registerGlobalListener: globalListener [
 ]
 
 { #category : #'window creation and deletion' }
-OSSDL2Driver >> registerWindow: window [
-	WindowMap at: window handle windowID put: window
+OSSDL2Driver >> registerWindow: aBackendWindow [
+	WindowMap at: aBackendWindow sdl2Window windowID put: aBackendWindow
 ]
 
 { #category : #'global events' }
@@ -266,7 +294,10 @@ OSSDL2Driver >> sendEventWithoutWindow: event [
 	converted := event accept: self.
 	converted ifNil: [ ^ self ].
 	globalListeners do: [ :list | list handleEvent: converted ].
-	WindowMap valuesDo: [ :window | window deliverGlobalEvent: converted ].
+	self flag: #pharoFixMe. "Avoid holding the mutex for so long".	
+	WindowMapMutex critical: [
+		WindowMap valuesDo: [ :window | window deliverGlobalEvent: converted ].
+	]
 ]
 
 { #category : #'window creation and deletion' }
@@ -290,7 +321,8 @@ OSSDL2Driver >> setGLAttributes: glAttributes [
 
 { #category : #'events-processing' }
 OSSDL2Driver >> setupEventLoop [
-	EventLoopProcess ifNotNil: [ EventLoopProcess terminate ].
+	EventLoopProcess ifNotNil: [ 
+		EventLoopProcess isTerminating ifFalse: [EventLoopProcess terminate. EventLoopProcess := nil] ].
 	EventLoopProcess := self class isVMDisplayUsingSDL2 ifTrue: [ 
 		[ self eventLoopProcessWithVMWindow ] 
 		forkAt: Processor lowIOPriority
@@ -314,7 +346,8 @@ OSSDL2Driver >> shutDown [
 	 remaining on restart)"
 
 	WindowMap := nil.
-	JoystickMap := nil
+	JoystickMap := nil.
+	EventLoopProcess ifNotNil: [ EventLoopProcess terminate ].	
 ]
 
 { #category : #'global events' }
@@ -329,7 +362,9 @@ OSSDL2Driver >> unregisterGlobalListener: globalListener [
 { #category : #'window creation and deletion' }
 OSSDL2Driver >> unregisterWindowWithId: windowId [
 
-	WindowMap removeKey: windowId.
+	WindowMapMutex critical: [ 
+		WindowMap removeKey: windowId ifAbsent: [].
+	].
 	
 	"Does it make sense to keep the SDL event loop process running even if no OSWindow is currently open ?"
 	"WindowMap ifEmpty: [ 
@@ -401,6 +436,7 @@ OSSDL2Driver >> visitControllerDeviceRemovedEvent: controllerEvent [
 
 { #category : #'global events' }
 OSSDL2Driver >> visitDropEvent: dropEvent [
+
 	^ OSWindowDropEvent new
 		timestamp: dropEvent timestamp;
 		filePath: dropEvent file readString

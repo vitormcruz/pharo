@@ -23,12 +23,12 @@ Class {
 		'nonEmpty5ElementsWithoutDuplicate',
 		'sameAtEndAndBegining',
 		'nonEmpty1Element',
-		'floatCollection',
 		'indexArray',
 		'subCollection',
 		'duplicateElement',
 		'collectionWithDuplicateElement',
-		'collectionWith4Elements'
+		'collectionWith4Elements',
+		'stringCollection'
 	],
 	#category : #'Collections-Tests-Sequenceable'
 }
@@ -108,7 +108,7 @@ HeapTest >> collectionWith5Elements [
 { #category : #requirements }
 HeapTest >> collectionWithCopyNonIdentical [
 	" return a collection that include elements for which 'copy' return a different object (this is not the case of SmallInteger)"
-	^ floatCollection 
+	^ stringCollection 
 ]
 
 { #category : #requirements }
@@ -227,7 +227,7 @@ HeapTest >> elementTwiceInForOccurrences [
 HeapTest >> elementsCopyNonIdenticalWithoutEqualElements [
 	" return a collection that does niot incllude equal elements ( classic equality )
 	all elements included are elements for which copy is not identical to the element  "
-	^ floatCollection 
+	^ stringCollection 
 ]
 
 { #category : #requirements }
@@ -410,7 +410,7 @@ HeapTest >> setUp [
 	speciesClass := Heap.
 	sameAtEndAndBegining := Heap new add: 1.5 ;  add: 1.5 copy ; yourself.
 	nonEmpty1Element := Heap new add: 5 ; yourself.
-	floatCollection := Heap new add: 2.5 ; add: 5.5 ; add:4.2 ; yourself.
+	stringCollection := Heap new add: 'a' ; add: 'b' ; add: 'c' ; yourself.
 	indexArray := #( 1 3).
 	subCollection := Heap new.
 	duplicateElement := 1.
@@ -443,8 +443,8 @@ HeapTest >> test0FixtureRequirementsOfTGrowableTest [
 	self nonEmpty.
 	self element.
 	self elementNotInForOccurrences.
-	self assert: self empty isEmpty.
-	self deny: self nonEmpty isEmpty.
+	self assertEmpty: self empty.
+	self denyEmpty: self nonEmpty.
 	self assert: (self nonEmpty includes: self element).
 	self deny: (self nonEmpty includes: self elementNotInForOccurrences)
 ]
@@ -523,14 +523,13 @@ HeapTest >> testFirst [
 
 { #category : #'basic tests' }
 HeapTest >> testHeap [
-	| heap | 
+	| heap |
 	heap := Heap new.
 	self assert: heap isHeap.
-	
-	self assert: heap isEmpty.
-	heap add: 1.
-	self deny: heap isEmpty
 
+	self assertEmpty: heap.
+	heap add: 1.
+	self denyEmpty: heap
 ]
 
 { #category : #tests }

@@ -53,9 +53,13 @@ ThreadSafeTranscript class >> taskbarIconName [
 
 { #category : #streaming }
 ThreadSafeTranscript >> << anObject [
-	"Output anObject asString on the receiver and show the output"
-	
-	self show: anObject
+	"Write anObject to the receiver, dispatching using #putOn:
+	This is a shortcut for both nextPut: and nextPutAll: since anObject can be both
+	the element type of the receiver as well as a collection of those elements.
+	No further conversions of anObject are applied.
+	Return self to accomodate chaining."
+
+ 	anObject putOn: self
 ]
 
 { #category : #accessing }
@@ -115,8 +119,8 @@ ThreadSafeTranscript >> critical: block [
 
 { #category : #streaming }
 ThreadSafeTranscript >> endEntry [
-"	Signal to #step to display all the characters since the last #step. 
-	Stream is reset there.
+"	
+	The next #stepGlobal message (usually invoked by Morhic stepping) will raise an #appendEntry update and reset the stream.
 "  
   	self critical: [ deferredEndEntry := true ].
 ]
@@ -188,6 +192,11 @@ ThreadSafeTranscript >> printOn: aStream [
 
 	self == Transcript ifFalse: [^super printOn: aStream].
 	aStream nextPutAll: 'Transcript'
+]
+
+{ #category : #accessing }
+ThreadSafeTranscript >> selectedClassOrMetaClass [
+	^ nil
 ]
 
 { #category : #updating }

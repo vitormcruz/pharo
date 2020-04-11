@@ -400,6 +400,32 @@ LinkedList >> postCopy [
 		lastLink := aLink].
 ]
 
+{ #category : #enumerating }
+LinkedList >> reject: rejectBlock [
+	"Optimized version of SequenceableCollection>>#reject:"
+
+	| newCollection |
+	newCollection := self class new.
+	self
+		do: [ :each | 
+			(rejectBlock value: each)
+				ifFalse: [ newCollection add: each ] ].
+	^ newCollection
+]
+
+{ #category : #enumerating }
+LinkedList >> reject: rejectBlock thenCollect: collectBlock [
+	"Optimized version of SequenceableCollection>>#reject:thenCollect:"
+
+	| newCollection |
+	newCollection := self class new.
+	self
+		do: [ :each | 
+			(rejectBlock value: each)
+				ifFalse: [ newCollection add: (collectBlock value: each) ] ].
+	^ newCollection
+]
+
 { #category : #removing }
 LinkedList >> remove: aLinkOrObject ifAbsent: aBlock [ 
 	"Remove aLink from the receiver. If it is not there, answer the result of evaluating aBlock."
@@ -535,6 +561,7 @@ LinkedList >> size [
 { #category : #sorting }
 LinkedList >> sort: aBlock [
 	|aLinkedList|
+	self isEmpty ifTrue: [ ^self ].
 	aLinkedList := LinkedList newFrom: (self asArray sort: aBlock).
 	firstLink := aLinkedList firstLink.
 	lastLink := aLinkedList lastLink.

@@ -30,11 +30,6 @@ GLMRubricTextMorphicTest >> checkInitializeBlockSetsTextSelectionForPresentation
 ]
 
 { #category : #tests }
-GLMRubricTextMorphicTest >> expectedFailures [
-	^ #(testUpdatingTextPortUpdatesTheMorph)
-]
-
-{ #category : #tests }
 GLMRubricTextMorphicTest >> noTestAcceptKeyCanBeOverriden [
 	| composite textMorph overriden shortcut|
 	overriden := false.
@@ -44,7 +39,7 @@ GLMRubricTextMorphicTest >> noTestAcceptKeyCanBeOverriden [
 	self simulateOnlyOneClickOn: textMorph.
 	(Delay forMilliseconds: HandMorph doubleClickTime + 1) wait.
 	"self simulateOnlyOneClickOn: textMorph."
-	self assert: ActiveHand keyboardFocus equals: textMorph textArea.
+	self assert: textMorph activeHand keyboardFocus equals: textMorph textArea.
 	
 	shortcut := $s meta asKeyCombination.
 	textMorph textArea handleKeystroke: (KeyboardEvent new
@@ -65,7 +60,7 @@ GLMRubricTextMorphicTest >> noTestEnteringTextInPort [
 	window := composite openOn: 4.
 	textMorph := self find: RubScrolledTextMorph in: window.
 	self simulateOnlyOneClickOn: textMorph.
-	self simulateKeyStrokes: 'hello'.
+	self simulateKeyStrokes: 'hello' inWorld: textMorph world.
 	self assert: (composite pane port: #text) value asString equals: 'hello'
 ]
 
@@ -76,10 +71,10 @@ GLMRubricTextMorphicTest >> noTestExplicitAcceptDoesNotAffectTextPort [
 	window := composite openOn: 4.
 	textMorph := self find: RubScrolledTextMorph in: window.
 	self simulateOnlyOneClickOn: textMorph.
-	self simulateKeyStrokes: '4'.
+	self simulateKeyStrokes: '4' inWorld: textMorph world.
 	self assert: (composite pane port: #text) value asString equals: '1234'.
-	self simulateKeyStroke: $s meta.
-	self simulateKeyStrokes: '56'.
+	self simulateKeyStroke: $s meta inWorld: textMorph world.
+	self simulateKeyStrokes: '56' inWorld: textMorph world.
 	self assert: (composite pane port: #text) value asString equals: '123456'
 ]
 
@@ -135,7 +130,7 @@ GLMRubricTextMorphicTest >> testMultipleSelectionWithChange [
 	composite := GLMCompositePresentation new with: [ :a | a text display: '123456789' ].
 	window := composite openOn: 4.
 	textMorph := self find: RubScrolledTextMorph in: window.
-	self assert: textMorph selectionInterval isEmpty.
+	self assertEmpty: textMorph selectionInterval.
 	textPresentation := composite presentations first.
 	textPresentation selectionInterval: (2 to: 5).
 	self assert: textMorph textArea selection asString equals: '2345'.
@@ -156,11 +151,12 @@ GLMRubricTextMorphicTest >> testPastingUpdatesTextPort [
 { #category : #tests }
 GLMRubricTextMorphicTest >> testResettingTheSelection [
 	| composite textPresentation |
-	composite := GLMCompositePresentation new with: [ :a | a text display: '123456789' ].
+	composite := GLMCompositePresentation new
+		with: [ :a | a text display: '123456789' ].
 	window := composite openOn: 4.
 	textPresentation := composite presentations first.
 	textPresentation selectionInterval: (2 to: 5).
-	self shouldnt: [textPresentation selectionInterval: nil] raise: Error
+	textPresentation selectionInterval: nil
 ]
 
 { #category : #tests }
@@ -218,6 +214,7 @@ GLMRubricTextMorphicTest >> testUpdatingScriptPresentationPreservesSelection [
 
 { #category : #tests }
 GLMRubricTextMorphicTest >> testUpdatingTextPortUpdatesTheMorph [
+	<expectedFailure>
 	| composite textMorph |
 	composite := GLMCompositePresentation new with: [:a | a text ].
 	window := composite openOn: 'fourtytwo'.

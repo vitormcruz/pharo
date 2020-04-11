@@ -3,11 +3,11 @@ SUnit tests to simulate and test mouse behavior
 "
 Class {
 	#name : #SimulateMouseTest,
-	#superclass : #UITestCase,
+	#superclass : #AbstractUITestCase,
 	#instVars : [
 		'morph'
 	],
-	#category : #'SUnit-Support-UITesting-Tests'
+	#category : #'SUnit-Support-UITesting-Tests-Base'
 }
 
 { #category : #helpers }
@@ -64,7 +64,7 @@ SimulateMouseTest >> timeoutAfter: aDuration ifNot: aBlock [
 SimulateMouseTest >> waitForMorphThat: aBlock [
 
 	self timeoutAfter: 2 seconds ifNot: [
-		morph := World submorphThat: aBlock ifNone: [ nil ].
+		morph := self currentWorld submorphThat: aBlock ifNone: [ nil ].
 		(Delay forMilliseconds: 100) wait.
 		morph isNil].
 	^ morph.

@@ -1,5 +1,5 @@
 "
-Provides a superclass for classes that function as models.  The only behavior provided is fast dependents maintenance, which bypasses the generic DependentsFields mechanism.  1/23/96 sw
+Provides optimized model support
 "
 Class {
 	#name : #Model,
@@ -8,8 +8,13 @@ Class {
 		'dependents',
 		'announcer'
 	],
-	#category : #'System-Model'
+	#category : #'System-Model-Base'
 }
+
+{ #category : #accessing }
+Model class >> theme [
+	^ Smalltalk ui theme
+]
 
 { #category : #'dependents-private' }
 Model >> actAsExecutor [
@@ -27,7 +32,7 @@ Model >> addDependent: anObject [
 	^ anObject
 ]
 
-{ #category : #'stepping-window' }
+{ #category : #window }
 Model >> addModelItemsToWindowMenu: aMenu [
 	"aMenu is being constructed to be presented to the user in response to the user's pressing on the menu widget in the title bar of a morphic window.  Here, the model is given the opportunity to add any model-specific items to the menu, whose default target is the SystemWindow itself."
 ]
@@ -104,7 +109,7 @@ Model >> hasUnacceptedEdits [
 	dependents ifNil: [^ false].
 	self dependents
 		do: [:each | 
-			self flag: #fixMe. "The check for #respondsTo: is a hack necessary just because the old
+			self flag: #pharoFixMe. "The check for #respondsTo: is a hack necessary just because the old
 			Browser uses it wrong. We need to change this after old Browser removal"
 			((each respondsTo: #hasUnacceptedEdits) and: [ each hasUnacceptedEdits ]) 
 				ifTrue: [^ true]]
@@ -113,7 +118,7 @@ Model >> hasUnacceptedEdits [
 
 ]
 
-{ #category : #'stepping-window' }
+{ #category : #window }
 Model >> modelWakeUpIn: aWindow [
 	"A window with me as model is being entered or expanded.  Default response is no-op" 
 ]
@@ -158,13 +163,13 @@ Model >> step [
 	"Default for morphic models is no-op"
 ]
 
-{ #category : #'stepping-window' }
+{ #category : #stepping }
 Model >> stepAt: millisecondClockValue in: aWindow [
 
 	^ self stepIn: aWindow
 ]
 
-{ #category : #'stepping-window' }
+{ #category : #stepping }
 Model >> stepIn: aWindow [
 
 	^ self step
@@ -176,7 +181,7 @@ Model >> stepTime [
 	^ 1000 "milliseconds -- default backstop for objects serving as models of system windows"
 ]
 
-{ #category : #'stepping-window' }
+{ #category : #stepping }
 Model >> stepTimeIn: aSystemWindow [
 	
 	^ self stepTime 
@@ -235,7 +240,7 @@ Model >> wantsSteps [
 	^ false
 ]
 
-{ #category : #'stepping-window' }
+{ #category : #stepping }
 Model >> wantsStepsIn: aSystemWindow [
 	
 	^ self wantsSteps

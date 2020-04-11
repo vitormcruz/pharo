@@ -1,7 +1,21 @@
 "
-I am an abstract critic class.
+I am an abstract critique class.
 
-My subclasses should define whether they provide a selection interval, or refactory change
+A critique links a quality rule to a source code target. It is the main unit that should be used to provide information to the user.
+
+I specialize the ReProperty class by extracting information from the rule that reported the violation. 
+The #title is extracted from the rule's #name, the #icon based on the rule's #severity and a #description is provided based on the rule's #rationale.
+
+A critique has the #providesChange method which returns a boolean value specifying whether the critique can provide a change which will resolve the issue. The #change method can be used to obtain an object of RBRefactoryChange kind.
+
+The reference to the critized entity is established through ReSourceAnchor.
+A critique has a reference to the criticized entity.
+
+This link is established through ReSourceAnchor. A source anchor has a reference to the actual class, method, or other entity that is criticized. An anchor also has a #providesInterval method that returns a boolean indicating if the anchor provides a selection interval to the actual source of the critique. The interval can be accessed through the #interval method.
+
+There are two subclasses of ReSourceAnchor.
+ReIntervalSourceAnchor stores the actual interval object which is set during initialization.
+ReSearchStringSourceAnchor stores a searchString which will be searched for in the entities source code on demand to find an interval of substring
 "
 Class {
 	#name : #ReAbstractCritique,
@@ -86,8 +100,7 @@ ReAbstractCritique >> actions [
 
 { #category : #actions }
 ReAbstractCritique >> ban [
-	
-	sourceAnchor sourceEntity ban: self  
+	self entity ban: self
 ]
 
 { #category : #accessing }
@@ -112,28 +125,10 @@ ReAbstractCritique >> description [
 	^ rule rationale
 ]
 
-{ #category : #'gt-extension' }
-ReAbstractCritique >> gtInspectorDescriptionIn: composite [
-	<gtInspectorPresentationOrder: 1>
-
-	^ composite text
-		title: 'Description';
-		display: [ self description ]
-]
-
-{ #category : #'gt-extension' }
-ReAbstractCritique >> gtInspectorSourceCodeIn: composite [
-	<gtInspectorPresentationOrder: 0>
-
-	sourceAnchor gtInspectorAnchorIn: composite
-	
-		
-]
-
 { #category : #actions }
 ReAbstractCritique >> guidedBan [
 
-	ReCriticEngine guidedBy: sourceAnchor entity ban: self
+	ReCriticEngine guidedBy: self entity  ban: self
 ]
 
 { #category : #accessing }
@@ -167,7 +162,7 @@ ReAbstractCritique >> popDescriptionUp [
 	UIManager default longMessage: self description title: self title
 ]
 
-{ #category : #initialization }
+{ #category : #printing }
 ReAbstractCritique >> printOn: aStream [
 
 	super printOn: aStream.
@@ -193,15 +188,6 @@ ReAbstractCritique >> providesChange [
 { #category : #accessing }
 ReAbstractCritique >> rule [
 	^ rule
-]
-
-{ #category : #'gt-extension' }
-ReAbstractCritique >> spotterPreviewRationaleIn: aComposite [
-	<spotterPreview: 5>
-	aComposite text
-		title: [ self title ];
-		display: [ self description ];
-		entity: self
 ]
 
 { #category : #accessing }

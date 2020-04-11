@@ -23,70 +23,88 @@ MorphicEventHandlerTest >> tearDown [
 
 { #category : #tests }
 MorphicEventHandlerTest >> testClickFromMorph [
-
 	morph eventHandler on: #click send: #value to: true.
-	
-	self assert: ((morph click: nil) == true)
+
+	self assert: (morph click: nil) identicalTo: true
 ]
 
 { #category : #tests }
 MorphicEventHandlerTest >> testDoubleClickFromMorph [
-
 	morph eventHandler on: #doubleClick send: #value to: true.
-	
-	self assert: ((morph doubleClick: nil) == true)
+
+	self assert: (morph doubleClick: nil) identicalTo: true
 ]
 
 { #category : #tests }
 MorphicEventHandlerTest >> testDoubleClickTimeoutFromMorph [
-
 	morph eventHandler on: #doubleClickTimeout send: #value to: true.
-	
-	self assert: ((morph doubleClickTimeout: nil) == true)
+
+	self assert: (morph doubleClickTimeout: nil) identicalTo: true
 ]
 
 { #category : #tests }
 MorphicEventHandlerTest >> testKeyStrokeFromMorph [
-
 	| keyboardEvent |
-	keyboardEvent := KeyboardEvent new 
-							setType: #keystroke
-							buttons: 2
-							position: nil
-							keyValue: nil
-							charCode: 65
-							hand: nil
-							stamp: nil.
+	keyboardEvent := KeyboardEvent new
+		setType: #keystroke
+		buttons: 2
+		position: nil
+		keyValue: nil
+		charCode: 65
+		hand: nil
+		stamp: nil.
 
 	morph eventHandler on: #keyStroke send: #value to: true.
-	
-	self assert: ((morph handleKeystroke: keyboardEvent) == true)
+
+	self assert: (morph handleKeystroke: keyboardEvent) identicalTo: true
 ]
 
 { #category : #'tests-events' }
 MorphicEventHandlerTest >> testMouseEnterDraggingFromMorph [
-
-	| event | 
-	event := MouseEvent basicNew setType: #mouseOver position: nil buttons: 2 hand: Morph new.
+	| event |
+	event := MouseEvent basicNew
+		setType: #mouseOver
+		position: nil
+		buttons: 2
+		hand: Morph new.
 	morph eventHandler on: #mouseEnterDragging send: #value to: true.
-	
-	self assert: ((morph handleMouseEnter: event) == true)
+
+	self assert: (morph handleMouseEnter: event) identicalTo: true
+]
+
+{ #category : #tests }
+MorphicEventHandlerTest >> testMouseEnterEventIsNotDuplicated [
+	| mockObject window evt |
+	mockObject := MockObjectForEventTests new.
+
+	[ window := mockObject stringMorph openInWindow.
+	evt := MouseButtonEvent new
+		setType: nil
+		position: mockObject stringMorph center
+		which: MouseButtonEvent redButton
+		buttons: MouseButtonEvent redButton
+		hand: nil
+		stamp: nil.
+
+	self assert: mockObject counter equals: 0.
+
+	mockObject stringMorph handleMouseEnter: evt.
+	self assert: mockObject counter equals: 1 ]
+		ensure: [ window ifNotNil: #close ]
 ]
 
 { #category : #'tests-events' }
 MorphicEventHandlerTest >> testMouseEnterFromMorph [
-
 	morph eventHandler on: #mouseEnter send: #value to: true.
-	
-	self assert: ((morph mouseEnter: nil) == true)
+
+	self assert: (morph mouseEnter: nil) identicalTo: true
 ]
 
 { #category : #'tests-events' }
 MorphicEventHandlerTest >> testMouseLeaveFromMorph [
-
 	morph eventHandler on: #mouseLeave send: #value to: true.
-	
-	self assert: ((morph mouseLeave: nil) == true)
+
+	self assert: (morph mouseLeave: nil) identicalTo: true
 ]
 
 { #category : #tests }

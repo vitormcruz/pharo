@@ -2,7 +2,6 @@ Class {
 	#name : #MCMergingTest,
 	#superclass : #MCTestCase,
 	#instVars : [
-		'conflictBlock',
 		'conflicts'
 	],
 	#category : #'Monticello-Tests-Base'
@@ -10,20 +9,17 @@ Class {
 
 { #category : #asserting }
 MCMergingTest >> assert: aCollection hasElements: anArray [
-	self assert: (aCollection collect: [:ea | ea token]) asSet = anArray asSet
+	self assert: (aCollection collect: [ :ea | ea token ]) asSet equals: anArray asSet
 ]
 
 { #category : #asserting }
 MCMergingTest >> assertMerge: local with: remote base: ancestor gives: result conflicts: conflictResult [
 	| merger |
 	conflicts := #().
-	merger := MCThreeWayMerger
-				base: (self snapshotWithElements: local)
-				target: (self snapshotWithElements: remote)
-				ancestor: (self snapshotWithElements: ancestor).
-	merger conflicts do: [:ea | self handleConflict: ea].
+	merger := MCThreeWayMerger base: (self snapshotWithElements: local) target: (self snapshotWithElements: remote) ancestor: (self snapshotWithElements: ancestor).
+	merger conflicts do: [ :ea | self handleConflict: ea ].
 	self assert: merger mergedSnapshot definitions hasElements: result.
-	self assert: conflicts asSet = conflictResult asSet.
+	self assert: conflicts asSet equals: conflictResult asSet
 ]
 
 { #category : #emulating }
@@ -126,7 +122,7 @@ MCMergingTest >> testMultiPackageMerge [
 	merger applyPatch: ((self snapshotWithElements: #(a2 b1)) patchRelativeToBase: (self snapshotWithElements: #(b1))).
 	merger conflicts do: [:ea | self handleConflict: ea].
 	self assert: merger mergedSnapshot definitions hasElements: #(a2 b1).
-	self assert: conflicts isEmpty
+	self assertEmpty: conflicts
 ]
 
 { #category : #tests }
@@ -139,7 +135,7 @@ MCMergingTest >> testMultiPackageMerge2 [
 	merger applyPatch: ((self snapshotWithElements: #(a1 b1)) patchRelativeToBase: (self snapshotWithElements: #(b1))).
 	merger conflicts do: [:ea | self handleConflict: ea].
 	self assert: merger mergedSnapshot definitions hasElements: #(a1 b1).
-	self assert: conflicts isEmpty
+	self assertEmpty: conflicts
 ]
 
 { #category : #tests }
@@ -152,7 +148,7 @@ MCMergingTest >> testMultiPackageMerge3 [
 	merger applyPatch: ((self snapshotWithElements: #()) patchRelativeToBase: (self snapshotWithElements: #(a1))).
 	merger conflicts do: [:ea | self handleConflict: ea].
 	self assert: merger mergedSnapshot definitions hasElements: #(a1 b1).
-	self assert: conflicts isEmpty
+	self assertEmpty: conflicts
 ]
 
 { #category : #tests }

@@ -13,46 +13,37 @@ RBCreateAccessorsForVariableTest >> setUp [
 { #category : #tests }
 RBCreateAccessorsForVariableTest >> testExistingInstanceVariableAccessors [
 	| ref |
-	ref := RBCreateAccessorsForVariableRefactoring 
-		variable: 'name'
-		class: RBLintRuleTest
-		classVariable: false.
+	ref := RBCreateAccessorsForVariableRefactoring variable: 'name' class: RBLintRuleTestData classVariable: false.
 	self executeRefactoring: ref.
-	self assert: ref changes changes isEmpty.
-	self assert: ref setterMethod == #name:.
-	self assert: ref getterMethod == #name
+	self assertEmpty: ref changes changes.
+	self assert: ref setterMethod identicalTo: #name:.
+	self assert: ref getterMethod identicalTo: #name
 ]
 
 { #category : #tests }
 RBCreateAccessorsForVariableTest >> testNewClassVariableAccessors [
 	| ref class |
-	ref := RBCreateAccessorsForVariableRefactoring 
-		variable: 'Foo1'
-		class: RBLintRuleTest
-		classVariable: true.
+	ref := RBCreateAccessorsForVariableRefactoring variable: 'Foo1' class: RBLintRuleTestData classVariable: true.
 	self executeRefactoring: ref.
-	class := ref model metaclassNamed: #RBLintRuleTest.
-	self deny: ref changes changes isEmpty.
-	self assert: ref setterMethod == #foo1:.
-	self assert: ref getterMethod == #foo1.
-	self assert: (class parseTreeFor: #foo1) = (RBParser parseMethod: 'foo1 ^Foo1').
-	self assert: (class parseTreeFor: #foo1:) = (RBParser parseMethod: 'foo1: anObject Foo1 := anObject')
+	class := ref model metaclassNamed: #RBLintRuleTestData.
+	self denyEmpty: ref changes changes.
+	self assert: ref setterMethod identicalTo: #foo1:.
+	self assert: ref getterMethod identicalTo: #foo1.
+	self assert: (class parseTreeFor: #foo1) equals: (self parseMethod: 'foo1 ^Foo1').
+	self assert: (class parseTreeFor: #foo1:) equals: (self parseMethod: 'foo1: anObject Foo1 := anObject')
 ]
 
 { #category : #tests }
 RBCreateAccessorsForVariableTest >> testNewInstanceVariableAccessors [
 	| ref class |
-	ref := RBCreateAccessorsForVariableRefactoring 
-		variable: 'foo1'
-		class: RBLintRuleTest
-		classVariable: false.
+	ref := RBCreateAccessorsForVariableRefactoring variable: 'foo1' class: RBLintRuleTestData classVariable: false.
 	self executeRefactoring: ref.
-	class := ref model classNamed: #RBLintRuleTest.
-	self deny: ref changes changes isEmpty.
-	self assert: ref setterMethod == #foo1:.
-	self assert: ref getterMethod == #foo1.
-	self assert: (class parseTreeFor: #foo1) = (RBParser parseMethod: 'foo1 ^foo1').
-	self assert: (class parseTreeFor: #foo1:) = (RBParser parseMethod: 'foo1: anObject foo1 := anObject')
+	class := ref model classNamed: #RBLintRuleTestData.
+	self denyEmpty: ref changes changes.
+	self assert: ref setterMethod identicalTo: #foo1:.
+	self assert: ref getterMethod identicalTo: #foo1.
+	self assert: (class parseTreeFor: #foo1) equals: (self parseMethod: 'foo1 ^foo1').
+	self assert: (class parseTreeFor: #foo1:) equals: (self parseMethod: 'foo1: anObject foo1 := anObject')
 ]
 
 { #category : #'failure tests' }
@@ -60,10 +51,10 @@ RBCreateAccessorsForVariableTest >> testNonExistantName [
 	self
 		shouldFail: (RBCreateAccessorsForVariableRefactoring 
 				variable: #Foo
-				class: RBBasicLintRuleTest
+				class: RBBasicLintRuleTestData
 				classVariable: true);
 		shouldFail: (RBCreateAccessorsForVariableRefactoring 
 				variable: 'foo'
-				class: RBBasicLintRuleTest
+				class: RBBasicLintRuleTestData
 				classVariable: true)
 ]

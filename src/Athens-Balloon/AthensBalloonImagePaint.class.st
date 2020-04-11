@@ -64,15 +64,13 @@ AthensBalloonImagePaint >> form: anObject [
 	direction := form extent x @0.
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 AthensBalloonImagePaint >> initialize [
-
 	super initialize.
 
-	direction := 0@0.
-	form := nil.
-	origin := 0@0.
-	tileFlag := false.
+	direction := 0 @ 0.
+	origin := 0 @ 0.
+	tileFlag := false
 ]
 
 { #category : #accessing }

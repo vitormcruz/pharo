@@ -5,8 +5,7 @@ Class {
 	#name : #MCRepositoryTest,
 	#superclass : #MCTestCase,
 	#instVars : [
-		'repository',
-		'ancestors'
+		'repository'
 	],
 	#category : #'Monticello-Tests-Repository'
 }
@@ -36,7 +35,7 @@ MCRepositoryTest >> assertMissing: aVersionInfo [
 
 { #category : #asserting }
 MCRepositoryTest >> assertVersionInfos: aCollection [
-	self assert: repository allVersionInfos asSet = aCollection asSet
+	self assert: repository allVersionInfos asSet equals: aCollection asSet
 ]
 
 { #category : #'tests-input data' }
@@ -82,8 +81,7 @@ MCRepositoryTest >> snapshotAt: aVersionInfo [
 MCRepositoryTest >> testAddAndLoad [
 	| node |
 	node := self addVersionWithSnapshot: self snapshot1 name: 'rev1'.
-	self assert: (self snapshotAt: node) = self snapshot1.
-
+	self assert: (self snapshotAt: node) equals: self snapshot1
 ]
 
 { #category : #tests }
@@ -157,8 +155,8 @@ MCRepositoryTest >> testStoreAndLoad [
 	| node node2 |
 	node := self saveSnapshot1.
 	node2 := self saveSnapshot2.
-	self assert: (self snapshotAt: node) = self snapshot1.
-	self assert: (self snapshotAt: node2) = self snapshot2.
+	self assert: (self snapshotAt: node) equals: self snapshot1.
+	self assert: (self snapshotAt: node2) equals: self snapshot2
 ]
 
 { #category : #building }

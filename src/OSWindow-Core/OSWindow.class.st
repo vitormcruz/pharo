@@ -23,21 +23,36 @@ Currently there's two kinds of renderers available:
 OSWindow instance and its handle: 
  - all operations with window (like hiding/showing/resizing etc) is possible only if its handle is valid. If window gets destroyed, or image opened in a new session while window was created in previous session, the handle becomes invalid, and any operations will lead to error. 
 To test if window is still valid, you can just use #isValid message.
+
+Text input
+
+Why does OSWindow need a text input API?
+When I press a key on my keyboard, my program receives a character event, right?
+Well, it's not always that simple. Sometimes it can take multiple key presses to produce a character. Sometimes a single key press can produce multiple characters.
+Text input is not as simple as it seems, particularly when you consider International users (and you should). It's not hard to figure out why that is when you look at languages like Chinese, Japanese, and Korean. These languages, collectively referred to as the CJK, have thousands of symbols.
+It would not be feasible to have a keyboard with over ten-thousand keys, would it? The solution to this is a software input method.
+
+Related methods:
+ - startTextInput
+ - stopTextInput
+ - isTextInputActive
+
+(reference https://wiki.libsdl.org/Tutorials/TextInput)
 "
 Class {
 	#name : #OSWindow,
 	#superclass : #Object,
 	#instVars : [
-		'handle',
 		'initialAttributes',
 		'eventHandler',
-		'currentCursor'
+		'currentCursor',
+		'backendWindow'
 	],
 	#classVars : [
 		'TraceEvents',
 		'VMWindow'
 	],
-	#category : #'OSWindow-Core'
+	#category : #'OSWindow-Core-Base'
 }
 
 { #category : #'clipboard handling' }
@@ -52,7 +67,12 @@ OSWindow class >> clipboardText: aString [
 
 { #category : #'instance creation' }
 OSWindow class >> createWithAttributes: attributes [
-	^ self basicNew initWithAttributes: attributes
+	^ self createWithAttributes: attributes eventHandler: nil
+]
+
+{ #category : #'instance creation' }
+OSWindow class >> createWithAttributes: attributes eventHandler: eventHandler [
+	^ self basicNew initWithAttributes: attributes eventHandler: eventHandler
 ]
 
 { #category : #finalization }
@@ -73,6 +93,11 @@ OSWindow class >> newWithNullDriver [
 { #category : #tracing }
 OSWindow class >> traceEvents: aBoolean [
 	TraceEvents := aBoolean
+]
+
+{ #category : #accessing }
+OSWindow >> backendWindow [
+	^ backendWindow
 ]
 
 { #category : #accessing }
@@ -103,7 +128,7 @@ OSWindow >> captureMouse [
 { #category : #private }
 OSWindow >> checkIsValid [
 
-	(handle isNil or: [ handle isValid not ]) ifTrue: [ self invalidHandle ].
+	(backendWindow isNil or: [ backendWindow isValid not ]) ifTrue: [ self invalidHandle ].
 ]
 
 { #category : #'clipboard handling' }
@@ -118,40 +143,38 @@ OSWindow >> clipboardText: aString [
 
 { #category : #private }
 OSWindow >> createWindow [
-	handle ifNotNil: [ self error: 'The window is already created.' ].
+	backendWindow ifNotNil: [ self error: 'The window is already created.' ].
 	
-	handle := initialAttributes createWindowHandleFor: self.
-	handle isValid ifTrue: [ 
+	backendWindow := initialAttributes createWindowHandleFor: self.
+	backendWindow isValid ifTrue: [ 
 		"Handle here points to an OSWindowHandle, its #handle message has the real 
 		 external resource. This is a bit confusing, but is better like this :)"
-		handle prepareExternalResourceForAutoRelease ]
+		backendWindow prepareExternalResourceForAutoRelease ]
 ]
 
 { #category : #'dispatching events' }
 OSWindow >> deliverEvent: anEvent [
 	"TODO..."
-	
-	TraceEvents == true ifTrue: [ Transcript show: anEvent; cr ].
-	eventHandler ifNotNil: [ 
-		eventHandler handleEvent: anEvent ].
-	anEvent performDefaultAction 
 
+	TraceEvents == true
+		ifTrue: [ self traceCr: anEvent ].
+	eventHandler ifNotNil: [ eventHandler handleEvent: anEvent ].
+	anEvent performDefaultAction
 ]
 
 { #category : #'dispatching events' }
 OSWindow >> deliverGlobalEvent: aGlobalEvent [
 	"TODO..."
-	
-	TraceEvents == true ifTrue: [ Transcript show: aGlobalEvent; cr ].
-	eventHandler ifNotNil: [ 
-		eventHandler handleEvent: aGlobalEvent ].
 
+	TraceEvents == true
+		ifTrue: [ self traceCr: aGlobalEvent ].
+	eventHandler ifNotNil: [ eventHandler handleEvent: aGlobalEvent ]
 ]
 
 { #category : #private }
 OSWindow >> destroy [
 	self validHandle destroy.
-	handle := nil.
+	backendWindow := nil.
 	eventHandler := nil.
 ]
 
@@ -177,6 +200,12 @@ OSWindow >> extent: newExtent [
 	self validHandle extent: newExtent
 ]
 
+{ #category : #'window management' }
+OSWindow >> focus [
+
+	self validHandle raise.
+]
+
 { #category : #accessing }
 OSWindow >> fullscreen: aBoolean [
 	self validHandle fullscreen: aBoolean
@@ -187,15 +216,10 @@ OSWindow >> getFlags [
 	^ self validHandle getFlags
 ]
 
-{ #category : #accessing }
-OSWindow >> handle [
-	^ handle
-]
-
 { #category : #visibility }
 OSWindow >> hide [
 	self checkIsValid .
-	handle hide
+	backendWindow hide
 ]
 
 { #category : #accessing }
@@ -204,10 +228,12 @@ OSWindow >> icon: aForm [
 ]
 
 { #category : #initialization }
-OSWindow >> initWithAttributes: attributes [
+OSWindow >> initWithAttributes: attributes eventHandler: anEventHandle [
 	initialAttributes := attributes.
+	eventHandler := anEventHandle.
 	self createWindow.
 	self initialize
+
 ]
 
 { #category : #private }
@@ -215,14 +241,21 @@ OSWindow >> invalidHandle [
 	self error: 'Invalid window handle'
 ]
 
+{ #category : #'text input' }
+OSWindow >> isTextInputActive [
+	"Check whether or not Unicode text input events are enabled"
+
+	^ self validHandle isTextInputActive
+]
+
 { #category : #testing }
 OSWindow >> isValid [
-	 ^ handle notNil and: [ handle isValid ]
+	 ^ backendWindow notNil and: [ backendWindow isValid ]
 ]
 
 { #category : #testing }
 OSWindow >> isVisible [
-	^ self isValid and: [handle isVisible]
+	^ self isValid and: [backendWindow isVisible]
 ]
 
 { #category : #'window management' }
@@ -239,22 +272,22 @@ OSWindow >> minimize [
 
 { #category : #'instance creation' }
 OSWindow >> newAthensRenderer [
-	^ handle newAthensRenderer
+	^ backendWindow newAthensRenderer
 ]
 
 { #category : #factory }
 OSWindow >> newFormRenderer: form [
-	^ handle newFormRenderer: form
+	^ backendWindow newFormRenderer: form
 ]
 
 { #category : #factory }
 OSWindow >> newGenericRenderer [
-	^ handle newGenericRenderer
+	^ backendWindow newGenericRenderer
 ]
 
 { #category : #factory }
 OSWindow >> newOpenGLRenderer [
-	^ handle newOpenGLRenderer
+	^ backendWindow newOpenGLRenderer
 ]
 
 { #category : #accessing }
@@ -274,7 +307,7 @@ OSWindow >> position: newPosition [
 
 { #category : #'event handling' }
 OSWindow >> processPendingEvents [
-	handle processPendingEvents
+	backendWindow processPendingEvents
 ]
 
 { #category : #'mouse capture' }
@@ -284,12 +317,12 @@ OSWindow >> releaseMouse [
 
 { #category : #accessing }
 OSWindow >> renderer [
-	^ handle renderer
+	^ backendWindow renderer
 ]
 
 { #category : #accessing }
 OSWindow >> renderer: aRenderer [
-	handle renderer: aRenderer
+	backendWindow renderer: aRenderer
 ]
 
 { #category : #accessing }
@@ -314,6 +347,12 @@ OSWindow >> setDraggableArea: aRectangle [
 	^self validHandle setDraggableArea: aRectangle.
 ]
 
+{ #category : #private }
+OSWindow >> setJustCreatedHandle: aHandle [
+	"This method is to be called by a driver that needs to create the window in a critical section to prevent a race condition where some events such as expose could be missed."
+	backendWindow := aHandle
+]
+
 { #category : #accessing }
 OSWindow >> setMouseCursor: cursorWithMask [
 	currentCursor == cursorWithMask ifTrue: [ ^ self ].
@@ -332,7 +371,24 @@ OSWindow >> setMouseCursor: cursor mask: mask [
 { #category : #visibility }
 OSWindow >> show [
 	self checkIsValid .
-	handle show
+	backendWindow show
+]
+
+{ #category : #'text input' }
+OSWindow >> startTextInput [
+	"Start accepting Unicode text input events.
+	I will start accepting Unicode text input events in the focused window, and start emitting text input and text editing events.
+	Please use me in pair with stopTextInput.
+	On some platforms I may activate the screen keyboard."
+
+	self validHandle startTextInput
+]
+
+{ #category : #'text input' }
+OSWindow >> stopTextInput [
+	"Stop receiving any text input events"
+
+	self validHandle stopTextInput
 ]
 
 { #category : #accessing }
@@ -360,7 +416,7 @@ OSWindow >> toggleBorderOn [
 { #category : #private }
 OSWindow >> validHandle [
 	self checkIsValid.
-	^ handle
+	^ backendWindow
 ]
 
 { #category : #accessing }

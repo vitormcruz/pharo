@@ -27,7 +27,7 @@ Class {
 		'window',
 		'okToDoSlice'
 	],
-	#category : #MonticelloGUI
+	#category : #'MonticelloGUI-Slicing'
 }
 
 { #category : #opening }
@@ -142,7 +142,7 @@ MCSliceMaker >> okToDoSlice: aBoolean [
 { #category : #'user interface' }
 MCSliceMaker >> openFor: anotherWindow [
 	window := self window.
-	anotherWindow openModal: window.
+	window openModal.
 	^ self resultInfo
 ]
 

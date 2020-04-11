@@ -1,9 +1,6 @@
 Class {
 	#name : #GLMPaginatedMorphTreeMorph,
 	#superclass : #PaginatedMorphTreeMorph,
-	#instVars : [
-		'stopStepping'
-	],
 	#category : #'Glamour-Morphic-Widgets'
 }
 
@@ -23,7 +20,7 @@ GLMPaginatedMorphTreeMorph >> stepTime [
 	^ self model stepTime
 ]
 
-{ #category : #testing }
+{ #category : #stepping }
 GLMPaginatedMorphTreeMorph >> wantsSteps [
 	^ self model wantsSteps
 ]

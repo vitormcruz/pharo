@@ -96,7 +96,7 @@ GlobalIdentifierPersistence >> hasPreviousPersistence [
 GlobalIdentifierPersistence >> isEnabled [
 	"If HOME directory does not exists, ignore the persistence mechanism.
 	HOME directory may not exists in case of a server deployment.
-	See https://pharo.fogbugz.com/f/cases/19944"
+	See https://pharo.manuscript.com/f/cases/19944"
 	^ self checker isEnabled
 ]
 
@@ -110,7 +110,7 @@ GlobalIdentifierPersistence >> load [
 GlobalIdentifierPersistence >> load: existingDictionary [
 	"It loads stored information into existingDictionary."
 	self isEnabled ifFalse: [ ^ self ].
-	self preferences exists ifFalse: [
+	self preferences ifAbsent: [
 		"This is a new computer, so we define new computer UUID.
 		User still has to agree about sending data if it is not has been done yet."
 		^ self save: existingDictionary ].

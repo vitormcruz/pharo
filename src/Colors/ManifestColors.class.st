@@ -1,3 +1,6 @@
+"
+Support for colors and color maps
+"
 Class {
 	#name : #ManifestColors,
 	#superclass : #PackageManifest,
@@ -6,5 +9,5 @@ Class {
 
 { #category : #'meta-data - dependency analyser' }
 ManifestColors class >> manuallyResolvedDependencies [
-	^ #(#'Collections-Streams' #'AST-Core')
+	^ #(#'Collections-Streams')
 ]

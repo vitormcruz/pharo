@@ -84,7 +84,7 @@ StandardWindow >> flash [
 
 ]
 
-{ #category : #initialize }
+{ #category : #initialization }
 StandardWindow >> initialize [
 	"Initialize the receiver."
 
@@ -170,14 +170,6 @@ StandardWindow >> open [
 ]
 
 { #category : #'open/close' }
-StandardWindow >> openAsIsIn: aWorld [
-	"Sad fixup for dodgy layout."
-
-	super openAsIsIn: aWorld.
-	self allMorphs do: [:m | m layoutChanged]
-]
-
-{ #category : #'open/close' }
 StandardWindow >> openFullscreen [
 	"Open the receiver in a FullscreenMorph."
 
@@ -192,6 +184,13 @@ StandardWindow >> openedFullscreen [
 
 	self allMorphs do: [:m | m layoutChanged].
 	self activate
+]
+
+{ #category : #'open/close' }
+StandardWindow >> postOpenInWorld: aWorld [
+
+	self allMorphs do: [:m | m layoutChanged].
+	super postOpenInWorld: aWorld
 ]
 
 { #category : #controls }

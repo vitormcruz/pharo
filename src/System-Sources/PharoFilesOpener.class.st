@@ -18,7 +18,7 @@ PharoFilesOpener class >> default [
 	^ Default ifNil: [ Default := self new ]
 ]
 
-{ #category : #singleton }
+{ #category : #initialization }
 PharoFilesOpener class >> reset [
 	Default := nil
 ]
@@ -69,6 +69,10 @@ PharoFilesOpener >> changesFileOrNilReadOnly: readOnly silent: silent [
 
 	silent
 		ifTrue: [ ^ changesFile ].
+		
+	changesFile isOpen ifFalse: [ 
+		changesFile := nil.
+		^ nil ].
 
 	(changesFile isReadOnly and: [ self shouldInformAboutReadOnlyChanges ])
 		ifTrue: [ self informProblemInChanges: self cannotWriteMsg ].
@@ -84,7 +88,7 @@ PharoFilesOpener >> changesName [
 
 { #category : #helper }
 PharoFilesOpener >> ignoreIfFail: aBlock [
-	^ [ aBlock value ] ifError: [  ]
+	^ [ aBlock value ] ifErrorDo: [  ]
 ]
 
 { #category : #'user interaction' }

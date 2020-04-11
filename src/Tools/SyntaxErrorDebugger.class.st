@@ -49,7 +49,8 @@ SyntaxErrorDebugger class >> buildMorphicViewOn: aSyntaxError [
 				menu: #codePaneMenu:shifted:)
 		frame: (0 @ 0.15 corner: 1 @ 1).
 	aSyntaxError addDependant: window.
-	^ window openInWorldExtent: 380 @ 220
+	window extent: 380 @ 220.
+	^ window openInWorld
 ]
 
 { #category : #'instance creation' }
@@ -239,22 +240,6 @@ SyntaxErrorDebugger >> listMenu: aMenu [
 { #category : #accessing }
 SyntaxErrorDebugger >> model [
 	^ self
-]
-
-{ #category : #other }
-SyntaxErrorDebugger >> notify: anError at: aLocation in: source [
-	"Open a syntax error view, inserting the given error message into the given source at the given location. This message is sent to the 'requestor' when the parser or compiler finds a syntax error."
-
-	| aClass  |
-	aClass := thisContext sender receiver encoder classEncoding.
-	self setClass: aClass
-		code: source
-		error: anError
-		location: aLocation
-		debugSession: (Processor activeProcess newDebugSessionNamed: 'Stack of the Syntax Error' startedAt: thisContext)
-		doitFlag: false.
-	self class open: self.
-
 ]
 
 { #category : #menu }

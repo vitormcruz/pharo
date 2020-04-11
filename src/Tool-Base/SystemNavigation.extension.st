@@ -1,27 +1,37 @@
 Extension { #name : #SystemNavigation }
 
 { #category : #'*Tool-Base' }
+SystemNavigation >> allMethodsWithSourceString: aString matchCase: caseSensitive [
+	"Answer a SortedCollection of all the methods that contain, in source code, aString as a substring.  Search the class comments also"
+
+	| list addMethod addComment |
+	list := OrderedCollection new.
+	addMethod := [ :mrClass :mrSel | list add: (mrClass>>mrSel)].									
+	addComment := [ :mrClass | list add: (RGCommentDefinition realClass: mrClass)].										
+	self allBehaviorsDo: [:each |
+		each selectorsDo: [:sel | 
+			((each sourceCodeAt: sel) includesSubstring: aString caseSensitive: caseSensitive) 
+					ifTrue: [ addMethod value: each value: sel ]].
+			(each organization classComment asString includesSubstring: aString caseSensitive: caseSensitive) ifTrue: [ addComment value: each]	].
+	^ list 
+]
+
+{ #category : #'*Tool-Base' }
 SystemNavigation >> browseAllAccessesTo: instVarName from: aClass [
 	"Create and schedule a Message Set browser for all the receiver's methods 
 	or any methods of a subclass/superclass that refer to the instance variable name."
 
-	"self new browseAllAccessesTo: 'contents' from: Collection."
+	"self new browseAllAccessesTo: 'x' from: Point."
 
-	| coll |
-	coll := self allAccessesTo: instVarName from: aClass.
-	^ self browseMessageList: coll name: 'Accesses to ' , instVarName autoSelect: instVarName refreshingBlock: [ :method | | index |
-			index := aClass instVarIndexFor: instVarName.
-			(method readsField: index)
-				or: [ method writesField: index ] ]
-]
-
-{ #category : #'*Tool-Base' }
-SystemNavigation >> browseAllCallsOn: aLiteral localTo: aClass [
-	"Create and schedule a message browser on each method in or below the given class that refers to
-	aLiteral. For example, SystemNavigation new browseAllCallsOn: #open:label: localTo: CodeHolder."
-
-
-	^ self browseAllSendersOf: aLiteral localTo: aClass
+	| methods slot |
+	slot := aClass slotNamed: instVarName.
+	methods := aClass allMethodsAccessingSlot: slot.
+	
+	^ self
+		browseMessageList: methods
+		name: 'Accesses to ' , instVarName
+		autoSelect: instVarName
+		refreshingBlock: [ :method | slot isAccessedIn: method ]
 ]
 
 { #category : #'*Tool-Base' }
@@ -30,7 +40,7 @@ SystemNavigation >> browseAllCallsOnClass: aClass [
 	aClass. For example, SystemNavigation new browseAllCallsOnClass: Object."
 
 	^ self
-		browseMessageList: ((aClass allCallsOnIn: self) asSortedCollection)
+		browseMessageList: (aClass allCallsOnIn: self)
 		name: 'Users of class ' , aClass instanceSide name
 		autoSelect: aClass instanceSide name
 ]
@@ -92,21 +102,6 @@ SystemNavigation >> browseAllSendersOf: aLiteral [
 ]
 
 { #category : #'*Tool-Base' }
-SystemNavigation >> browseAllSendersOf: aLiteral localTo: aClass [
-	"Create and schedule a message browser on each method in or below the given class that refers to
-	aLiteral.
-	Example: 
-		SystemNavigation new browseAllSendersOf: #open:label: localTo: CodeHolder."
-
-	aClass ifNil: [ ^self inform: 'no selected class' ].
-	^ self headingAndAutoselectForLiteral: aLiteral do:
-		[:label :autoSelect|
-		self browseMessageList: (aClass allLocalCallsOn: aLiteral) asSortedCollection
-			name: label, ' local to ', aClass name
-			autoSelect: autoSelect]
-]
-
-{ #category : #'*Tool-Base' }
 SystemNavigation >> browseAllSendersOrUsersOf: aLiteralOrClass [ 
 	"Create and schedule a message browser on each method that refers to 
 	a literal or class name"
@@ -121,20 +116,25 @@ SystemNavigation >> browseAllStoresInto: instVarName from: aClass [
     "Create and schedule a Message Set browser for all the receiver's methods 
     or any methods of a subclass/superclass that refer to the instance variable name."
 
-    "self new browseAllStoresInto: 'youpi' from: BalloonEdgeData class."
+    "self new browseAllStoresInto: 'x' from: Point."
 
-    ^ self browseMessageList: (self allStoresInto: instVarName of: aClass)
-                name: 'Stores into ' , instVarName 
-                autoSelect: instVarName
+	| methods slot |
+	slot := aClass slotNamed: instVarName.
+	methods := aClass allMethodsWritingSlot: slot.
+	
+	^ self
+		browseMessageList: methods
+		name: 'Stores into ' , instVarName
+		autoSelect: instVarName
+		refreshingBlock: [ :method | slot isWrittenIn: method ]
 
 ]
 
 { #category : #'*Tool-Base' }
 SystemNavigation >> browseAllUsersOfTrait: aTrait [
-	"Create and openenvironment  a browser on each class or trait that imports aTrait"
-
-	^Smalltalk tools browser openInEnvironment: (RBBrowserEnvironment new forClasses: aTrait traitUsers)
+	"Launch a class-list list browser on all classes or traits which import aTrait"
 	
+	^Smalltalk tools messageList browseClasses: aTrait traitUsers
 ]
 
 { #category : #'*Tool-Base' }
@@ -202,8 +202,7 @@ SystemNavigation >> browseClassesWithNamesContaining: aString caseSensitive: cas
 	
 	|  classes |
 	classes :=  self environment allClasses select: [:class | (class name includesSubstring: aString caseSensitive: caseSensitive)].				
-	^Smalltalk tools browser openInEnvironment: (RBBrowserEnvironment new forClasses: classes).
-									
+	^Smalltalk tools messageList browseClasses: classes
 ]
 
 { #category : #'*Tool-Base' }
@@ -214,10 +213,10 @@ SystemNavigation >> browseHierarchy: aBehavior [
 
 { #category : #'*Tool-Base' }
 SystemNavigation >> browseHierarchy: aClass selector: aSelector [
+
 	"Open a browser"
 
-	aClass isNil
-		ifTrue: [ ^ self ].
+	aClass ifNil: [ ^ self ].
 	^ Smalltalk tools browser new
 		spawnHierarchyForClass: aClass selector: aSelector;
 		yourself
@@ -308,33 +307,16 @@ SystemNavigation >> browseMethodsWithString: aString matchCase: caseSensitive [
 ]
 
 { #category : #'*Tool-Base' }
-SystemNavigation >> browseObsoleteMethodReferences [
+SystemNavigation >> browseObsoleteReferences [
+	<script>
 	"Open a browser on all referenced behaviors that are obsolete"
-
-	"SystemNavigation new browseObsoleteMethodReferences"
+	"SystemNavigation new browseObsoleteReferences"
 
 	| list |
-	list := self obsoleteMethodReferences.
+	list := self methodsReferencingObsoleteClasses.
 	^ self 
 		browseMessageList: list
 		name: 'Method referencing obsoletes'
-		autoSelect: nil
-]
-
-{ #category : #'*Tool-Base' }
-SystemNavigation >> browseObsoleteReferences [  
-	"self new browseObsoleteReferences"
-
-	| references |
-	references := OrderedCollection new.
-	(LookupKey allSubInstances select:
-		[:x | (x value isBehavior and: ['AnOb*' match: x value name]) or:
-		['AnOb*' match: x value class name]]) 
-		do: [:x | references addAll: (self allReferencesTo: x)].
-
-	^ self  
-		browseMessageList: references 
-		name: 'References to Obsolete Classes'
 ]
 
 { #category : #'*Tool-Base' }
@@ -345,23 +327,6 @@ SystemNavigation >> browseSendersOf: aSelector name: labelString autoSelect: aut
 		name: labelString
 		autoSelect: autoSelectString
 		refreshingBlock: [ :method | method hasSelector: aSelector ]
-]
-
-{ #category : #'*Tool-Base' }
-SystemNavigation >> browseSharedPoolUsersOf: aClass [
-
-	| pattern list | 
-	self okToChange ifFalse: [^ self ].
-	list := aClass poolUsers.
-	list isEmpty
-		ifTrue: [ ^ self ]
-		ifFalse: [pattern := UIManager default 
-				enterOrRequestFrom: list 
-				lines: #() 
-				title: 'Class name or fragment?'].
-
-	pattern ifNil: [^ self ].
-	pattern browse
 ]
 
 { #category : #'*Tool-Base' }
@@ -484,6 +449,7 @@ SystemNavigation >> confirmRemovalOf: aSelector on: aClass [
 	"Determine if it is okay to remove the given selector. Answer 1 if it  
 	should be removed, 2 if it should be removed followed by a senders  
 	browse, and 3 if it should not be removed."
+	
 	| count answer caption allCalls |
 	allCalls := self allCallsOn: aSelector.
 	(count := allCalls size) = 0
@@ -494,9 +460,8 @@ SystemNavigation >> confirmRemovalOf: aSelector on: aClass [
 					and: [allCalls first selector == aSelector])
 				ifTrue: [^ 1]].
 	"only sender is itself"
-	caption := 'The message ', aSelector printString ,' has ' , count printString , ' sender'.
-	count > 1
-		ifTrue: [caption := caption copyWith: $s].
+	caption := 'The message ', aSelector printString ,' has ' , count printString , ' sender' asPluralBasedOn: count.
+	
 	answer := UIManager default 
 		chooseFrom: #('Remove it'
 				'Remove, then browse senders'
@@ -514,47 +479,6 @@ SystemNavigation >> confirmRemovalOf: aSelector on: aClass [
 ]
 
 { #category : #'*Tool-Base' }
-SystemNavigation >> confirmRemovalOfSelectors: aCollection on: aClass [
-	"Determine if it is okay to remove the given selector. Answer 1 if it  
-	should be removed, 2 if it should be removed followed by a senders  
-	browse, and 3 if it should not be removed."
-
-	| collection count answer caption allCalls selectors oneCalls |
-	collection := aCollection asOrderedCollection copy.
-	oneCalls := OrderedCollection new.
-	aCollection
-		do:
-			[ :sel | 
-			allCalls := self allCallsOn: sel.
-			(count := allCalls size) = 0
-				ifTrue: [ collection remove: sel ].	"no senders -- let the removal happen without warning"
-			count = 1
-				ifTrue:
-					[ (allCalls first actualClass == aClass and: [ allCalls first selector == sel ])
-						ifTrue: [ oneCalls add: sel.
-							collection remove: sel ] ]	"only sender is itself" ].
-
-	"collection removeAll: (self buildSelfContainedCallsFrom: aCollection in: aClass)."
-	collection ifEmpty: [ ^ 1 ].
-	count := collection sum: [ :sel | (self allCallsOn: sel) size ].
-	selectors := collection joinUsing: ', #' last: ' and #'.
-	"ugly but faster"
-	caption := count = 1
-		ifTrue: [ 'The messages #' , selectors , ' have ' , count printString , ' sender' ]
-		ifFalse: [ 'The messages #' , selectors , ' have ' , count printString , ' senders' ].
-	answer := UIManager default
-		chooseFrom:
-			#('Remove them' 'Remove, then browse senders (if still existing)' 'Don''t remove, but show me those senders' 'Forget it -- do nothing -- sorry I asked')
-		title: caption.
-	answer = 3
-		ifTrue: [ collection do: [ :aSelector | self browseAllSendersOf: aSelector ] ].
-	answer = 0
-		ifTrue: [ answer := 3 ].
-	"If user didn't answer, treat it as cancel"
-	^ answer min: 3
-]
-
-{ #category : #'*Tool-Base' }
 SystemNavigation >> methodHierarchyBrowserForClass: aClass selector: sel [
 	"Create and schedule a message set browser on all implementors of the 
 	currently selected message selector. Do nothing if no message is selected."
@@ -567,12 +491,12 @@ SystemNavigation >> methodHierarchyBrowserForClass: aClass selector: sel [
 
 	aClass allSuperclasses reverseDo: [:cl |
 		(cl includesSelector: sel) ifTrue: [
-			list addLast: (self createMethodNamed: sel realParent: cl)]].
+			list addLast: (cl>>sel)]].
 	aClass allSubclassesDo: [:cl | 
 		(cl includesSelector: sel) ifTrue: [
-			list addLast: ( self createMethodNamed: sel realParent: cl)]].
+			list addLast: (cl>>sel) ]].
 
-	list addLast: (self createMethodNamed: sel realParent: aClass).
+	list addLast: (aClass>>sel).
 	^ self browseMessageList: list name: 'Inheritance of ' , sel
 
 

@@ -39,8 +39,10 @@ CompiledMethod class >> basicNew: size [
 
 { #category : #'class initialization' }
 CompiledMethod class >> checkBytecodeSetConflictsInMethodsWith: aBlock [
-	(self allSubInstances detect: aBlock ifNone: [ ])
-		ifNotNil: [ Warning signal: 'There are existing CompiledMethods with a different encoderClass.' ]
+
+	self allSubInstances
+		detect: aBlock
+		ifFound: [ Warning signal: 'There are existing CompiledMethods with a different encoderClass.' ]
 ]
 
 { #category : #'class initialization' }
@@ -131,11 +133,6 @@ CompiledMethod class >> headerFlagForEncoder: anEncoderClass [
 	
 	self error: 'The encoder is not one of the two installed bytecode sets'.
 	^ 0
-]
-
-{ #category : #constants }
-CompiledMethod class >> implicitRequirementMarker [
-	^ #requirement
 ]
 
 { #category : #'class initialization' }
@@ -329,6 +326,11 @@ CompiledMethod class >> toReturnSelfTrailerBytes: trailer [
 	^self newBytes: 3 trailerBytes: trailer nArgs: 0 nTemps: 0 nStack: 0 nLits: 2 primitive: 256
 ]
 
+{ #category : #'source code management' }
+CompiledMethod >> argumentNames [
+	^ self propertyAt: #argumentNames ifAbsent: [ super argumentNames ]
+]
+
 { #category : #'accessing-backward compatible' }
 CompiledMethod >> category [
 	"Please favor protocol instead of category. We want to have method protocol and class package and tag = a category"
@@ -350,6 +352,9 @@ CompiledMethod >> classBinding: aBinding [
 { #category : #accessing }
 CompiledMethod >> codeForNoSource [
 	"if everything fails, decompile the bytecode"
+	"If there is no compiler, we cannot decompile it"	
+	Smalltalk hasCompiler ifFalse: [ ^ nil ].
+	
 	 ^(self compiler decompileMethod: self) formattedCode
 ]
 
@@ -358,7 +363,7 @@ CompiledMethod >> copyWithSource: aString [
 	^self copyWithTrailerBytes: (CompiledMethodTrailer new sourceCode: aString) 
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 CompiledMethod >> copyWithTrailerBytes: trailer [
 "Testing:
 	(CompiledMethod compiledMethodAt: #copyWithTrailerBytes:)
@@ -423,6 +428,9 @@ CompiledMethod >> getSourceFromFile [
 CompiledMethod >> getSourceReplacingSelectorWith: newSelector [
 	| oldKeywords newKeywords source newSource oldSelector start |
 	source := self sourceCode.
+	
+	source ifNil: [ ^ nil ].
+	
 	oldSelector := self selector.
 	oldSelector = newSelector ifTrue: [ ^ source ].
 	
@@ -442,7 +450,7 @@ CompiledMethod >> getSourceReplacingSelectorWith: newSelector [
 
 { #category : #'accessing-pragmas & properties' }
 CompiledMethod >> hasPragmaNamed: aSymbol [
-	^ self pragmas anySatisfy: [ :pragma | pragma keyword = aSymbol ]
+	^ self pragmas anySatisfy: [ :pragma | pragma selector = aSymbol ]
 ]
 
 { #category : #testing }
@@ -486,8 +494,7 @@ CompiledMethod >> isAbstract [
 	marker := self markerOrNil ifNil: [^false].
 	
 	^marker == self class subclassResponsibilityMarker 
-		or: [ marker == self class explicitRequirementMarker
-			or: [  marker == self class implicitRequirementMarker]]
+		or: [ marker == self class explicitRequirementMarker ]
 
 ]
 
@@ -511,6 +518,8 @@ CompiledMethod >> isConflict [
 { #category : #testing }
 CompiledMethod >> isDeprecated [
 	"Object selectorsInProtocol: #deprecation"
+	self methodClass isDeprecated ifTrue: [ ^ true ].
+
 	(self
 		sendsAnySelectorOf:
 			#(#deprecated: #deprecated:on:in: #deprecated:on:in:transformWith: #deprecated:transformWith:))
@@ -555,16 +564,6 @@ CompiledMethod >> isFromTrait [
 ]
 
 { #category : #testing }
-CompiledMethod >> isImplicitlyRequired [
-	^ self isImplicitlyRequired: self markerOrNil
-]
-
-{ #category : #testing }
-CompiledMethod >> isImplicitlyRequired: marker [
-	^ marker == self class implicitRequirementMarker
-]
-
-{ #category : #testing }
 CompiledMethod >> isInstalled [
 	self methodClass ifNotNil:
 		[:class|
@@ -598,13 +597,14 @@ CompiledMethod >> isProvided: marker [
 
 { #category : #testing }
 CompiledMethod >> isRequired [
+	"A method is required if it is a method declaring a subclass responsibility or an explicit requirement. This mean the method needs to be overriden (in case of subclass reponsibility) or implemented (in case of explicit requirement)."
+
 	^ self isRequired: self markerOrNil
 ]
 
 { #category : #testing }
 CompiledMethod >> isRequired: marker [
 	marker ifNil: [^ false].
-	(self isImplicitlyRequired: marker) ifTrue: [^ true].
 	(self isExplicitlyRequired: marker) ifTrue: [^ true]. 
 	(self isSubclassResponsibility: marker) ifTrue: [^ true]. 
 	^ false
@@ -655,7 +655,7 @@ CompiledMethod >> isTaggedWith: aSymbol [
 { #category : #'source code management' }
 CompiledMethod >> linesOfCode [
 	"An approximate measure of lines of code.
-	Includes comments, but excludes empty lines."
+	Includes method's name and comments, but excludes empty lines."
 	| lines |
 	lines := 0.
 	self sourceCode lineIndicesDo: [:start :endWithoutDelimiters :end |
@@ -691,6 +691,12 @@ CompiledMethod >> methodClass: aClass [
 { #category : #accessing }
 CompiledMethod >> name [
 	^ self printString
+]
+
+{ #category : #accessing }
+CompiledMethod >> numberOfReservedLiterals [
+
+	^ 2
 ]
 
 { #category : #accessing }
@@ -730,10 +736,10 @@ CompiledMethod >> postCopy [
 	| penultimateLiteral |
 	(penultimateLiteral := self penultimateLiteral) isMethodProperties ifTrue:
 		[self penultimateLiteral: (penultimateLiteral copy
-									setMethod: self;
+									method: self;
 									yourself).
 		 self penultimateLiteral pragmas do:
-			[:p| p setMethod: self]]
+			[:p| p method: self]]
 
 ]
 
@@ -924,7 +930,7 @@ CompiledMethod >> readsField: varIndex [
 	^ super readsField: varIndex 
 ]
 
-{ #category : #'initialize-release' }
+{ #category : #initialization }
 CompiledMethod >> removeFromSystem [
 	^ self methodClass removeSelector: self selector
 ]
@@ -1080,7 +1086,8 @@ CompiledMethod >> tags [
 
 { #category : #'source code management' }
 CompiledMethod >> tempNames [
-	^self methodNode tempNames.
+	"on the level of the compiled method, tempNames includes argument names"
+	^self ast argumentNames, self ast temporaryNames
 ]
 
 { #category : #'accessing-tags' }

@@ -1,6 +1,6 @@
 Extension { #name : #Class }
 
-{ #category : #'*Epicea-Ring' }
+{ #category : #'*Epicea' }
 Class >> asEpiceaRingDefinition [
 	
 	| ring |
@@ -13,14 +13,14 @@ Class >> asEpiceaRingDefinition [
 		addSharedPools: self sharedPoolNames;
 		comment: self organization classComment;
 		stamp: self organization commentStamp;
-		definitionSource: self definition;
+		definitionSource: self oldDefinition;
 		package: (EpPlatform current packageNameFor: self);
 		withMetaclass.
 
-	ring theMetaClass 
-		traitCompositionSource: self theMetaClass traitCompositionString;
-		definitionSource: self theMetaClass definition;
-		addInstanceVariables: self theMetaClass instVarNames.  
+	ring classSide 
+		traitCompositionSource: self classSide traitCompositionString;
+		definitionSource: self classSide oldDefinition;
+		addInstanceVariables: self classSide instVarNames.  
 
 	^ ring
 ]

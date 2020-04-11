@@ -4,7 +4,7 @@ I'm an abstract class grouping generic methods for managing packages/classes/gro
 Class {
 	#name : #AbstractTool,
 	#superclass : #Model,
-	#category : #'Tool-Base'
+	#category : #'Tool-Base-Utilities'
 }
 
 { #category : #'world menu' }
@@ -13,7 +13,13 @@ AbstractTool class >> menuCommandOn: aBuilder [
 	(aBuilder item: #Tools)
 		order: 1.0;
 		target: self;
-		help: 'Set of tools to get a better Pharo experience.'
+		help: 'Set of tools to get a better Pharo experience.';
+		with: [ (aBuilder item: #'Undo last refactoring')
+				target: self;
+				selector: #undoLastRefactoring;
+				help: 'Undo last refactoring, after execute this command you can not redo this refactoring.';
+				order: 1000;
+				iconName: #smallUndo.]
 ]
 
 { #category : #private }
@@ -42,12 +48,12 @@ AbstractTool class >> requestProtocolNameFor: aClass initialAnswer: aString [
 		acceptNewEntry: true;
 		title: 'New Protocol Name' ;
 		yourself.
-	^ ui chooseFromOwner: World
+	^ ui chooseFromOwner: self currentWorld
 ]
 
-{ #category : #'world menu' }
-AbstractTool class >> theme [
-	^ Smalltalk ui theme 
+{ #category : #method }
+AbstractTool >> browseAllStoresInto: aVariableName from: aClass [ 
+	^self systemNavigation browseAllStoresInto: aVariableName from: aClass 
 ]
 
 { #category : #class }
@@ -103,29 +109,6 @@ AbstractTool >> defaultGetSelectorAndSendQuery: array to: queryPerformer with: q
 					array at: 1 put: aSymbol.
 					queryPerformer perform: querySelector withArguments: array ])
 				ifFalse: [ self inform: 'no such selector' ] ]
-]
-
-{ #category : #class }
-AbstractTool >> defineTrait: defString notifying: aController [  
-
-	| defTokens keywdIx envt oldTrait newTraitName trait |
-	self selectedClass isTrait ifTrue:[oldTrait := self selectedClass].
-	defTokens := defString findTokens: Character separators.
-	keywdIx := defTokens findFirst: [:x | x = 'category'].
-	envt := self class environment.
-	keywdIx := defTokens findFirst: [:x | x = 'named:'].
-	newTraitName := (defTokens at: keywdIx+1) copyWithoutAll: '#()'.
-	((oldTrait isNil or: [oldTrait instanceSide name asString ~= newTraitName])
-		and: [envt includesKey: newTraitName asSymbol]) ifTrue:
-			["Attempting to define new class/trait over existing one when
-				not looking at the original one in this browser..."
-			(self confirm: ((newTraitName , ' is an existing class/trait in this system.
-Redefining it might cause serious problems.
-Is this really what you want to do?') asText makeBoldFrom: 1 to: newTraitName size))
-				ifFalse: [^ nil ]].
-
-	trait := self class compiler source: defString; requestor: aController; logged: true; evaluate.
-	^ trait
 ]
 
 { #category : #method }

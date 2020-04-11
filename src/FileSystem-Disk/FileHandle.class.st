@@ -67,7 +67,7 @@ FileHandle >> at: index write: buffer startingAt: start count: count [
 
 { #category : #public }
 FileHandle >> binaryReadStream [
-	^ ZnBufferedReadStream on: (File named: reference fullName) readStream
+	^ (File named: reference fullName) readStream
 ]
 
 { #category : #public }
@@ -105,7 +105,7 @@ FileHandle >> open [
 	self flag: 'TODO: for now we solely rely on the old FileStreams'
 	"id := self basicOpen.
 	id ifNil: 	[
-		reference exists ifFalse: [FileDoesNotExist signalWith: reference].
+		reference ifAbsent: [FileDoesNotExist signalWith: reference].
 		self error: 'Unable to open file ' , reference printString]"
 ]
 

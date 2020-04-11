@@ -4,7 +4,7 @@ I am the adapter used to bridge a TextInputFieldPresenter and a PluggableTextFie
 Class {
 	#name : #MorphicTextInputFieldAdapter,
 	#superclass : #MorphicTextAdapter,
-	#category : #'Spec-MorphicAdapters'
+	#category : #'Spec-MorphicAdapters-Base'
 }
 
 { #category : #'widget API' }
@@ -23,14 +23,13 @@ MorphicTextInputFieldAdapter >> acceptOnCR [
 MorphicTextInputFieldAdapter >> adapt: aModel [
 	
 	super adapt: aModel.
-	aModel whenBuiltDo: [ :w | w widget color: Smalltalk ui theme backgroundColor ]
+	aModel whenBuiltDo: [ :w | w widget color: self theme backgroundColor ]
 ]
 
 { #category : #factory }
 MorphicTextInputFieldAdapter >> buildWidget [
 	| plu |
-	plu := PluggableTextFieldMorph new
-		convertTo: String;
+	plu := RubTextFieldMorph new
 		on: self
 			text: #getText
 			accept: #accept:
@@ -48,8 +47,10 @@ MorphicTextInputFieldAdapter >> buildWidget [
 		dropEnabled: self dropEnabled;
 		hResizing: #spaceFill;
 		vResizing: #spaceFill;
-		acceptOnCR: self acceptOnCR;
-		hideScrollBarsIndefinitely.
+		acceptOnCR: self acceptOnCR.
+	
+	self model whenTextChanged: [ plu setText: self model getText].
+		
 	^ plu
 ]
 
@@ -83,10 +84,4 @@ MorphicTextInputFieldAdapter >> ghostText [
 MorphicTextInputFieldAdapter >> ghostText: aText [
 
 	^ self model ghostText: aText
-]
-
-{ #category : #NOCompletion }
-MorphicTextInputFieldAdapter >> isCodeCompletionAllowed [
-	
-	^ false
 ]
